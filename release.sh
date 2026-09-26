@@ -11,7 +11,7 @@ BUILD=$(cat BUILD.txt | tr -d '[:space:]')
 APP_NAME="Xomsky"
 DMG_FILE="dist/Xomsky.dmg"
 CHECKSUM_FILE="dist/checksums.txt"
-REPO="unacau/mac-productivity-suite"
+REPO="unacau/xomsky"
 TAG="v$VERSION"
 
 MODE="cloud"

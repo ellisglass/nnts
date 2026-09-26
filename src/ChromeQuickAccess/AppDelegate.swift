@@ -1758,11 +1758,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         
         let response = alert.runModal()
         if response == .alertSecondButtonReturn {
-            if let url = URL(string: "https://github.com/unacau/mac-productivity-suite") {
+            if let url = URL(string: "https://github.com/unacau/xomsky") {
                 NSWorkspace.shared.open(url)
             }
         } else if response == .alertThirdButtonReturn {
-            if let url = URL(string: "https://unacau.github.io/mac-productivity-suite") {
+            if let url = URL(string: "https://unacau.github.io/xomsky") {
                 NSWorkspace.shared.open(url)
             }
         }
@@ -1776,7 +1776,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     public func checkForUpdates() async {
-        guard let url = URL(string: "https://api.github.com/repos/unacau/mac-productivity-suite/releases/latest") else { return }
+        guard let url = URL(string: "https://api.github.com/repos/unacau/xomsky/releases/latest") else { return }
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("Xomsky-App", forHTTPHeaderField: "User-Agent")

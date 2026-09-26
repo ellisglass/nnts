@@ -2012,7 +2012,7 @@ struct ChromeQuickAccessUnitTests {
 
     @Test
     func testUpdateEngineDownloadUrlAndCommand() {
-        #expect(UpdateEngine.directDmgDownloadUrl.absoluteString == "https://github.com/unacau/mac-productivity-suite/releases/latest/download/Xomsky.dmg")
+        #expect(UpdateEngine.directDmgDownloadUrl.absoluteString == "https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg")
         #expect(UpdateEngine.homebrewUpgradeCommand == "brew update && brew upgrade --cask xomsky")
     }
 
@@ -2045,7 +2045,7 @@ struct ChromeQuickAccessUnitTests {
         
         --------
         
-        Full Changelog: https://github.com/unacau/mac-productivity-suite/compare/v1.1.4...v1.1.5
+        Full Changelog: https://github.com/unacau/xomsky/compare/v1.1.4...v1.1.5
         """
         
         let highlights = UpdateEngine.parseReleaseHighlights(from: sampleMarkdown, maxBullets: 4)
@@ -2104,7 +2104,7 @@ struct ChromeQuickAccessUnitTests {
         let ghURL = DiagnosticBundleService.makeGitHubIssueURL(description: "Test issue")
         #expect(ghURL != nil)
         #expect(ghURL?.host == "github.com")
-        #expect(ghURL?.path.contains("unacau/mac-productivity-suite/issues/new") == true)
+        #expect(ghURL?.path.contains("unacau/xomsky/issues/new") == true)
         #expect(ghURL?.absoluteString.contains("%5BBug%20Report%5D") == true || ghURL?.absoluteString.contains("[Bug") == true)
     }
 

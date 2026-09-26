@@ -131,7 +131,7 @@ const PROFILES = [
     className: "avatar-ai11",
     windows: 6,
     tabs: ["GitHub Pull Requests", "CI Pipeline", "Terminal"],
-    url: "https://github.com/unacau/mac-productivity-suite",
+    url: "https://github.com/unacau/xomsky",
     color: "#3B82F6"
   },
   {

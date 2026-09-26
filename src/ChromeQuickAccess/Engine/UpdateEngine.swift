@@ -10,7 +10,7 @@ public enum InstallationSource: String, Sendable, Equatable {
 public final class UpdateEngine: Sendable {
     private static let logger = Logger(subsystem: "com.almosteleven.xomsky", category: "update-engine")
     
-    public static let directDmgDownloadUrl = URL(string: "https://github.com/unacau/mac-productivity-suite/releases/latest/download/Xomsky.dmg")!
+    public static let directDmgDownloadUrl = URL(string: "https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg")!
     
     public static let homebrewUpgradeCommand = "brew update && brew upgrade --cask xomsky"
     

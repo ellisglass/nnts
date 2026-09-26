@@ -93,7 +93,7 @@ Xomsky was engineered around the "missing limb effect" — the visceral friction
 ## 4. File Layout
 
 ```
-mac-productivity-suite/
+xomsky/
 ├── Package.swift                             # Swift Package Manager manifest
 ├── VERSION.txt                               # Semantic version tracking (1.0.0)
 ├── BUILD.txt                                 # Build increment counter (1)

@@ -138,7 +138,7 @@ public enum DiagnosticBundleService {
         *(Please attach `xomsky-diagnostic.zip` by dragging it into this issue box)*
         """
 
-        var components = URLComponents(string: "https://github.com/unacau/mac-productivity-suite/issues/new")
+        var components = URLComponents(string: "https://github.com/unacau/xomsky/issues/new")
         components?.queryItems = [
             URLQueryItem(name: "title", value: "[Bug Report] "),
             URLQueryItem(name: "body", value: body)
