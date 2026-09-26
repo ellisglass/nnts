@@ -7,17 +7,23 @@
   <meta name="description" content="Ultra-fast, intuitive macOS app switcher via Caps Lock + letter. Dedicated Chrome & Brave profile switching via Caps + C/B + 1-4, and automatic Linux-style Copy-on-Select.">
 
   <!-- OpenGraph -->
+  <meta property="og:type" content="website">
   <meta property="og:title" content="Xomsky — Fast & Intuitive App Access via Caps Lock + Letter">
   <meta property="og:description" content="Fast macOS app switcher via Caps Lock + letter. Direct Chrome & Brave profile window switching via Caps + C/B + 1-4, and automatic Copy-on-Select.">
-  <meta property="og:image" content="assets/images/khomyak_opengraph_banner.png">
+  <meta property="og:image" content="assets/images/xomsky_opengraph_banner.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Xomsky — Fast & Intuitive App Access via Caps Lock + Letter">
+  <meta name="twitter:description" content="Fast macOS app switcher via Caps Lock + letter. Direct Chrome & Brave profile window switching via Caps + C/B + 1-4, and automatic Copy-on-Select.">
+  <meta name="twitter:image" content="assets/images/xomsky_opengraph_banner.png">
 
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg?v=v6">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png?v=v6">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png?v=v6">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png?v=v6">
-  
-  <link rel="stylesheet" href="styles.css?v=cockpit_v2">
-  <link rel="stylesheet" href="variants.css?v=2.2">
+  <link rel="stylesheet" href="styles.min.css?v=3.1">
+  <link rel="stylesheet" href="variants.min.css?v=3.1">
 
   <!-- Immediate Zero-Flicker System Theme Detector -->
   <script>
@@ -34,8 +40,8 @@
   </script>
 
   <!-- Local Offline Three.js & Controls -->
-  <script src="assets/js/three.min.js"></script>
-  <script src="assets/js/OrbitControls.js"></script>
+  <script defer src="assets/js/three.min.js"></script>
+  <script defer src="assets/js/OrbitControls.min.js"></script>
 </head>
 <body class="liminal-body">
 
@@ -49,7 +55,7 @@
     <!-- Top Bar: Navigation & Action Controls -->
     <header class="top-nav">
       <div class="nav-brand">
-        <img src="assets/images/brand-mark.svg?v=v6" alt="Xomsky Logo" class="brand-icon">
+        <img src="assets/images/brand-mark.svg?v=v6" alt="Xomsky Logo" class="brand-icon" width="28" height="28" fetchpriority="high">
         <span class="brand-name">Xomsky</span>
       </div>
 
@@ -185,7 +191,7 @@
             </div>
 
             <div class="macos-video-viewport">
-              <video class="cinematic-bg-video" id="cinematic-bg-video" autoplay loop muted playsinline>
+              <video class="cinematic-bg-video" id="cinematic-bg-video" autoplay loop muted playsinline preload="auto">
                 <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
               </video>
             </div>
@@ -286,7 +292,7 @@
         </div>
 
         <div class="proofs-video-player-wrap">
-          <video id="proofs-video" class="proofs-video-element" controls playsinline loop muted>
+          <video id="proofs-video" class="proofs-video-element" controls playsinline loop muted preload="none">
             <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
           </video>
         </div>
@@ -316,46 +322,15 @@
       </div>
     </div>
 
-    <!-- Hidden Elements to prevent app.js legacy references from crashing -->
-    <div style="display: none;">
-      <button id="hud-toggle"></button>
-      <button id="paradox-toggle"></button>
-      <button id="pricing-toggle"></button>
-      <div id="hero-card"></div>
-      <div id="native-mac-hud">
-        <div id="hud-mascot-peek"></div>
-        <img id="hud-app-icon" src=""/>
-        <div id="hud-app-title"></div>
-        <div id="hud-app-subtitle"></div>
-        <div id="hud-carousel">
-          <div class="hud-slot-item active" data-index="0"></div>
-          <div class="hud-slot-item" data-index="1"></div>
-          <div class="hud-slot-item" data-index="2"></div>
-          <div class="hud-slot-item" data-index="3"></div>
-        </div>
-        <div id="window-preview-title"></div>
-        <div id="window-preview-body"></div>
-        <div id="window-preview-url"></div>
-        <div id="window-preview-tabs"></div>
-      </div>
-      <div id="pricing-card"></div>
-      <button id="pricing-close"></button>
-      <button id="hero-pricing-trigger"></button>
-      <div id="paradox-card"></div>
-      <button id="paradox-close"></button>
-      <button id="simulate-profile4-btn"></button>
-    </div>
-
-
     <!-- Footer -->
     <footer class="site-footer">
       <div class="footer-content">
-        <p>&copy; 2026 Xomsky. All rights reserved. &middot; <a href="archive/" class="footer-archive-link" title="Explore archived design explorations (Option A, B & 0)">Archived Concepts (A, B, 0)</a></p>
+        <p>&copy; 2026 Xomsky. Built for macOS Sonoma, Sequoia & Tahoe. &middot; <a href="https://github.com/unacau/mac-productivity-suite" target="_blank" rel="noopener">GitHub</a> &middot; <a href="https://github.com/unacau/mac-productivity-suite/releases" target="_blank" rel="noopener">Releases</a> &middot; <a href="https://github.com/unacau/mac-productivity-suite/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></p>
       </div>
     </footer>
   </div>
 
-  <script src="app.js?v=cockpit_v1"></script>
-  <script src="variants.js?v=2.2"></script>
+  <script defer src="app.min.js?v=3.1"></script>
+  <script defer src="variants.min.js?v=3.1"></script>
 </body>
 </html>

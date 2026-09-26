@@ -1744,7 +1744,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.informativeText = """
         Version \(AppDelegate.appVersion) (Build \(AppDelegate.appBuild))
 
-        Universal Grammar for Your Mac Shortcuts.
+        Zero-Latency Keyboard Navigation for macOS.
         Sub-16ms Context Switching • Zero-Driver • Pure Swift 6.
 
         Open source under MIT License.

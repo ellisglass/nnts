@@ -99,7 +99,7 @@ class RangeRequestHandler(BaseHTTPRequestHandler):
 def run(port=8080):
     server_address = ('127.0.0.1', port)
     httpd = HTTPServer(server_address, RangeRequestHandler)
-    print(f"🐹 Khomyak Web Server running at: http://127.0.0.1:{port}/")
+    print(f"🐹 Xomsky Web Server running at: http://127.0.0.1:{port}/")
     print(f"📂 Serving directory: {DIRECTORY}")
     try:
         httpd.serve_forever()

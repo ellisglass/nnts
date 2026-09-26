@@ -4,8 +4,7 @@
 [![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-black.svg?style=flat-square)](https://github.com/unacau/mac-productivity-suite)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
-Zero-latency keyboard cockpit for macOS in pure native Swift 6. 
-Jumps to Chrome/Brave profiles, switches pinned apps by first letter, and copies text on selection.
+Instantly jump to specific Chrome or Brave profiles with <kbd>Caps Lock</kbd> + <kbd>C</kbd>/<kbd>B</kbd> + <kbd>1..4</kbd>, switch to favorite apps by their first letter while holding <kbd>Caps Lock</kbd>, and eliminate repetitive <kbd>Cmd</kbd>+<kbd>C</kbd> keystrokes with automatic copy-on-select.
 
 ```bash
 brew install unacau/tap/xomsky
@@ -14,24 +13,21 @@ brew install unacau/tap/xomsky
 
 ---
 
-## Shortcuts (Home-Row Cockpit)
+## Shortcuts
 
 <p align="center">
-  <img src="assets/xomsky_keyboard_cockpit.svg" alt="Xomsky Keyboard Layout" width="100%">
+  <img src="assets/hero_concepts/concept_c_bento_grid.png" alt="Xomsky Shortcuts & Bento Grid" width="100%">
 </p>
 
 | Shortcut | Action | Target / Details |
 | :--- | :--- | :--- |
-| <kbd>Caps</kbd> + <kbd>1..4</kbd> | **Direct Profile Jump** | Instant jump to Chromium profile slot 1, 2, 3, or 4 |
-| <kbd>Caps</kbd> + <kbd>C</kbd> / <kbd>B</kbd> | **Profile Cycle** | Cycle Google Chrome (`C`) or Brave (`B`) profiles with HUD |
-| <kbd>Caps</kbd> + <kbd>T</kbd> | **Terminal** | Ghostty, iTerm2, Alacritty, Terminal.app |
-| <kbd>Caps</kbd> + <kbd>I</kbd> | **IDE** | Antigravity IDE, Cursor, VS Code, Xcode, JetBrains |
-| <kbd>Caps</kbd> + <kbd>A</kbd> | **AI Agent** | Antigravity, Claude, ChatGPT |
-| <kbd>Caps</kbd> + <kbd>N</kbd> | **Notes** | Obsidian, Apple Notes, Notion, Bear |
-| <kbd>Caps</kbd> + <kbd>F</kbd> | **Finder** | Focus macOS file manager |
-| **Select Text (>10pt)** | **Copy-on-Select** | Auto-copies on mouse release with cursor toast |
+| <kbd>Caps</kbd> + <kbd>C</kbd> / <kbd>B</kbd> + <kbd>1..4</kbd><br> | **Direct Profile Jump** | Instantly raise a specific Chrome (`C`) or Brave (`B`) profile window |
+| <kbd>Caps</kbd> + <kbd>C</kbd> / <kbd>B</kbd> | **Profile Cycle** | Cycle through browser profiles with a minimalist HUD overlay |
+| <kbd>Caps</kbd> + <kbd>[A–Z]</kbd> | **First-Letter App Switch** | Instant switch to any app by its first letter (<kbd>T</kbd> Terminal, <kbd>F</kbd> Finder, <kbd>N</kbd> Notes, <kbd>S</kbd> Spotify, etc.) |
+| *Repeated tap on key* | **App Cycle** | Cycle through all applications sharing the same first letter |
+| **Select Text (drag)** | **Copy-on-Select** | Auto-copies selected text to clipboard with instant cursor toast (no <kbd>Cmd</kbd>+<kbd>C</kbd>) |
 
-*Repeated taps on an app shortcut cycle through open windows of that application.*
+*Holding <kbd>Caps</kbd> displays the minimalist HUD overlay. Press <kbd>Esc</kbd> anytime to dismiss.*
 
 ---
 
