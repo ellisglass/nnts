@@ -229,16 +229,16 @@ public struct ProfileAvatarView: View {
                         )
                 }
                 
-                // Active tactile shadow / black selection ring
+                // Active glassmorphic selection ring
                 if isSelected {
                     Circle()
-                        .stroke(Color(red: 0.10, green: 0.10, blue: 0.14), lineWidth: 1.5)
+                        .stroke(Color.white, lineWidth: 1.75)
                         .frame(width: ringSize, height: ringSize)
+                        .shadow(color: Color.white.opacity(0.60), radius: 4, x: 0, y: 0)
                         .shadow(color: Color.black.opacity(0.35), radius: 2.5, x: 0, y: 1.5)
-                        .shadow(color: Color.white.opacity(0.60), radius: 1, x: 0, y: -0.5)
                 } else {
                     Circle()
-                        .stroke(Color.black.opacity(0.16), lineWidth: 0.75)
+                        .stroke(Color.white.opacity(0.24), lineWidth: 0.75)
                         .frame(width: ringSize - 2, height: ringSize - 2)
                 }
             }
@@ -246,8 +246,8 @@ public struct ProfileAvatarView: View {
             
             Text("\(slotIndex)")
                 .font(.system(size: isLarge ? 12 : 10, weight: isSelected ? .bold : .medium, design: .monospaced))
-                .foregroundColor(isSelected ? Color(red: 0.06, green: 0.06, blue: 0.10) : Color.black.opacity(0.42))
-                .shadow(color: Color.white.opacity(isSelected ? 0.65 : 0.30), radius: 1, y: 1)
+                .foregroundColor(isSelected ? .white : .white.opacity(0.65))
+                .shadow(color: Color.black.opacity(0.45), radius: 1.5, y: 1)
         }
         .frame(width: colWidth)
         .padding(.vertical, 2.5)
@@ -255,21 +255,21 @@ public struct ProfileAvatarView: View {
             if isSelected {
                 if let ns = namespace {
                     Capsule()
-                        .fill(Color.black.opacity(0.07))
+                        .fill(Color.white.opacity(0.16))
                         .overlay(
                             Capsule()
-                                .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
+                                .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
                         )
-                        .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
+                        .shadow(color: Color.black.opacity(0.15), radius: 3, y: 1)
                         .matchedGeometryEffect(id: "activeSlotCapsule", in: ns)
                 } else {
                     Capsule()
-                        .fill(Color.black.opacity(0.07))
+                        .fill(Color.white.opacity(0.16))
                         .overlay(
                             Capsule()
-                                .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
+                                .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
                         )
-                        .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
+                        .shadow(color: Color.black.opacity(0.15), radius: 3, y: 1)
                 }
             }
         }
@@ -311,16 +311,16 @@ public struct AppChannelItemView: View {
                     .frame(width: avatarSize, height: avatarSize)
                     .clipShape(RoundedRectangle(cornerRadius: iconCornerRadius, style: .continuous))
                 
-                // Active tactile shadow / black selection ring along the app icon perimeter (tight 1.25pt offset)
+                // Active glassmorphic selection ring along the app icon perimeter
                 if isSelected {
                     RoundedRectangle(cornerRadius: ringCornerRadius, style: .continuous)
-                        .stroke(Color(red: 0.10, green: 0.10, blue: 0.14), lineWidth: 1.5)
+                        .stroke(Color.white, lineWidth: 1.75)
                         .frame(width: ringSize, height: ringSize)
+                        .shadow(color: Color.white.opacity(0.60), radius: 4, x: 0, y: 0)
                         .shadow(color: Color.black.opacity(0.35), radius: 2.0, x: 0, y: 1.0)
-                        .shadow(color: Color.white.opacity(0.60), radius: 1, x: 0, y: -0.5)
                 } else {
                     RoundedRectangle(cornerRadius: ringCornerRadius - 0.5, style: .continuous)
-                        .stroke(Color.black.opacity(0.16), lineWidth: 0.75)
+                        .stroke(Color.white.opacity(0.24), lineWidth: 0.75)
                         .frame(width: ringSize - 1.5, height: ringSize - 1.5)
                 }
             }
@@ -328,8 +328,8 @@ public struct AppChannelItemView: View {
             
             Text("\(channelIndex)")
                 .font(.system(size: 10, weight: isSelected ? .bold : .medium, design: .monospaced))
-                .foregroundColor(isSelected ? Color(red: 0.06, green: 0.06, blue: 0.10) : Color.black.opacity(0.42))
-                .shadow(color: Color.white.opacity(isSelected ? 0.65 : 0.30), radius: 1, y: 1)
+                .foregroundColor(isSelected ? .white : .white.opacity(0.65))
+                .shadow(color: Color.black.opacity(0.45), radius: 1.5, y: 1)
         }
         .frame(width: colWidth)
         .padding(.vertical, 2.5)
@@ -337,21 +337,21 @@ public struct AppChannelItemView: View {
             if isSelected {
                 if let ns = namespace {
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(Color.black.opacity(0.07))
+                        .fill(Color.white.opacity(0.16))
                         .overlay(
                             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
+                                .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
                         )
-                        .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
+                        .shadow(color: Color.black.opacity(0.15), radius: 3, y: 1)
                         .matchedGeometryEffect(id: "activeAppChannelCapsule", in: ns)
                 } else {
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(Color.black.opacity(0.07))
+                        .fill(Color.white.opacity(0.16))
                         .overlay(
                             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
+                                .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
                         )
-                        .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
+                        .shadow(color: Color.black.opacity(0.15), radius: 3, y: 1)
                 }
             }
         }
@@ -721,6 +721,38 @@ public struct CRTChromaticAberrationIcon: View {
     }
 }
 
+// MARK: - Visual Effect Blur (Native macOS Behind-Window Frosted Glass)
+public struct VisualEffectBlur: NSViewRepresentable {
+    public var material: NSVisualEffectView.Material
+    public var blendingMode: NSVisualEffectView.BlendingMode
+    public var state: NSVisualEffectView.State
+
+    public init(
+        material: NSVisualEffectView.Material = .hudWindow,
+        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
+        state: NSVisualEffectView.State = .active
+    ) {
+        self.material = material
+        self.blendingMode = blendingMode
+        self.state = state
+    }
+
+    public func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = state
+        view.wantsLayer = true
+        return view
+    }
+
+    public func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
+        nsView.state = state
+    }
+}
+
 // MARK: - Modern Switcher HUD View (Retro TV Channel Switcher)
 public struct MinimalHUDView: View {
     @ObservedObject var state = ChromeSwitcherState.shared
@@ -771,7 +803,7 @@ public struct MinimalHUDView: View {
     public var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                Spacer().frame(height: 22)
+                Spacer()
                 
                 // 1. Center Hero Display (Large App Icon with Chromatic Aberration + Title)
                 VStack(spacing: 7) {
@@ -779,35 +811,35 @@ public struct MinimalHUDView: View {
                     
                     Text(activeName)
                         .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(Color(red: 0.10, green: 0.10, blue: 0.14))
-                        .shadow(color: Color.white.opacity(0.65), radius: 1, y: 1)
+                        .foregroundColor(.white)
+                        .shadow(color: Color.black.opacity(0.50), radius: 3, y: 1.5)
                         .lineLimit(1)
                     
                     if let prof = activeProfile {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 4.5) {
                             Circle()
-                                .fill(Color(red: 0.12, green: 0.12, blue: 0.16))
-                                .frame(width: 4.5, height: 4.5)
-                                .shadow(color: Color.black.opacity(0.35), radius: 1, y: 0.5)
+                                .fill(Color(red: 0.30, green: 0.85, blue: 0.60))
+                                .frame(width: 5, height: 5)
+                                .shadow(color: Color(red: 0.30, green: 0.85, blue: 0.60).opacity(0.65), radius: 2)
                             Text(prof.effectiveName)
-                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                                .foregroundColor(Color(red: 0.10, green: 0.10, blue: 0.14))
+                                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.95))
                         }
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2.5)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
                         .background(
                             Capsule()
-                                .fill(Color.white.opacity(0.45))
+                                .fill(Color.white.opacity(0.14))
                                 .overlay(
                                     Capsule()
-                                        .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
+                                        .stroke(Color.white.opacity(0.28), lineWidth: 0.75)
                                 )
-                                .shadow(color: Color.black.opacity(0.08), radius: 2, y: 1)
+                                .shadow(color: Color.black.opacity(0.18), radius: 3, y: 1)
                         )
                     }
                 }
                 
-                Spacer()
+                Spacer().frame(height: 20)
                 
                 // 2. Bottom Channel Presets Row (Apps on same letter or Chrome profiles)
                 HStack(spacing: 9) {
@@ -846,115 +878,54 @@ public struct MinimalHUDView: View {
             .frame(width: Self.hudWidth, height: Self.hudHeight)
             .background(
                 ZStack {
-                    // 1. Frosted ultra-thin material for native macOS glass blur
+                    // 1. Native macOS Behind-Window Frosted Glass Blur
+                    VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow, state: .active)
+                    
+                    // 2. Frosted ultra-thin material for native macOS glass blur & vibrancy
                     KinescopeShape(cornerRadius: 34, bulge: 8)
                         .fill(.ultraThinMaterial)
                     
-                    // 2. Tactile CRT Light Gray Base (much lighter, refined phosphor tube glass)
+                    // 3. Translucent liquid dark glass tint
                     KinescopeShape(cornerRadius: 34, bulge: 8)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color(red: 0.95, green: 0.95, blue: 0.96).opacity(0.96),
-                                    Color(red: 0.89, green: 0.89, blue: 0.91).opacity(0.97)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                    
-                    // 3. Phosphor Aperture Grille Scanlines
-                    CRTScanlinesView()
-                        .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
-                    
-                    // 4. CRT Corner & Edge Soft Vignette
-                    KinescopeShape(cornerRadius: 34, bulge: 8)
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    Color.clear,
-                                    Color.black.opacity(0.08)
-                                ]),
-                                center: UnitPoint(x: 0.5, y: 0.5),
-                                startRadius: 90,
-                                endRadius: 185
-                            )
-                        )
-                    
-                    // 5. Convex Kinescope Face Lighting (Radial specular highlight across upper curved glass)
-                    KinescopeShape(cornerRadius: 34, bulge: 8)
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    Color.white.opacity(0.55),
-                                    Color.white.opacity(0.15),
-                                    Color.clear
-                                ]),
-                                center: UnitPoint(x: 0.5, y: 0.08),
-                                startRadius: 0,
-                                endRadius: 210
-                            )
-                        )
-                    
-                    // 6. Subtle CRT phosphor tube bottom depth
-                    KinescopeShape(cornerRadius: 34, bulge: 8)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.clear,
-                                    Color.black.opacity(0.05)
-                                ],
-                                startPoint: .center,
-                                endPoint: .bottom
-                            )
-                        )
-                }
-                .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
-            )
-            .overlay(
-                // Curved Outer Kinescope Bezel Rim (Dual-tone lighting with specular highlight and deep shadow)
-                KinescopeShape(cornerRadius: 34, bulge: 8)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.92),
-                                Color.white.opacity(0.50),
-                                Color.white.opacity(0.18),
-                                Color.black.opacity(0.14),
-                                Color.black.opacity(0.35)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 1.25
-                    )
-            )
-            .overlay(
-                // CRT Glass Effect Overlay (Organic glass gloss, dome glare, and refraction rim)
-                ZStack {
-                    // 1. Diagonal ambient glass gloss across kinescope face
-                    KinescopeShape(cornerRadius: 34, bulge: 8)
-                        .fill(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity(0.35), location: 0.0),
-                                    .init(color: Color.white.opacity(0.14), location: 0.22),
-                                    .init(color: Color.white.opacity(0.04), location: 0.42),
-                                    .init(color: Color.clear, location: 0.60)
+                                    Color(red: 0.12, green: 0.13, blue: 0.18).opacity(0.68),
+                                    Color(red: 0.08, green: 0.09, blue: 0.13).opacity(0.76)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                     
-                    // 2. Upper bulb glass dome reflection (convex lens glare)
+                    // 4. Subtle phosphor aperture grille scanlines for optical texture
+                    CRTScanlinesView()
+                        .opacity(0.25)
+                        .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
+                    
+                    // 5. Diagonal Ambient Glass Gloss across face
+                    KinescopeShape(cornerRadius: 34, bulge: 8)
+                        .fill(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.22), location: 0.0),
+                                    .init(color: Color.white.opacity(0.08), location: 0.28),
+                                    .init(color: Color.white.opacity(0.02), location: 0.52),
+                                    .init(color: Color.clear, location: 0.72)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    // 6. Upper bulb glass dome reflection (convex lens glare)
                     GeometryReader { geo in
                         Ellipse()
                             .fill(
                                 RadialGradient(
                                     gradient: Gradient(colors: [
-                                        Color.white.opacity(0.30),
-                                        Color.white.opacity(0.08),
+                                        Color.white.opacity(0.20),
+                                        Color.white.opacity(0.05),
                                         Color.clear
                                     ]),
                                     center: UnitPoint(x: 0.5, y: 0.0),
@@ -963,18 +934,18 @@ public struct MinimalHUDView: View {
                                 )
                             )
                             .frame(width: geo.size.width * 1.2, height: geo.size.height * 0.65)
-                            .position(x: geo.size.width / 2, y: geo.size.height * 0.15)
+                            .position(x: geo.size.width / 2, y: geo.size.height * 0.12)
                     }
                     
-                    // 3. Top inner glass refraction rim highlight
+                    // 7. Top inner glass refraction rim highlight
                     KinescopeShape(cornerRadius: 34, bulge: 8)
-                        .inset(by: 1.5)
+                        .inset(by: 1.0)
                         .stroke(
                             LinearGradient(
                                 stops: [
-                                    .init(color: Color.white.opacity(0.75), location: 0.0),
-                                    .init(color: Color.white.opacity(0.30), location: 0.25),
-                                    .init(color: Color.white.opacity(0.0), location: 0.55)
+                                    .init(color: Color.white.opacity(0.60), location: 0.0),
+                                    .init(color: Color.white.opacity(0.22), location: 0.28),
+                                    .init(color: Color.clear, location: 0.60)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -983,11 +954,28 @@ public struct MinimalHUDView: View {
                         )
                 }
                 .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
-                .allowsHitTesting(false)
+            )
+            .overlay(
+                // Curved Outer Glass Refraction Rim (Multi-stop specular highlight and subtle shadow)
+                KinescopeShape(cornerRadius: 34, bulge: 8)
+                    .strokeBorder(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color.white.opacity(0.65), location: 0.0),
+                                .init(color: Color.white.opacity(0.30), location: 0.35),
+                                .init(color: Color.white.opacity(0.10), location: 0.70),
+                                .init(color: Color.white.opacity(0.25), location: 1.0)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.25
+                    )
             )
             .overlay(
                 // CRT phosphor green vector arc trace strictly along the outer left edge
                 CRTVectorArcView()
+                    .opacity(0.55)
             )
             .overlay(alignment: .top) {
                 if state.isMascotPeeking {
@@ -999,9 +987,10 @@ public struct MinimalHUDView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            // Convex 3D drop shadow (ambient + deep directional)
-            .shadow(color: Color.black.opacity(0.45), radius: 28, x: 0, y: 14)
-            .shadow(color: Color.black.opacity(0.22), radius: 8, x: 0, y: 3)
+            // Multi-layered floating glass drop shadow
+            .shadow(color: Color.black.opacity(0.40), radius: 32, x: 0, y: 16)
+            .shadow(color: Color.black.opacity(0.20), radius: 10, x: 0, y: 4)
+            .shadow(color: Color.white.opacity(0.08), radius: 1, x: 0, y: -0.5)
             .scaleEffect(state.isVisible ? 1.0 : 0.93)
             .opacity(state.isVisible ? 1.0 : 0.0)
             .animation(XomskyMotion.interactiveSnap, value: state.isVisible)
