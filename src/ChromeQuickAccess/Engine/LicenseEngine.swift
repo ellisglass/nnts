@@ -14,7 +14,18 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         return digest.compactMap { String(format: "%02x", $0) }.joined()
     }
     
-    public static let serviceName = "com.almosteleven.xomsky.license"
+    public static let productionServiceName = "com.almosteleven.xomsky.license"
+    public static var serviceName: String {
+        return isRunningTests ? "com.almosteleven.xomsky.license.test" : productionServiceName
+    }
+    
+    public static var storage: UserDefaults {
+        if isRunningTests {
+            return UserDefaults(suiteName: "com.almosteleven.xomsky.tests") ?? .standard
+        }
+        return .standard
+    }
+    
     public static let licenseAccount = "pro_license_key"
     public static let activationAccount = "pro_activation_id"
     public static let receiptAccount = "pro_receipt_token"
@@ -73,9 +84,9 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         // 1. Try reading from macOS Keychain (Requires valid activationId and cryptographic receipt verification)
         if let key = readKeychainLicense(),
            validateLicenseKey(key),
-           let aid = readKeychainActivationId() ?? UserDefaults.standard.string(forKey: "XomskyProActivationId"),
+           let aid = readKeychainActivationId() ?? Self.storage.string(forKey: "XomskyProActivationId"),
            !aid.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let savedReceipt = readKeychainReceipt() ?? UserDefaults.standard.string(forKey: "XomskyProReceiptToken")
+            let savedReceipt = readKeychainReceipt() ?? Self.storage.string(forKey: "XomskyProReceiptToken")
             let expectedReceipt = Self.computeReceiptToken(key: key, activationId: aid)
             if savedReceipt == expectedReceipt || (Self.isRunningTests && Self.testIgnoreReceiptCheckInTests) {
                 self.internalIsPro = true
@@ -88,11 +99,11 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         }
         
         // 2. Fallback to UserDefaults (Requires valid activationId and cryptographic receipt verification)
-        if let fallbackKey = UserDefaults.standard.string(forKey: "XomskyProLicenseKey"),
+        if let fallbackKey = Self.storage.string(forKey: "XomskyProLicenseKey"),
            validateLicenseKey(fallbackKey),
-           let fallbackAid = UserDefaults.standard.string(forKey: "XomskyProActivationId"),
+           let fallbackAid = Self.storage.string(forKey: "XomskyProActivationId"),
            !fallbackAid.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let savedReceipt = UserDefaults.standard.string(forKey: "XomskyProReceiptToken")
+            let savedReceipt = Self.storage.string(forKey: "XomskyProReceiptToken")
             let expectedReceipt = Self.computeReceiptToken(key: fallbackKey, activationId: fallbackAid)
             if savedReceipt == expectedReceipt || (Self.isRunningTests && Self.testIgnoreReceiptCheckInTests) {
                 self.internalIsPro = true
@@ -184,7 +195,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         _ = semaphore.wait(timeout: .now() + timeout)
         if isSuccess, let aid = parsedActivationId {
             _ = saveKeychainActivationId(id: aid)
-            UserDefaults.standard.set(aid, forKey: "XomskyProActivationId")
+            Self.storage.set(aid, forKey: "XomskyProActivationId")
             self.activeActivationId = aid
         }
         return isSuccess
@@ -290,13 +301,13 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
     private func activateOffline(key: String, activationId: String? = nil) -> Bool {
         let effectiveAid = activationId ?? self.activeActivationId ?? (Self.isRunningTests ? "act_test_\(UUID().uuidString)" : "")
         _ = saveKeychainLicense(key: key)
-        UserDefaults.standard.set(key, forKey: "XomskyProLicenseKey")
+        Self.storage.set(key, forKey: "XomskyProLicenseKey")
         if !effectiveAid.isEmpty {
             _ = saveKeychainActivationId(id: effectiveAid)
-            UserDefaults.standard.set(effectiveAid, forKey: "XomskyProActivationId")
+            Self.storage.set(effectiveAid, forKey: "XomskyProActivationId")
             let receipt = Self.computeReceiptToken(key: key, activationId: effectiveAid)
             _ = saveKeychainReceipt(receipt: receipt)
-            UserDefaults.standard.set(receipt, forKey: "XomskyProReceiptToken")
+            Self.storage.set(receipt, forKey: "XomskyProReceiptToken")
             self.activeActivationId = effectiveAid
         }
         self.testOverrideProStatus = nil
@@ -313,9 +324,9 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         deleteKeychainLicense()
         deleteKeychainActivationId()
         deleteKeychainReceipt()
-        UserDefaults.standard.removeObject(forKey: "XomskyProLicenseKey")
-        UserDefaults.standard.removeObject(forKey: "XomskyProActivationId")
-        UserDefaults.standard.removeObject(forKey: "XomskyProReceiptToken")
+        Self.storage.removeObject(forKey: "XomskyProLicenseKey")
+        Self.storage.removeObject(forKey: "XomskyProActivationId")
+        Self.storage.removeObject(forKey: "XomskyProReceiptToken")
         self.testOverrideProStatus = nil
         self.internalIsPro = false
         self.activeLicenseKey = nil

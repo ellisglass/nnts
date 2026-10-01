@@ -62,10 +62,6 @@ public final class CapsLockEngine: @unchecked Sendable {
     
     /// Callbacks for actions
     public var onChromeTrigger: (@MainActor () -> Void)?
-    public var onAntigravityTrigger: (@MainActor () -> Void)?
-    public var onTerminalTrigger: (@MainActor () -> Void)?
-    public var onNotesTrigger: (@MainActor () -> Void)?
-    public var onIdeTrigger: (@MainActor () -> Void)?
     public var onProfileTrigger: (@MainActor (Int) -> Void)?
     public var onModifierReleased: (@MainActor () -> Void)?
     public var onCancelTrigger: (@MainActor () -> Void)?
@@ -225,11 +221,11 @@ public final class CapsLockEngine: @unchecked Sendable {
             return nil
         }
         
-        // 4. Fallback check for external Hyper modifiers (Cmd + Opt + Ctrl + Shift)
-        let hyperFlagsMask: CGEventFlags = [.maskCommand, .maskAlternate, .maskControl, .maskShift]
-        let isHyperModifiers = event.flags.contains(hyperFlagsMask)
+        // 4. Fallback check for external multi-modifiers (Cmd + Opt + Ctrl + Shift)
+        let multiModifierFlagsMask: CGEventFlags = [.maskCommand, .maskAlternate, .maskControl, .maskShift]
+        let isMultiModifiers = event.flags.contains(multiModifierFlagsMask)
         if type == .flagsChanged && keyCode != Self.capsLockKeyCode {
-            if isHyperModifiers {
+            if isMultiModifiers {
                 if !isExternalHyperHeld {
                     isExternalHyperHeld = true
                     capsUsedAsModifier = false
@@ -244,8 +240,8 @@ public final class CapsLockEngine: @unchecked Sendable {
             }
         }
         
-        // 5. Intercept key combinations when Caps Lock or external Hyper is held
-        if isCapsHeld || isExternalHyperHeld || isHyperModifiers {
+        // 5. Intercept key combinations when Caps Lock or external multi-modifier is held
+        if isCapsHeld || isExternalHyperHeld || isMultiModifiers {
             if type == .keyDown {
                 // Ignore key autorepeat
                 if event.getIntegerValueField(.keyboardEventAutorepeat) != 0 {
@@ -267,34 +263,6 @@ public final class CapsLockEngine: @unchecked Sendable {
                     capsUsedAsModifier = true
                     onChromeTrigger?()
                     return nil // Swallow primary browser shortcut
-                }
-                
-                // Check for 'A' (focus / cycle Antigravity & AI Agent)
-                if uKeyCode == KeyCodes.kVK_ANSI_A {
-                    capsUsedAsModifier = true
-                    onAntigravityTrigger?()
-                    return nil // Swallow 'A'
-                }
-                
-                // Check for 'T' (focus / cycle Terminal apps)
-                if uKeyCode == KeyCodes.kVK_ANSI_T {
-                    capsUsedAsModifier = true
-                    onTerminalTrigger?()
-                    return nil // Swallow 'T'
-                }
-                
-                // Check for 'N' (focus / cycle Notes apps)
-                if uKeyCode == KeyCodes.kVK_ANSI_N {
-                    capsUsedAsModifier = true
-                    onNotesTrigger?()
-                    return nil // Swallow 'N'
-                }
-                
-                // Check for 'I' (focus / cycle IDE apps)
-                if uKeyCode == KeyCodes.kVK_ANSI_I {
-                    capsUsedAsModifier = true
-                    onIdeTrigger?()
-                    return nil // Swallow 'I'
                 }
                 
                 // Check for '1'..'8' (focus specific profile)
@@ -345,12 +313,9 @@ public final class CapsLockEngine: @unchecked Sendable {
             } else if type == .keyUp {
                 // Swallow keyUp for intercepted keys so no stray events are sent
                 let uKeyCode = UInt32(keyCode)
+                let browserKeyCode = ChromeProfileEngine.shared.primaryShortcutKeyCode
                 if dynamicKeyTriggers[uKeyCode] != nil ||
-                   uKeyCode == KeyCodes.kVK_ANSI_C ||
-                   uKeyCode == KeyCodes.kVK_ANSI_A ||
-                   uKeyCode == KeyCodes.kVK_ANSI_T ||
-                   uKeyCode == KeyCodes.kVK_ANSI_N ||
-                   uKeyCode == KeyCodes.kVK_ANSI_I ||
+                   uKeyCode == browserKeyCode ||
                    uKeyCode == KeyCodes.kVK_Escape ||
                    uKeyCode == KeyCodes.kVK_Tab ||
                    uKeyCode == KeyCodes.kVK_LeftArrow ||

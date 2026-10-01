@@ -181,22 +181,22 @@ const CAM_PRESETS = {
     target: new THREE.Vector3(0.25, 0.90, 0.20)
   },
   optionC: {
-    // Hamster framed proudly and prominently in the center channel between left copy and right macOS video window
-    pos: new THREE.Vector3(-0.35, 1.55, 4.80),
-    target: new THREE.Vector3(-0.35, 0.82, 0.15)
+    // Hamster pushed back ("отдален") and moved up-left along the green arrow
+    pos: new THREE.Vector3(0.10, 0.85, 9.80),
+    target: new THREE.Vector3(2.80, -0.45, 0.15)
   },
   mobileOptionC: {
-    // Tighter portrait framing for mobile: centers hamster's face and paws in top 280px viewport
-    pos: new THREE.Vector3(-0.35, 1.48, 5.20),
-    target: new THREE.Vector3(-0.35, 0.70, 0.15)
+    pos: new THREE.Vector3(0.20, 0.60, 6.20),
+    target: new THREE.Vector3(0.50, -0.40, 0.15)
   },
   rear: {
-    pos: new THREE.Vector3(0.35, 1.85, -4.90),
-    target: new THREE.Vector3(-0.35, 0.78, 0.10)
+    // Hamster butt positioned in upper-right along red arrow with matching scale
+    pos: new THREE.Vector3(0.00, 0.80, -9.80),
+    target: new THREE.Vector3(3.00, -0.50, 0.15)
   },
   front: {
-    pos: new THREE.Vector3(-0.35, 1.55, 4.80),
-    target: new THREE.Vector3(-0.35, 0.64, 0.10)
+    pos: new THREE.Vector3(-0.35, 1.05, 4.80),
+    target: new THREE.Vector3(-0.35, 0.20, 0.10)
   }
 };
 
@@ -235,6 +235,18 @@ let currentCamView = "hero"; // Default to dynamic 3/4 Hero view (balanced & sho
 let targetCamPos = CAM_PRESETS.hero.pos.clone();
 let targetCamLook = CAM_PRESETS.hero.target.clone();
 let isCamTransitioning = false;
+let isTabVisible = !document.hidden;
+let isCanvasVisible = true;
+let isAnimating = false;
+
+function resumeAnimationLoop() {
+  isTabVisible = !document.hidden;
+  if (!isAnimating && isTabVisible && isCanvasVisible) {
+    lastFrameTime = performance.now();
+    isAnimating = true;
+    requestAnimationFrame(animate);
+  }
+}
 
 function setCameraView(viewName, smooth = true) {
   let targetView = viewName;
@@ -252,6 +264,7 @@ function setCameraView(viewName, smooth = true) {
     controls.update();
   } else {
     isCamTransitioning = true;
+    resumeAnimationLoop();
   }
   updateCamBtnLabel();
 }
@@ -307,19 +320,19 @@ const CATEGORY_DATA = {
     ]
   },
   ide: {
-    title: "IDE (Antigravity IDE)",
+    title: "IntelliJ IDEA",
     shortcut: "Caps-Lock + I",
     color: "#6366F1",
     lines: [
-      "// AppGroupEngine.swift — 5-Category Suite",
-      "public static let ide = AppGroupEngine(",
-      "  category: \"IDE\",",
-      "  candidates: [AppCandidate(\"Antigravity IDE\")]",
+      "// AppGroupEngine.swift — First-Letter Shortcuts",
+      "public static let intellij = AppGroupEngine(",
+      "  category: \"IntelliJ IDEA\",",
+      "  candidates: [AppCandidate(\"IntelliJ IDEA\")]",
       ") // sub-16ms CGEventTap window focus"
     ]
   },
   ai: {
-    title: "AI Agent (Antigravity)",
+    title: "Antigravity",
     shortcut: "Caps-Lock + A",
     color: "#06B6D4",
     message: "Verified 100% native CGEventTap architecture without background daemons. Context switches execute in 1 display frame."
@@ -354,8 +367,8 @@ let keyboardGroup;
 let interactiveKeyMeshes = [];
 let keyMeshMap = {};
 
-const RESTING_GAZE_X = 0.12; // ACM CHI Gaze-Cueing: gentle ~8-10° resting turn toward right-side HUD
-const RESTING_GAZE_Y = -0.02;
+const RESTING_GAZE_X = 0.28; // Gaze directed slightly down and right toward center video window
+const RESTING_GAZE_Y = -0.06;
 let mouseX = 0, mouseY = 0;
 let targetHeadX = RESTING_GAZE_X, targetHeadY = RESTING_GAZE_Y;
 let raycaster, mouseVec;
@@ -363,6 +376,7 @@ let mouseMoved = true;
 
 // Dynamic Environment & Lighting References
 let floorMesh, floorMat;
+let contactShadowMesh, contactShadowMat;
 let panelMesh, panelMat;
 let ambientLight, keyLight, rimLightL, rimLightR, fillLight;
 let pillarMat, pillarMeshes = [];
@@ -464,14 +478,22 @@ function initThreeJS() {
 
   const initTheme = THEMES[currentTheme] || THEMES.dark;
 
-  // Scene & Atmosphere
+  // Scene & Atmosphere: Transparent WebGL Canvas for 3D Mascot Overlay
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(initTheme.bg);
-  scene.fog = new THREE.FogExp2(initTheme.bg, initTheme.fogDensity);
+  scene.background = null;
+  scene.fog = null;
 
-  // Camera: Placed by default in dynamic 3/4 hero view
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramView = urlParams.get("view");
+  const defaultCam = (paramView && CAM_PRESETS[paramView]) ? paramView : getVariantDefaultCam();
+  const initPreset = CAM_PRESETS[defaultCam] || CAM_PRESETS.hero;
+  currentCamView = defaultCam;
+  targetCamPos = initPreset.pos.clone();
+  targetCamLook = initPreset.target.clone();
+
+  // Camera: Placed by default in variant's active framing
   camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-  camera.position.copy(CAM_PRESETS.hero.pos);
+  camera.position.copy(initPreset.pos);
 
   // Renderer: Thermal & GPU power-optimized for cool silent operation
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "default" });
@@ -491,8 +513,8 @@ function initThreeJS() {
   controls.dampingFactor = 0.06;
   controls.maxPolarAngle = Math.PI / 2 - 0.02;
   controls.minDistance = 2.4;
-  controls.maxDistance = 8.0;
-  controls.target.copy(CAM_PRESETS.hero.target);
+  controls.maxDistance = 14.0;
+  controls.target.copy(initPreset.target);
   controls.addEventListener("start", () => { isCamTransitioning = false; });
 
   // Raycasting
@@ -511,7 +533,7 @@ function initThreeJS() {
     targetHeadX = RESTING_GAZE_X;
     targetHeadY = RESTING_GAZE_Y;
   }, { passive: true });
-  container.addEventListener("pointerdown", onPointerDown, { passive: true });
+  window.addEventListener("pointerdown", onPointerDown, { passive: true });
 
   // animate(); // Kickoff handled by IntersectionObserver
 }
@@ -525,18 +547,39 @@ function buildBrightLiminalEnvironment() {
   const chassisColorOverride = 0x2A2A2E;
   const plateColorOverride = 0x1C1C1F;
 
-  // Luminous Marble / Smoked Obsidian Floor
-  const floorGeo = new THREE.PlaneGeometry(250, 250);
-  floorMat = new THREE.MeshStandardMaterial({
-    color: t.floorColor,
-    roughness: t.floorRoughness,
-    metalness: t.floorMetalness
-  });
+  // Luminous Shadow Floor for transparent canvas (localized footprint to avoid bleeding over UI/video)
+  const floorGeo = new THREE.CircleGeometry(3.6, 36);
+  floorMat = new THREE.ShadowMaterial({ opacity: currentTheme === "light" ? 0.22 : 0.55 });
   floorMesh = new THREE.Mesh(floorGeo, floorMat);
-  floorMesh.position.y = -0.6;
+  floorMesh.position.set(-0.10, -0.59, 0.40);
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.receiveShadow = true;
   scene.add(floorMesh);
+
+  // Soft Radial Contact Shadow Disc directly grounding the hamster & keyboard in both light and dark modes
+  const contactGeo = new THREE.PlaneGeometry(3.8, 2.8);
+  const contactCanvas = document.createElement("canvas");
+  contactCanvas.width = 256;
+  contactCanvas.height = 256;
+  const cctx = contactCanvas.getContext("2d");
+  const cgrad = cctx.createRadialGradient(128, 128, 10, 128, 128, 124);
+  cgrad.addColorStop(0, "rgba(0, 0, 0, 0.85)");
+  cgrad.addColorStop(0.40, "rgba(0, 0, 0, 0.45)");
+  cgrad.addColorStop(0.75, "rgba(0, 0, 0, 0.12)");
+  cgrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+  cctx.fillStyle = cgrad;
+  cctx.fillRect(0, 0, 256, 256);
+  const contactTex = new THREE.CanvasTexture(contactCanvas);
+  contactShadowMat = new THREE.MeshBasicMaterial({
+    map: contactTex,
+    transparent: true,
+    opacity: currentTheme === "light" ? 0.26 : 0.50,
+    depthWrite: false
+  });
+  contactShadowMesh = new THREE.Mesh(contactGeo, contactShadowMat);
+  contactShadowMesh.position.set(-0.15, -0.585, 0.45);
+  contactShadowMesh.rotation.x = -Math.PI / 2;
+  scene.add(contactShadowMesh);
 
   // Overhead Luminous Softbox Panel
   const panelGeo = new THREE.BoxGeometry(12, 0.1, 5);
@@ -1314,6 +1357,7 @@ function onMouseMove(e) {
 }
 
 function onPointerDown(e) {
+  if (e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, .nav-actions, .cinematic-video-tabs, .hero-floating-controls')) return;
   userInteracted = true;
   mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
   mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -1373,7 +1417,7 @@ function applyTheme(themeName, animate = true, persist = false) {
   if (!scene || !floorMat) return;
 
   if (!animate) {
-    scene.background.setHex(target.bg);
+    if (scene.background) scene.background.setHex(target.bg);
     if (scene.fog) {
       scene.fog.color.setHex(target.bg);
       scene.fog.density = target.fogDensity;
@@ -1398,10 +1442,15 @@ function applyTheme(themeName, animate = true, persist = false) {
       fillLight.color.setHex(target.fillColor);
       fillLight.intensity = target.fillIntensity;
     }
-    if (floorMat) {
+    if (floorMat && floorMat.isShadowMaterial) {
+      floorMat.opacity = themeName === "light" ? 0.22 : 0.55;
+    } else if (floorMat) {
       floorMat.color.setHex(target.floorColor);
       floorMat.roughness = target.floorRoughness;
       floorMat.metalness = target.floorMetalness;
+    }
+    if (contactShadowMat) {
+      contactShadowMat.opacity = themeName === "light" ? 0.26 : 0.50;
     }
     if (panelMat) panelMat.color.setHex(target.panelColor);
     if (pillarMat) {
@@ -1425,7 +1474,7 @@ function applyTheme(themeName, animate = true, persist = false) {
 
   // Animate lerp transition
   themeTransition.from = {
-    bgColor: scene.background.clone(),
+    bgColor: scene.background ? scene.background.clone() : new THREE.Color(target.bg),
     fogDensity: scene.fog ? scene.fog.density : target.fogDensity,
     ambientColor: ambientLight ? ambientLight.color.clone() : new THREE.Color(target.ambientColor),
     ambientIntensity: ambientLight ? ambientLight.intensity : target.ambientIntensity,
@@ -1437,9 +1486,11 @@ function applyTheme(themeName, animate = true, persist = false) {
     rimRIntensity: rimLightR ? rimLightR.intensity : target.rimRIntensity,
     fillColor: fillLight ? fillLight.color.clone() : new THREE.Color(target.fillColor),
     fillIntensity: fillLight ? fillLight.intensity : target.fillIntensity,
-    floorColor: floorMat ? floorMat.color.clone() : new THREE.Color(target.floorColor),
-    floorRoughness: floorMat ? floorMat.roughness : target.floorRoughness,
-    floorMetalness: floorMat ? floorMat.metalness : target.floorMetalness,
+    floorColor: (floorMat && !floorMat.isShadowMaterial) ? floorMat.color.clone() : new THREE.Color(target.floorColor),
+    floorRoughness: (floorMat && !floorMat.isShadowMaterial) ? floorMat.roughness : target.floorRoughness,
+    floorMetalness: (floorMat && !floorMat.isShadowMaterial) ? floorMat.metalness : target.floorMetalness,
+    floorOpacity: (floorMat && floorMat.isShadowMaterial) ? floorMat.opacity : (currentTheme === "light" ? 0.22 : 0.55),
+    contactShadowOpacity: contactShadowMat ? contactShadowMat.opacity : (currentTheme === "light" ? 0.26 : 0.50),
     panelColor: panelMat ? panelMat.color.clone() : new THREE.Color(target.panelColor),
     pillarColor: pillarMat ? pillarMat.color.clone() : new THREE.Color(target.pillarColor),
     pillarRoughness: pillarMat ? pillarMat.roughness : target.pillarRoughness,
@@ -1468,6 +1519,8 @@ function applyTheme(themeName, animate = true, persist = false) {
     floorColor: new THREE.Color(target.floorColor),
     floorRoughness: target.floorRoughness,
     floorMetalness: target.floorMetalness,
+    floorOpacity: themeName === "light" ? 0.22 : 0.55,
+    contactShadowOpacity: themeName === "light" ? 0.26 : 0.50,
     panelColor: new THREE.Color(target.panelColor),
     pillarColor: new THREE.Color(target.pillarColor),
     pillarRoughness: target.pillarRoughness,
@@ -1493,6 +1546,7 @@ function applyTheme(themeName, animate = true, persist = false) {
 
   themeTransition.progress = 0;
   themeTransition.active = true;
+  resumeAnimationLoop();
 }
 
 function switchTheme(targetTheme = null) {
@@ -1508,18 +1562,10 @@ let clock = new THREE.Clock();
 let lastFrameTime = 0;
 const TARGET_FPS = 60;
 const FRAME_INTERVAL = 1000 / TARGET_FPS; // ~16.67ms cap
-let isTabVisible = !document.hidden;
-let isCanvasVisible = true;
-let isAnimating = false;
 
 // Completely stop GPU drawing when browser tab is inactive/minimized
 document.addEventListener("visibilitychange", () => {
-  isTabVisible = !document.hidden;
-  if (isTabVisible && isCanvasVisible && !isAnimating) {
-    lastFrameTime = performance.now();
-    isAnimating = true;
-    requestAnimationFrame(animate);
-  }
+  resumeAnimationLoop();
 });
 
 // Completely stop GPU drawing when canvas is scrolled out of view
@@ -1531,11 +1577,7 @@ document.addEventListener("DOMContentLoaded", () => {
       entries.forEach(entry => {
         // When founder story enters viewport (>15%), suspend WebGL canvas (0% GPU)
         isCanvasVisible = !entry.isIntersecting;
-        if (isCanvasVisible && isTabVisible && !isAnimating) {
-          lastFrameTime = performance.now();
-          isAnimating = true;
-          requestAnimationFrame(animate);
-        }
+        resumeAnimationLoop();
       });
     }, { threshold: 0.15 });
     observer.observe(founderSection);
@@ -1598,8 +1640,10 @@ function animate(currentTime = performance.now()) {
     const f = themeTransition.from;
     const t = themeTransition.to;
 
-    scene.background.copy(f.bgColor).lerp(t.bgColor, ease);
-    if (scene.fog) {
+    if (scene.background && f.bgColor && t.bgColor) {
+      scene.background.copy(f.bgColor).lerp(t.bgColor, ease);
+    }
+    if (scene.fog && f.bgColor && t.bgColor) {
       scene.fog.color.copy(f.bgColor).lerp(t.bgColor, ease);
       scene.fog.density = THREE.MathUtils.lerp(f.fogDensity, t.fogDensity, ease);
     }
@@ -1624,9 +1668,16 @@ function animate(currentTime = performance.now()) {
       fillLight.intensity = THREE.MathUtils.lerp(f.fillIntensity, t.fillIntensity, ease);
     }
     if (floorMat) {
-      floorMat.color.copy(f.floorColor).lerp(t.floorColor, ease);
-      floorMat.roughness = THREE.MathUtils.lerp(f.floorRoughness, t.floorRoughness, ease);
-      floorMat.metalness = THREE.MathUtils.lerp(f.floorMetalness, t.floorMetalness, ease);
+      if (floorMat.isShadowMaterial && f.floorOpacity !== undefined && t.floorOpacity !== undefined) {
+        floorMat.opacity = THREE.MathUtils.lerp(f.floorOpacity, t.floorOpacity, ease);
+      } else if (!floorMat.isShadowMaterial) {
+        floorMat.color.copy(f.floorColor).lerp(t.floorColor, ease);
+        floorMat.roughness = THREE.MathUtils.lerp(f.floorRoughness, t.floorRoughness, ease);
+        floorMat.metalness = THREE.MathUtils.lerp(f.floorMetalness, t.floorMetalness, ease);
+      }
+    }
+    if (contactShadowMat && f.contactShadowOpacity !== undefined && t.contactShadowOpacity !== undefined) {
+      contactShadowMat.opacity = THREE.MathUtils.lerp(f.contactShadowOpacity, t.contactShadowOpacity, ease);
     }
     if (panelMat) {
       panelMat.color.copy(f.panelColor).lerp(t.panelColor, ease);

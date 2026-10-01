@@ -313,12 +313,63 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
                 return
             }
             
+            // Level 4: Pre-flight accessibility check for empty string selection
+            if let selectedText = engine.focusedElementSelectedText(),
+               Self.isStringEmptyOrWhitespace(selectedText) {
+                engine.logger.debug("Copy skipped: Accessibility selected text is empty string or whitespace.")
+                TelemetryBuffer.shared.append(
+                    category: "copy-on-select",
+                    level: "INFO",
+                    message: "Copy on select suppressed: AX selected text is empty string."
+                )
+                return
+            }
+            
             engine.postCopyKeystroke()
         }
     }
     
+    public static var mockFocusedSelectedText: String? = nil
+    
+    public func focusedElementSelectedText() -> String? {
+        if let mock = Self.mockFocusedSelectedText {
+            return mock
+        }
+        var focusedElement: CFTypeRef?
+        let systemWide = AXUIElementCreateSystemWide()
+        guard AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focusedElement) == .success,
+              let element = focusedElement,
+              CFGetTypeID(element) == AXUIElementGetTypeID() else {
+            return nil
+        }
+        
+        let axElement = element as! AXUIElement
+        var selectedTextRef: CFTypeRef?
+        if AXUIElementCopyAttributeValue(axElement, kAXSelectedTextAttribute as CFString, &selectedTextRef) == .success,
+           let text = selectedTextRef as? String {
+            return text
+        }
+        return nil
+    }
+    
+    public static func isStringEmptyOrWhitespace(_ text: String?) -> Bool {
+        guard let text = text else { return true }
+        return text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
     public func postCopyKeystroke() {
         let initialChangeCount = NSPasteboard.general.changeCount
+        
+        // Snapshot current pasteboard items for clean restoration if Cmd+C produces an empty string
+        let previousItems: [[NSPasteboard.PasteboardType: Data]] = NSPasteboard.general.pasteboardItems?.compactMap { item in
+            var dict: [NSPasteboard.PasteboardType: Data] = [:]
+            for type in item.types {
+                if let data = item.data(forType: type) {
+                    dict[type] = data
+                }
+            }
+            return dict.isEmpty ? nil : dict
+        } ?? []
         
         let src = CGEventSource(stateID: .hidSystemState)
         let cKeyCode: CGKeyCode = CGKeyCode(KeyCodes.kVK_ANSI_C)
@@ -351,23 +402,63 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
                 newCount = NSPasteboard.general.changeCount
             }
             
-            let didChange = newCount != initialChangeCount
-            TelemetryBuffer.shared.append(
-                category: "copy-on-select",
-                level: "INFO",
-                message: "Cmd+C evaluated: changeCount \(initialChangeCount) -> \(newCount) (copied: \(didChange))"
+            _ = self.evaluateCopiedContent(
+                initialChangeCount: initialChangeCount,
+                previousItems: previousItems,
+                mousePos: mousePos
             )
-            
-            if didChange {
-                CopyToastWindow.shared.show(at: mousePos)
+        }
+    }
+    
+    @discardableResult
+    public func evaluateCopiedContent(
+        initialChangeCount: Int,
+        previousItems: [[NSPasteboard.PasteboardType: Data]],
+        mousePos: CGPoint
+    ) -> Bool {
+        let newCount = NSPasteboard.general.changeCount
+        let didChange = newCount != initialChangeCount
+        TelemetryBuffer.shared.append(
+            category: "copy-on-select",
+            level: "INFO",
+            message: "Cmd+C evaluated: changeCount \(initialChangeCount) -> \(newCount) (copied: \(didChange))"
+        )
+        
+        if didChange {
+            // Level 5: Filter out empty strings and whitespace-only copied text
+            if let newString = NSPasteboard.general.string(forType: .string),
+               Self.isStringEmptyOrWhitespace(newString) {
+                logger.debug("Cmd+C resulted in empty string; filtering out copy and restoring previous pasteboard.")
                 TelemetryBuffer.shared.append(
                     category: "copy-on-select",
                     level: "INFO",
-                    message: "Toast 'Copied!' displayed at (\(Int(mousePos.x)), \(Int(mousePos.y)))"
+                    message: "Copy on select suppressed: copied string was empty or whitespace only."
                 )
-            } else {
-                self.logger.debug("Pasteboard unchanged after Cmd+C; suppressing false Copied toast.")
+                
+                // Restore previous pasteboard contents to prevent clobbering user's clipboard
+                NSPasteboard.general.clearContents()
+                if !previousItems.isEmpty {
+                    for itemDict in previousItems {
+                        let newItem = NSPasteboardItem()
+                        for (type, data) in itemDict {
+                            newItem.setData(data, forType: type)
+                        }
+                        NSPasteboard.general.writeObjects([newItem])
+                    }
+                }
+                return false
             }
+            
+            CopyToastWindow.shared.show(at: mousePos)
+            TelemetryBuffer.shared.append(
+                category: "copy-on-select",
+                level: "INFO",
+                message: "Toast 'Copied!' displayed at (\(Int(mousePos.x)), \(Int(mousePos.y)))"
+            )
+            return true
+        } else {
+            logger.debug("Pasteboard unchanged after Cmd+C; suppressing false Copied toast.")
+            return false
         }
     }
 }

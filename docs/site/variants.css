@@ -48,85 +48,146 @@
 }
 
 /* ==========================================================================
-   Option C: Side-by-Side 60fps Video & Live 3D Mascot Stage
+   Fullscreen 60fps Native Video Backdrop (Wonderful.ai Style)
+   ========================================================================== */
+.hero-video-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-bg-video {
+  width: min(80vw, 1000px);
+  aspect-ratio: 1212 / 578;
+  max-height: 56vh;
+  object-fit: cover;
+  display: block;
+  border-radius: 22px;
+  box-shadow: 
+    0 24px 60px -12px rgba(0, 0, 0, 0.10),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  opacity: 0.98;
+  transition: opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease;
+}
+
+[data-theme="light"] .hero-bg-video {
+  opacity: 1.0;
+  filter: contrast(1.02);
+}
+
+[data-theme="dark"] .hero-bg-video {
+  opacity: 0.86;
+  filter: contrast(1.06) brightness(0.82);
+  box-shadow: 
+    0 32px 80px -15px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.hero-video-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+[data-theme="dark"] .hero-video-scrim {
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.25) 0%, rgba(15, 23, 42, 0.65) 100%);
+}
+
+[data-theme="light"] .hero-video-scrim {
+  background: radial-gradient(circle at center, transparent 0%, rgba(253, 248, 250, 0.35) 100%);
+}
+
+/* ==========================================================================
+   Hero Stage with Live 3D Mascot & Floating Demo Controls
    ========================================================================== */
 .variant-stage-section {
   position: relative;
   width: 100%;
-  min-height: calc(100vh - 84px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 30px 0;
-  box-sizing: border-box;
-}
-
-.option-c-split-stage {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 44px;
-  pointer-events: none;
-  z-index: 85;
-  width: 100%;
-  max-width: 1540px;
-  margin: 0 auto;
-  gap: 36px;
-  box-sizing: border-box;
-}
-
-.option-c-left-col {
-  width: 440px;
-  max-width: 36vw;
-  pointer-events: auto;
-  user-select: none;
-}
-
-.option-c-glass-card {
+  height: calc(100vh - 74px);
+  min-height: 560px;
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  background: rgba(15, 23, 42, 0.82);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(56, 189, 248, 0.30);
-  border-radius: 20px;
-  padding: 22px 24px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 24px 36px;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 85;
+}
+
+.hero-floating-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(56, 189, 248, 0.28);
   box-shadow: 
-    0 20px 48px rgba(0, 0, 0, 0.45),
-    0 0 28px rgba(56, 189, 248, 0.12);
+    0 12px 32px rgba(0, 0, 0, 0.40),
+    0 0 24px rgba(56, 189, 248, 0.12);
+  pointer-events: auto;
+  user-select: none;
   transition: all 0.22s ease;
 }
 
-[data-theme="light"] .option-c-glass-card {
+[data-theme="light"] .hero-floating-controls {
   background: rgba(255, 255, 255, 0.88);
   border-color: rgba(56, 189, 248, 0.35);
   box-shadow: 
-    0 16px 40px rgba(0, 0, 0, 0.10),
-    0 0 20px rgba(56, 189, 248, 0.10);
+    0 12px 32px rgba(0, 0, 0, 0.08),
+    0 0 16px rgba(56, 189, 248, 0.08);
 }
 
-.option-c-right-col {
-  width: 520px;
-  max-width: 42vw;
-  pointer-events: auto;
-  user-select: none;
+.hero-floating-controls:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.50),
+    0 0 32px rgba(56, 189, 248, 0.22);
+}
+
+.hero-capture-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #38BDF8;
+  letter-spacing: 0.01em;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  white-space: nowrap;
+}
+
+[data-theme="light"] .hero-capture-chip {
+  color: #0284C7;
+  border-left-color: rgba(0, 0, 0, 0.12);
 }
 
 .cinematic-heading {
-  font-size: 2.15rem;
+  font-size: 2.05rem;
   font-weight: 800;
   letter-spacing: -0.04em;
-  line-height: 1.15;
+  line-height: 1.16;
   margin: 0;
   color: var(--text-primary, #FFFFFF);
   text-align: left;
 }
 
 .cinematic-summary {
-  font-size: 0.98rem;
-  line-height: 1.45;
+  font-size: 0.94rem;
+  line-height: 1.48;
   color: var(--text-secondary, #94A3B8);
   margin: 0;
   text-align: left;
@@ -137,23 +198,24 @@
   align-items: center;
   gap: 8px;
   margin-top: 2px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .cinematic-tab-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 14px;
+  gap: 6px;
+  padding: 6px 13px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(15, 23, 42, 0.76);
+  background: rgba(15, 23, 42, 0.70);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: #E2E8F0;
-  font-size: 0.80rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -174,6 +236,77 @@
   border-color: #38BDF8;
   color: #38BDF8;
   box-shadow: 0 0 20px rgba(56, 189, 248, 0.32);
+}
+
+.hero-install-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 6px 14px;
+  margin-top: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  pointer-events: auto;
+}
+
+[data-theme="light"] .hero-install-strip {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.hero-install-strip:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  transform: translateY(-1px);
+}
+
+.hero-install-prompt {
+  color: #38BDF8;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.hero-install-cmd {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: #E2E8F0;
+  font-weight: 500;
+}
+
+[data-theme="light"] .hero-install-cmd {
+  color: #1E293B;
+}
+
+.hero-install-copy-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 6px;
+  color: #94A3B8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+[data-theme="light"] .hero-install-copy-btn {
+  background: rgba(0, 0, 0, 0.06);
+  color: #475569;
+}
+
+.hero-install-copy-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38BDF8;
 }
 
 .cinematic-macro-strip {
@@ -215,11 +348,13 @@
 
 /* macOS Video Player Window Container */
 .macos-video-window {
+  width: 100%;
+  max-width: 1380px;
   background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   border: 1.5px solid rgba(56, 189, 248, 0.38);
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: 
     0 24px 64px rgba(0, 0, 0, 0.65),
     0 0 0 1px rgba(255, 255, 255, 0.12),
@@ -248,10 +383,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 10px 16px;
   background: rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   font-family: var(--font-system);
+  gap: 12px;
 }
 
 [data-theme="light"] .macos-video-titlebar {
@@ -263,6 +399,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
+  flex-shrink: 0;
 }
 
 .tl-dot {
@@ -275,11 +412,23 @@
 .tl-min { background: #FFBD2E; border: 0.5px solid rgba(0,0,0,0.2); }
 .tl-max { background: #27C93F; border: 0.5px solid rgba(0,0,0,0.2); }
 
+.macos-titlebar-spacer {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .macos-titlebar-spacer {
+    display: none;
+  }
+}
+
 .macos-video-title {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #CBD5E1;
   letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 [data-theme="light"] .macos-video-title {
@@ -294,12 +443,15 @@
   padding: 2px 7px;
   border-radius: 999px;
   letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .macos-video-viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9;
+  max-height: calc(100vh - 190px);
   background: #000000;
   overflow: hidden;
 }

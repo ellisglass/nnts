@@ -317,6 +317,95 @@ struct ChromeQuickAccessUnitTests {
     }
     
     @Test @MainActor
+    func testCopyOnSelectEmptyStringFilteringHelper() {
+        #expect(CopyOnSelectEngine.isStringEmptyOrWhitespace("") == true)
+        #expect(CopyOnSelectEngine.isStringEmptyOrWhitespace("   ") == true)
+        #expect(CopyOnSelectEngine.isStringEmptyOrWhitespace("\n\t\r ") == true)
+        #expect(CopyOnSelectEngine.isStringEmptyOrWhitespace(nil) == true)
+        #expect(CopyOnSelectEngine.isStringEmptyOrWhitespace("hello") == false)
+        #expect(CopyOnSelectEngine.isStringEmptyOrWhitespace("  hello  ") == false)
+    }
+    
+    @Test @MainActor
+    func testCopyOnSelectPreFlightAXEmptyStringFiltering() {
+        CopyOnSelectEngine.mockFocusedSelectedText = "   "
+        defer { CopyOnSelectEngine.mockFocusedSelectedText = nil }
+        
+        let engine = CopyOnSelectEngine()
+        let selected = engine.focusedElementSelectedText()
+        #expect(selected == "   ")
+        #expect(CopyOnSelectEngine.isStringEmptyOrWhitespace(selected) == true)
+    }
+    
+    @Test @MainActor
+    func testCopyOnSelectPasteboardEmptyStringSuppressionAndRestoration() {
+        let pboard = NSPasteboard.general
+        pboard.clearContents()
+        pboard.setString("Preserved Clipboard Content", forType: .string)
+        
+        // Snapshot existing clipboard state
+        let snapshot: [[NSPasteboard.PasteboardType: Data]] = pboard.pasteboardItems?.compactMap { item in
+            var dict: [NSPasteboard.PasteboardType: Data] = [:]
+            for type in item.types {
+                if let data = item.data(forType: type) {
+                    dict[type] = data
+                }
+            }
+            return dict.isEmpty ? nil : dict
+        } ?? []
+        
+        let initialChangeCount = pboard.changeCount
+        
+        // Target app copies empty string or whitespace into pasteboard
+        pboard.clearContents()
+        pboard.setString("   \n", forType: .string)
+        
+        let engine = CopyOnSelectEngine()
+        let didCopy = engine.evaluateCopiedContent(
+            initialChangeCount: initialChangeCount,
+            previousItems: snapshot,
+            mousePos: CGPoint(x: 100, y: 100)
+        )
+        
+        // Should suppress the copy and restore previous content
+        #expect(didCopy == false)
+        #expect(pboard.string(forType: .string) == "Preserved Clipboard Content")
+    }
+    
+    @Test @MainActor
+    func testCopyOnSelectPasteboardValidStringAcceptance() {
+        let pboard = NSPasteboard.general
+        pboard.clearContents()
+        pboard.setString("Old Content", forType: .string)
+        
+        let snapshot: [[NSPasteboard.PasteboardType: Data]] = pboard.pasteboardItems?.compactMap { item in
+            var dict: [NSPasteboard.PasteboardType: Data] = [:]
+            for type in item.types {
+                if let data = item.data(forType: type) {
+                    dict[type] = data
+                }
+            }
+            return dict.isEmpty ? nil : dict
+        } ?? []
+        
+        let initialChangeCount = pboard.changeCount
+        
+        // Target app copies valid non-empty string
+        pboard.clearContents()
+        pboard.setString("Valid Selected Text", forType: .string)
+        
+        let engine = CopyOnSelectEngine()
+        let didCopy = engine.evaluateCopiedContent(
+            initialChangeCount: initialChangeCount,
+            previousItems: snapshot,
+            mousePos: CGPoint(x: 100, y: 100)
+        )
+        
+        #expect(didCopy == true)
+        #expect(pboard.string(forType: .string) == "Valid Selected Text")
+    }
+    
+    @Test @MainActor
     func testProfileEffectiveNameFallbackHierarchy() {
         let p1 = ChromeProfile(index: 1, dir: "Profile 1", name: "", gaiaName: "Igor Corporate")
         #expect(p1.effectiveName == "Igor Corporate")
@@ -486,7 +575,7 @@ struct ChromeQuickAccessUnitTests {
         let proxy = unsafeBitCast(1, to: CGEventTapProxy.self)
         
         var antigravityTriggered = false
-        engine.onAntigravityTrigger = { antigravityTriggered = true }
+        engine.dynamicKeyTriggers[KeyCodes.kVK_ANSI_A] = { antigravityTriggered = true }
         
         // Hold F18
         let f18Down = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(KeyCodes.kVK_F18), keyDown: true)!
@@ -699,17 +788,17 @@ struct ChromeQuickAccessUnitTests {
     }
     
     @Test @MainActor
-    func testCapsLockTerminalNotesIdeTriggers() {
+    func testCapsLockDynamicLetterTriggers() {
         let engine = CapsLockEngine()
         let proxy = unsafeBitCast(1, to: CGEventTapProxy.self)
         
         var terminalTriggered = false
-        var notesTriggered = false
+        var obsidianTriggered = false
         var ideTriggered = false
         
-        engine.onTerminalTrigger = { terminalTriggered = true }
-        engine.onNotesTrigger = { notesTriggered = true }
-        engine.onIdeTrigger = { ideTriggered = true }
+        engine.dynamicKeyTriggers[KeyCodes.kVK_ANSI_T] = { terminalTriggered = true }
+        engine.dynamicKeyTriggers[KeyCodes.kVK_ANSI_O] = { obsidianTriggered = true }
+        engine.dynamicKeyTriggers[KeyCodes.kVK_ANSI_I] = { ideTriggered = true }
         
         // Hold F18
         let f18Down = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(KeyCodes.kVK_F18), keyDown: true)!
@@ -721,11 +810,11 @@ struct ChromeQuickAccessUnitTests {
         #expect(resT == nil) // Swallowed
         #expect(terminalTriggered == true)
         
-        // Press 'N' (Notes)
-        let nDown = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(KeyCodes.kVK_ANSI_N), keyDown: true)!
-        let resN = engine.handleEvent(proxy: proxy, type: .keyDown, event: nDown)
-        #expect(resN == nil) // Swallowed
-        #expect(notesTriggered == true)
+        // Press 'O' (Obsidian)
+        let oDown = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(KeyCodes.kVK_ANSI_O), keyDown: true)!
+        let resO = engine.handleEvent(proxy: proxy, type: .keyDown, event: oDown)
+        #expect(resO == nil) // Swallowed
+        #expect(obsidianTriggered == true)
         
         // Press 'I' (IDE)
         let iDown = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(KeyCodes.kVK_ANSI_I), keyDown: true)!
@@ -738,9 +827,9 @@ struct ChromeQuickAccessUnitTests {
         let resTUp = engine.handleEvent(proxy: proxy, type: .keyUp, event: tUp)
         #expect(resTUp == nil)
         
-        let nUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(KeyCodes.kVK_ANSI_N), keyDown: false)!
-        let resNUp = engine.handleEvent(proxy: proxy, type: .keyUp, event: nUp)
-        #expect(resNUp == nil)
+        let oUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(KeyCodes.kVK_ANSI_O), keyDown: false)!
+        let resOUp = engine.handleEvent(proxy: proxy, type: .keyUp, event: oUp)
+        #expect(resOUp == nil)
         
         let iUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(KeyCodes.kVK_ANSI_I), keyDown: false)!
         let resIUp = engine.handleEvent(proxy: proxy, type: .keyUp, event: iUp)
@@ -751,18 +840,18 @@ struct ChromeQuickAccessUnitTests {
     func testMinimalHUDWindowAppGroupModes() {
         let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
         let items = [
-            AntigravityItem(name: "Obsidian", bundleID: "md.obsidian", path: "/Applications/Obsidian.app", icon: dummyIcon, index: 1),
-            AntigravityItem(name: "Notes", bundleID: "com.apple.Notes", path: "/System/Applications/Notes.app", icon: dummyIcon, index: 2)
+            AntigravityItem(name: "Notes", bundleID: "com.apple.Notes", path: "/System/Applications/Notes.app", icon: dummyIcon, index: 1),
+            AntigravityItem(name: "Notion", bundleID: "notion.id", path: "/Applications/Notion.app", icon: dummyIcon, index: 2)
         ]
         
         MinimalHUDWindow.shared.showAppGroup(mode: .notes, items: items, selectedIndex: 0)
         #expect(ChromeSwitcherState.shared.mode == .notes)
-        #expect(ChromeSwitcherState.shared.selectedAppItem?.name == "Obsidian")
+        #expect(ChromeSwitcherState.shared.selectedAppItem?.name == "Notes")
         #expect(ChromeSwitcherState.shared.hasBrothers == true)
         #expect(ChromeSwitcherState.shared.isVisible == true)
         
         MinimalHUDWindow.shared.selectNext()
-        #expect(ChromeSwitcherState.shared.selectedAppItem?.name == "Notes")
+        #expect(ChromeSwitcherState.shared.selectedAppItem?.name == "Notion")
         
         // Single app without brothers has hasBrothers == false (no bottom redundant icon)
         MinimalHUDWindow.shared.showAppGroup(mode: .notes, items: [items[0]], selectedIndex: 0)
@@ -774,8 +863,15 @@ struct ChromeQuickAccessUnitTests {
     
     @Test @MainActor
     func testChromeProfileSelectionLimitUpToFour() throws {
+        let prevBrowserProfileDirs = UserDefaults.standard.object(forKey: "SelectedBrowserProfileDirs")
+        defer {
+            if let prev = prevBrowserProfileDirs {
+                UserDefaults.standard.set(prev, forKey: "SelectedBrowserProfileDirs")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "SelectedBrowserProfileDirs")
+            }
+        }
         UserDefaults.standard.removeObject(forKey: "SelectedBrowserProfileDirs")
-        defer { UserDefaults.standard.removeObject(forKey: "SelectedBrowserProfileDirs") }
         
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -1019,7 +1115,7 @@ struct ChromeQuickAccessUnitTests {
     }
     
     @Test @MainActor
-    func testTwoGroupMenuStructure() {
+    func testStatusMenuStructure() {
         let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
         let mockAiAgent = [
             AntigravityItem(name: "Antigravity", bundleID: "com.google.antigravity", path: "/Applications/Antigravity.app", icon: dummyIcon, index: 1)
@@ -1067,13 +1163,13 @@ struct ChromeQuickAccessUnitTests {
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
         
-        // Refresh Profiles & Apps and Quit Quick Access use native keyEquivalent with ⌘ modifier
+        // Refresh Profiles & Apps and Quit Xomsky use native keyEquivalent with ⌘ modifier
         let refreshItem = menu.items.first(where: { $0.title.contains("Refresh Profiles & Apps") })
         #expect(refreshItem != nil)
         #expect(refreshItem?.keyEquivalent == "r")
         #expect(refreshItem?.keyEquivalentModifierMask == [.command])
         
-        let quitItem = menu.items.first(where: { $0.title.contains("Quit Xomsky") || $0.title.contains("Quit Khomyak") })
+        let quitItem = menu.items.first(where: { $0.title == "Quit Xomsky" })
         #expect(quitItem != nil)
         #expect(quitItem?.keyEquivalent == "q")
         #expect(quitItem?.keyEquivalentModifierMask == [.command])
@@ -1090,17 +1186,17 @@ struct ChromeQuickAccessUnitTests {
         #expect(chromeItem?.keyEquivalent == "c")
         #expect(chromeItem?.action != nil)
         
-        // Hamster Mascot Separator present between sections
-        let hamsterSeparator = menu.items.first(where: { $0.view is AppDelegate.HamsterSeparatorView })
-        #expect(hamsterSeparator != nil)
-        #expect(hamsterSeparator?.isEnabled == false)
+        // Mascot Separator present between sections
+        let mascotSeparator = menu.items.first(where: { $0.view is AppDelegate.MascotSeparatorView })
+        #expect(mascotSeparator != nil)
+        #expect(mascotSeparator?.isEnabled == false)
         
-        // Section 2: Toolset / Quick Apps header present and strictly non-clickable
-        let toolsetHeader = menu.items.first(where: { $0.title.contains("Core Toolset") || $0.title.contains("Quick Apps") || $0.title.contains("Toolset Shortcuts") || $0.title.contains("Toolkit") })
-        #expect(toolsetHeader != nil)
-        #expect(toolsetHeader?.isSectionHeader == true)
-        #expect(toolsetHeader?.isEnabled == false)
-        #expect(toolsetHeader?.action == nil)
+        // Section 2: Quick Apps header present and strictly non-clickable
+        let quickAppsHeader = menu.items.first(where: { $0.title == "Quick Apps (Caps-Lock)" })
+        #expect(quickAppsHeader != nil)
+        #expect(quickAppsHeader?.isSectionHeader == true)
+        #expect(quickAppsHeader?.isEnabled == false)
+        #expect(quickAppsHeader?.action == nil)
         
         // Active Quick Apps items present with valid keyEquivalent
         let termMatch = menu.items.first(where: { $0.title.contains("iTerm") || $0.title.contains("Terminal") })
@@ -1118,12 +1214,12 @@ struct ChromeQuickAccessUnitTests {
         #expect(ideItem?.keyEquivalent == "a")
         #expect(ideItem?.submenu == nil)
         
-        let notesMatch = menu.items.first(where: { $0.title.contains("Notes") || $0.title.contains("Obsidian") })
+        let notesMatch = menu.items.first(where: { $0.title.contains("Notes") })
         #expect(notesMatch != nil)
         #expect(notesMatch?.keyEquivalent.isEmpty == false)
         
-        // Change App / Manage Quick Apps item with submenu present
-        let changeAppItem = menu.items.first(where: { $0.title.contains("Manage Quick Apps") || $0.title == "Change App" })
+        // Manage Quick Apps item with submenu present
+        let changeAppItem = menu.items.first(where: { $0.title == "Manage Quick Apps..." })
         #expect(changeAppItem != nil)
         #expect(changeAppItem?.submenu != nil)
         
@@ -1138,7 +1234,7 @@ struct ChromeQuickAccessUnitTests {
         
         // App shortcuts derive strictly from first letter of app name (or slot digit for Chrome)
         for item in menu.items {
-            if item.isSeparatorItem || item.title.hasSuffix(":") || item.title.hasPrefix("Chrome") || item.title.hasPrefix("Core Toolset") || item.title.hasPrefix("Quick Apps") || item.title.hasPrefix("Toolkit") || item.title.hasPrefix("Toolset Shortcuts") || item.title.hasPrefix("Quick Shortcuts") || item.title.contains("Browsers & Profiles") || item.title.hasPrefix("Manage Quick Apps") || item.title == "Change App" || item.view is AppDelegate.HamsterSeparatorView { continue }
+            if item.isSeparatorItem || item.title.hasSuffix(":") || item.title.hasPrefix("Chrome") || item.title == "Quick Apps (Caps-Lock)" || item.title.contains("Browsers & Profiles") || item.title == "Manage Quick Apps..." || item.view is AppDelegate.MascotSeparatorView { continue }
             if !item.keyEquivalent.isEmpty && item.keyEquivalentModifierMask == [] {
                 let appName = item.title.trimmingCharacters(in: .whitespaces)
                 let key = item.keyEquivalent
@@ -1150,25 +1246,6 @@ struct ChromeQuickAccessUnitTests {
                 }
             }
         }
-    }
-    
-    @Test @MainActor
-    func testAppShortcutCategoryClassification() {
-        // Toolset categories: Terminal, IDE, AI Agent, Notes
-        #expect(AppGroupEngine.category(for: "com.googlecode.iterm2") == .toolset)
-        #expect(AppGroupEngine.category(for: "com.mitchellh.ghostty") == .toolset)
-        #expect(AppGroupEngine.category(for: "com.apple.Terminal") == .toolset)
-        #expect(AppGroupEngine.category(for: "com.google.antigravity") == .toolset)
-        #expect(AppGroupEngine.category(for: "com.google.antigravity-ide") == .toolset)
-        #expect(AppGroupEngine.category(for: "com.microsoft.VSCode") == .toolset)
-        #expect(AppGroupEngine.category(for: "com.apple.Notes") == .toolset)
-        #expect(AppGroupEngine.category(for: "md.obsidian") == .toolset)
-        
-        // Quick categories: Finder, System Settings, Communication, Media
-        #expect(AppGroupEngine.category(for: "com.apple.finder") == .quick)
-        #expect(AppGroupEngine.category(for: "com.apple.systempreferences") == .quick)
-        #expect(AppGroupEngine.category(for: "com.tdesktop.Telegram") == .quick)
-        #expect(AppGroupEngine.category(for: "com.spotify.client") == .quick)
     }
     
     @Test @MainActor
@@ -1201,30 +1278,30 @@ struct ChromeQuickAccessUnitTests {
         
         let appDelegate = AppDelegate()
         
-        // Mock a pinned set containing both Toolset and Quick shortcuts
+        // Mock a pinned set of applications
         let mockPinned = [
-            "com.google.antigravity",        // Toolset (A)
-            "com.google.antigravity-ide",    // Toolset (A)
-            "com.apple.finder",              // Quick (F)
-            "com.apple.systempreferences"    // Quick (S)
+            "com.google.antigravity",
+            "com.google.antigravity-ide",
+            "com.apple.finder",
+            "com.apple.systempreferences"
         ]
         UserDefaults.standard.set(mockPinned, forKey: "SelectedAppBundleIDs")
         AppGroupEngine.selectedBundleIDs = Set(mockPinned)
         
         let menu = appDelegate.buildStatusMenu()
         
-        let toolsetHeaderIdx = menu.items.firstIndex(where: { $0.title.contains("Core Toolset") || $0.title.contains("Toolset Shortcuts") })
+        let browserHeaderIdx = menu.items.firstIndex(where: { $0.title.contains("Browsers & Profiles") })
         let mascotSeparatorIdx = menu.items.firstIndex(where: { $0.view is AppDelegate.HamsterSeparatorView })
-        let quickHeaderIdx = menu.items.firstIndex(where: { $0.title.contains("Quick Shortcuts") || $0.title.contains("Quick Apps") })
+        let quickHeaderIdx = menu.items.firstIndex(where: { $0.title.contains("Quick Apps") })
         
-        #expect(toolsetHeaderIdx != nil, "Core Toolset header must exist")
+        #expect(browserHeaderIdx != nil, "Browsers & Profiles header must exist")
         #expect(mascotSeparatorIdx != nil, "Hamster mascot separator must exist")
-        #expect(quickHeaderIdx != nil, "Quick Shortcuts header must exist")
+        #expect(quickHeaderIdx != nil, "Quick Apps header must exist")
         
-        if let tIdx = toolsetHeaderIdx, let mIdx = mascotSeparatorIdx, let qIdx = quickHeaderIdx {
-            // Mascot sits as the elegant bridge between Core Toolset and Quick Shortcuts
-            #expect(tIdx < mIdx, "Toolset section must appear before mascot separator")
-            #expect(mIdx < qIdx, "Mascot separator must appear before Quick section")
+        if let bIdx = browserHeaderIdx, let mIdx = mascotSeparatorIdx, let qIdx = quickHeaderIdx {
+            // Mascot sits as the elegant bridge between Browsers & Profiles and Quick Apps
+            #expect(bIdx < mIdx, "Browser section must appear before mascot separator")
+            #expect(mIdx < qIdx, "Mascot separator must appear before Quick Apps section")
         }
     }
     
@@ -1366,7 +1443,8 @@ struct ChromeQuickAccessUnitTests {
         #expect(LicenseEngine.freeSlotsLimit == 5)
         #expect(LicenseEngine.freePinnedAppsLimit == 4)
         #expect(LicenseEngine.proPrice == "$19 Lifetime")
-        #expect(LicenseEngine.serviceName == "com.almosteleven.xomsky.license")
+        #expect(LicenseEngine.productionServiceName == "com.almosteleven.xomsky.license")
+        #expect(LicenseEngine.serviceName == "com.almosteleven.xomsky.license.test")
         #expect(LicenseEngine.licenseAccount == "pro_license_key")
         
         // Invalid key checks: empty or whitespace
@@ -1415,14 +1493,14 @@ struct ChromeQuickAccessUnitTests {
         #expect(engine.isPro == true)
         #expect(engine.activeLicenseKey == validKey)
         
-        // Verify persistent fallback in UserDefaults
-        #expect(UserDefaults.standard.string(forKey: "XomskyProLicenseKey") == validKey)
+        // Verify persistent fallback in isolated test storage
+        #expect(LicenseEngine.storage.string(forKey: "XomskyProLicenseKey") == validKey)
         
         // Deactivation clears state
         engine.deactivate()
         #expect(engine.isPro == false)
         #expect(engine.activeLicenseKey == nil)
-        #expect(UserDefaults.standard.string(forKey: "XomskyProLicenseKey") == nil)
+        #expect(LicenseEngine.storage.string(forKey: "XomskyProLicenseKey") == nil)
         engine.testMockOnlineValidationResult = nil
     }
     
@@ -1937,17 +2015,17 @@ struct ChromeQuickAccessUnitTests {
     
     @Test @MainActor
     func testMascotProceduralIconGenerationAndBlinking() {
-        let normalIcon = AppDelegate.makeKhomyakStatusIcon()
+        let normalIcon = AppDelegate.makeMascotStatusIcon()
         #expect(normalIcon.size.width == 18)
         #expect(normalIcon.size.height == 18)
         
-        let blinkingIcon = AppDelegate.makeKhomyakStatusIcon(blinkProgress: 1.0)
+        let blinkingIcon = AppDelegate.makeMascotStatusIcon(blinkProgress: 1.0)
         #expect(blinkingIcon.size.width == 18)
         
-        let gazeLeftIcon = AppDelegate.makeKhomyakStatusIcon(eyeGazeX: -0.8)
+        let gazeLeftIcon = AppDelegate.makeMascotStatusIcon(eyeGazeX: -0.8)
         #expect(gazeLeftIcon.size.width == 18)
         
-        let gazeRightIcon = AppDelegate.makeKhomyakStatusIcon(eyeGazeX: 0.8)
+        let gazeRightIcon = AppDelegate.makeMascotStatusIcon(eyeGazeX: 0.8)
         #expect(gazeRightIcon.size.width == 18)
     }
     
@@ -1959,7 +2037,7 @@ struct ChromeQuickAccessUnitTests {
         MinimalHUDWindow.shared.hideImmediate()
         #expect(ChromeSwitcherState.shared.isMascotPeeking == false)
         
-        let separatorView = AppDelegate.HamsterSeparatorView(icon: AppDelegate.makeKhomyakStatusIcon())
+        let separatorView = AppDelegate.MascotSeparatorView(icon: AppDelegate.makeMascotStatusIcon())
         #expect(separatorView.intrinsicContentSize.height == 20)
     }
     
@@ -2334,6 +2412,91 @@ struct ChromeQuickAccessUnitTests {
         #expect(clockCard.cardWidth == HUDCardView.standardCardWidth)
         #expect(chromeCard.cardWidth == clockCard.cardWidth, "All application cards must have identical width")
         #expect(HUDCardView.standardCardWidth == 132)
+        
+        // 1.7x scaled app icon size invariant (54pt * 1.7 -> 92pt)
+        #expect(chromeCard.iconSize == 92)
+        #expect(clockCard.iconSize == 92)
+    }
+    
+    @Test @MainActor
+    func testHUDCardViewExpandedSingleModeAndFocusTitleInvariant() {
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let sampleProfiles = [
+            ChromeProfile(index: 1, dir: "Default", name: "Personal"),
+            ChromeProfile(index: 2, dir: "Profile 1", name: "Work")
+        ]
+        
+        let singleExpandedCard = HUDCardView(
+            name: "Google Chrome",
+            icon: dummyIcon,
+            isSelected: true,
+            isBrowser: true,
+            profiles: sampleProfiles,
+            selectedProfileIndex: 0,
+            hasRowProfiles: true,
+            isSingleCard: true
+        )
+        
+        #expect(singleExpandedCard.isSingleCard == true)
+        #expect(singleExpandedCard.cardWidth == 240, "Single mode hero card must have expanded width (240pt)")
+        #expect(singleExpandedCard.cardWidth > HUDCardView.standardCardWidth)
+        
+        let unfocusedCard = HUDCardView(
+            name: "Terminal",
+            icon: dummyIcon,
+            isSelected: false,
+            isBrowser: false,
+            profiles: [],
+            selectedProfileIndex: 0,
+            hasRowProfiles: false,
+            isSingleCard: false
+        )
+        
+        #expect(unfocusedCard.isSelected == false)
+        #expect(unfocusedCard.cardWidth == 132)
+        
+        let singleNonBrowserCard = HUDCardView(
+            name: "Finder",
+            icon: dummyIcon,
+            isSelected: true,
+            isBrowser: false,
+            profiles: [],
+            selectedProfileIndex: 0,
+            hasRowProfiles: false,
+            isSingleCard: true
+        )
+        #expect(singleNonBrowserCard.cardWidth == 190, "Single mode non-browser card must have balanced width (190pt)")
+        
+        // 1.7x scaled app icon size invariants (single mode: 68pt * 1.7 -> 116pt; standard: 54pt * 1.7 -> 92pt)
+        #expect(singleExpandedCard.iconSize == 116)
+        #expect(unfocusedCard.iconSize == 92)
+        #expect(singleNonBrowserCard.iconSize == 116)
+    }
+    
+    @Test
+    func testKinescopeShapeConvexGeometryAndPathGeneration() {
+        let shape = KinescopeShape(cornerRadius: 32, bulge: 7)
+        #expect(shape.cornerRadius == 32)
+        #expect(shape.bulge == 7)
+        #expect(shape.insetAmount == 0)
+        
+        let testRect = CGRect(x: 0, y: 0, width: 300, height: 240)
+        let path = shape.path(in: testRect)
+        #expect(!path.isEmpty, "KinescopeShape must generate a valid non-empty vector path")
+        
+        let pathBounds = path.boundingRect
+        #expect(pathBounds.width > 0 && pathBounds.height > 0)
+        #expect(pathBounds.minX >= testRect.minX - 1.0)
+        #expect(pathBounds.maxX <= testRect.maxX + 1.0)
+        #expect(pathBounds.minY >= testRect.minY - 1.0)
+        #expect(pathBounds.maxY <= testRect.maxY + 1.0)
+        
+        // Test insetting behavior
+        let insetShape = shape.inset(by: 2.5)
+        #expect(insetShape.insetAmount == 2.5)
+        let insetPath = insetShape.path(in: testRect)
+        #expect(!insetPath.isEmpty)
+        #expect(insetPath.boundingRect.width < pathBounds.width)
     }
 
     @Test @MainActor
@@ -2473,12 +2636,159 @@ struct ChromeQuickAccessUnitTests {
         _ = engine.saveKeychainLicense(key: "XOMSKY-PIRATED-KEY-12345")
         engine.deleteKeychainReceipt()
         engine.deleteKeychainActivationId()
-        UserDefaults.standard.removeObject(forKey: "XomskyProReceiptToken")
-        UserDefaults.standard.removeObject(forKey: "XomskyProActivationId")
-        UserDefaults.standard.removeObject(forKey: "XomskyProLicenseKey")
+        LicenseEngine.storage.removeObject(forKey: "XomskyProReceiptToken")
+        LicenseEngine.storage.removeObject(forKey: "XomskyProActivationId")
+        LicenseEngine.storage.removeObject(forKey: "XomskyProLicenseKey")
         
         engine.checkLicenseStatus()
         #expect(engine.isPro == false, "Tampered license without cryptographic receipt must be rejected")
+    }
+
+    @Test @MainActor
+    func testObsidianStrictlyOnKeyOAndNeverOnKeyN() {
+        let prevSelected = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
+        defer {
+            if let prev = prevSelected {
+                UserDefaults.standard.set(prev, forKey: "SelectedAppBundleIDs")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "SelectedAppBundleIDs")
+            }
+            AppGroupEngine.notes.customItemsOverride = nil
+            AppGroupEngine.notes.refreshItems()
+        }
+        
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let obsidianItem = AntigravityItem(name: "Obsidian", bundleID: "md.obsidian", path: "/Applications/Obsidian.app", icon: dummyIcon, index: 1)
+        AppGroupEngine.notes.customItemsOverride = [obsidianItem]
+        AppGroupEngine.notes.refreshItems()
+        
+        UserDefaults.standard.set(["md.obsidian"], forKey: "SelectedAppBundleIDs")
+        AppGroupEngine.selectedBundleIDs = ["md.obsidian"]
+        
+        let appDelegate = AppDelegate()
+        appDelegate.updateDynamicShortcuts()
+        
+        // Obsidian must strictly be registered for key 'O' (kVK_ANSI_O)
+        let oTrigger = CapsLockEngine.shared.dynamicKeyTriggers[KeyCodes.kVK_ANSI_O]
+        #expect(oTrigger != nil, "Obsidian must register dynamic trigger on 'O'")
+        
+        // Key 'N' must NOT be registered for Obsidian
+        let nTrigger = CapsLockEngine.shared.dynamicKeyTriggers[KeyCodes.kVK_ANSI_N]
+        #expect(nTrigger == nil, "Key 'N' must never trigger Obsidian")
+    }
+
+    @Test @MainActor
+    func testCrossEngineDuplicateLetterCycling() async {
+        let prevSelected = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
+        defer {
+            if let prev = prevSelected {
+                UserDefaults.standard.set(prev, forKey: "SelectedAppBundleIDs")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "SelectedAppBundleIDs")
+            }
+            AppGroupEngine.communication.customItemsOverride = nil
+            AppGroupEngine.communication.refreshItems()
+            MinimalHUDWindow.shared.hideImmediate()
+        }
+        
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let slackItem = AntigravityItem(name: "Slack", bundleID: "com.tinyspeck.slackmacgap", path: "/Applications/Slack.app", icon: dummyIcon, index: 1)
+        let spotifyItem = AntigravityItem(name: "Spotify", bundleID: "com.spotify.client", path: "/Applications/Spotify.app", icon: dummyIcon, index: 2)
+        AppGroupEngine.communication.customItemsOverride = [slackItem, spotifyItem]
+        AppGroupEngine.communication.refreshItems()
+        
+        let mockPinned = ["com.tinyspeck.slackmacgap", "com.spotify.client"]
+        UserDefaults.standard.set(mockPinned, forKey: "SelectedAppBundleIDs")
+        AppGroupEngine.selectedBundleIDs = Set(mockPinned)
+        
+        let appDelegate = AppDelegate()
+        let menu = appDelegate.buildStatusMenu()
+        
+        let sItems = menu.items.filter { $0.keyEquivalent == "s" }
+        #expect(sItems.count == 2, "Both S-apps must appear in menu with key 's'")
+        
+        let firstS = sItems[0]
+        let secondS = sItems[1]
+        #expect(firstS.attributedTitle?.string.contains("1/2 ↻") == true || firstS.title.contains("1/2 ↻") || firstS.toolTip?.contains("1 of 2") == true)
+        #expect(secondS.attributedTitle?.string.contains("2/2 ↻") == true || secondS.title.contains("2/2 ↻") || secondS.toolTip?.contains("2 of 2") == true)
+        
+        // Verify dynamic key trigger cycles through HUD
+        appDelegate.updateDynamicShortcuts()
+        let sTrigger = CapsLockEngine.shared.dynamicKeyTriggers[KeyCodes.kVK_ANSI_S]
+        #expect(sTrigger != nil, "Trigger for 'S' must be registered")
+        
+        sTrigger?()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        #expect(ChromeSwitcherState.shared.isVisible == true)
+        #expect(ChromeSwitcherState.shared.selectedIndex == 0)
+        
+        sTrigger?()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        #expect(ChromeSwitcherState.shared.selectedIndex == 1)
+        
+        MinimalHUDWindow.shared.hideImmediate()
+        #expect(ChromeSwitcherState.shared.isVisible == false)
+    }
+
+    @Test @MainActor
+    func testUnpinnedLettersNeverTriggerPhantomDefaults() {
+        let prevSelected = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
+        defer {
+            if let prev = prevSelected {
+                UserDefaults.standard.set(prev, forKey: "SelectedAppBundleIDs")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "SelectedAppBundleIDs")
+            }
+        }
+        
+        // Pin only Finder (letter F)
+        UserDefaults.standard.set(["com.apple.finder"], forKey: "SelectedAppBundleIDs")
+        AppGroupEngine.selectedBundleIDs = ["com.apple.finder"]
+        
+        let appDelegate = AppDelegate()
+        appDelegate.updateDynamicShortcuts()
+        
+        // Terminal (T), Notes (N) are NOT pinned
+        let tTrigger = CapsLockEngine.shared.dynamicKeyTriggers[KeyCodes.kVK_ANSI_T]
+        #expect(tTrigger == nil, "Unpinned letter T must NOT have a registered trigger")
+        
+        let nTrigger = CapsLockEngine.shared.dynamicKeyTriggers[KeyCodes.kVK_ANSI_N]
+        #expect(nTrigger == nil, "Unpinned letter N must NOT have a registered trigger")
+        
+        let fTrigger = CapsLockEngine.shared.dynamicKeyTriggers[KeyCodes.kVK_ANSI_F]
+        #expect(fTrigger != nil, "Pinned letter F must have a registered trigger")
+    }
+
+    @Test @MainActor
+    func testUnifiedMenuLayoutHasNoCategorySplits() {
+        let prevSelected = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
+        defer {
+            if let prev = prevSelected {
+                UserDefaults.standard.set(prev, forKey: "SelectedAppBundleIDs")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "SelectedAppBundleIDs")
+            }
+        }
+        
+        UserDefaults.standard.set(AppGroupEngine.defaultPinnedBundleIDs, forKey: "SelectedAppBundleIDs")
+        AppGroupEngine.selectedBundleIDs = Set(AppGroupEngine.defaultPinnedBundleIDs)
+        
+        let appDelegate = AppDelegate()
+        let menu = appDelegate.buildStatusMenu()
+        
+        // Scan all section headers
+        let sectionHeaders = menu.items.filter { $0.isSectionHeader }
+        let headerTitles = sectionHeaders.map { $0.title }
+        
+        // Section headers must strictly contain ONLY Browsers & Profiles and Quick Apps (Caps-Lock)
+        #expect(headerTitles.contains(where: { $0.contains("Browsers & Profiles") }))
+        #expect(headerTitles.contains(where: { $0 == "Quick Apps (Caps-Lock)" }))
+        
+        // Strictly forbidden legacy category header titles
+        let forbiddenHeaders = ["Core Toolset", "Toolkit", "Toolset Shortcuts", "Quick Shortcuts"]
+        for forbidden in forbiddenHeaders {
+            #expect(!headerTitles.contains(where: { $0.contains(forbidden) }), "Header must not contain '\(forbidden)'")
+        }
     }
 }
 

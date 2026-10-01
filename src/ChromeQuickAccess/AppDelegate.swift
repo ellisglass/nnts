@@ -127,31 +127,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         case none
         case chrome
         case appLetter(Character)
-        case antigravity
-        case terminal
-        case notes
-        case ide
     }
     
     private var isCyclingHUDActive = false
     private var activeMode: ActiveSwitcherMode = .none
-    
-    private func handleSingleAppTrigger(
-        engine: AppGroupEngine,
-        mode: ActiveSwitcherMode,
-        switcherMode: SwitcherMode,
-        keyName: String
-    ) {
-        logger.info("Caps-Lock + \(keyName) triggered.")
-        TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Caps-Lock + \(keyName) triggered.")
-        guard let item = engine.selectedItem else { return }
-        
-        if !isCyclingHUDActive || activeMode != mode {
-            isCyclingHUDActive = true
-            activeMode = mode
-            MinimalHUDWindow.shared.showAppGroup(mode: switcherMode, items: [item], selectedIndex: 0)
-        }
-    }
     
     private func handleAppLetterTrigger(char: Character, items: [AntigravityItem]) {
         logger.info("Caps-Lock + \(char) triggered for \(items.map { $0.name }).")
@@ -328,10 +307,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func setupEngineCallbacks() {
         let profileEngine = ChromeProfileEngine.shared
-        let aiAgentEngine = AppGroupEngine.aiAgent
-        let terminalEngine = AppGroupEngine.terminal
-        let notesEngine = AppGroupEngine.notes
-        let ideEngine = AppGroupEngine.ide
         let capsEngine = CapsLockEngine.shared
         
         updateDynamicShortcuts()
@@ -339,54 +314,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 self.handleChromeTrigger()
-            }
-        }
-        
-        capsEngine.onAntigravityTrigger = { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                self.handleSingleAppTrigger(
-                    engine: aiAgentEngine,
-                    mode: .antigravity,
-                    switcherMode: .antigravity,
-                    keyName: String(aiAgentEngine.activeShortcutChar)
-                )
-            }
-        }
-        
-        capsEngine.onTerminalTrigger = { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                self.handleSingleAppTrigger(
-                    engine: terminalEngine,
-                    mode: .terminal,
-                    switcherMode: .terminal,
-                    keyName: String(terminalEngine.activeShortcutChar)
-                )
-            }
-        }
-        
-        capsEngine.onNotesTrigger = { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                self.handleSingleAppTrigger(
-                    engine: notesEngine,
-                    mode: .notes,
-                    switcherMode: .notes,
-                    keyName: String(notesEngine.activeShortcutChar)
-                )
-            }
-        }
-        
-        capsEngine.onIdeTrigger = { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                self.handleSingleAppTrigger(
-                    engine: ideEngine,
-                    mode: .ide,
-                    switcherMode: .ide,
-                    keyName: String(ideEngine.activeShortcutChar)
-                )
             }
         }
         
@@ -482,30 +409,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                             self.focusApp(bundleID: target.bundleID)
                         }
                     }
-                case .antigravity:
-                    if let target = aiAgentEngine.selectedItem {
-                        self.logger.info("Caps-Lock released: switching to AI Agent '\(target.name)' (\(target.bundleID)).")
-                        TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Switched to AI Agent '\(target.name)' (\(target.bundleID)).")
-                        aiAgentEngine.focusItem(bundleID: target.bundleID)
-                    }
-                case .terminal:
-                    if let target = terminalEngine.selectedItem {
-                        self.logger.info("Caps-Lock released: switching to Terminal app '\(target.name)' (\(target.bundleID)).")
-                        TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Switched to Terminal app '\(target.name)' (\(target.bundleID)).")
-                        terminalEngine.focusItem(bundleID: target.bundleID)
-                    }
-                case .notes:
-                    if let target = notesEngine.selectedItem {
-                        self.logger.info("Caps-Lock released: switching to Notes app '\(target.name)' (\(target.bundleID)).")
-                        TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Switched to Notes app '\(target.name)' (\(target.bundleID)).")
-                        notesEngine.focusItem(bundleID: target.bundleID)
-                    }
-                case .ide:
-                    if let target = ideEngine.selectedItem {
-                        self.logger.info("Caps-Lock released: switching to IDE app '\(target.name)' (\(target.bundleID)).")
-                        TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Switched to IDE app '\(target.name)' (\(target.bundleID)).")
-                        ideEngine.focusItem(bundleID: target.bundleID)
-                    }
                 case .none:
                     break
                 }
@@ -517,7 +420,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         guard let button = statusItem?.button else { return }
         
-        let icon = AppDelegate.makeKhomyakStatusIcon()
+        let icon = AppDelegate.makeMascotStatusIcon()
         button.image = icon
         button.imagePosition = .imageOnly
         button.toolTip = "Xomsky — Tap the Mascot"
@@ -551,12 +454,12 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     public func performMascotBlink() {
         guard let button = self.statusItem?.button else { return }
-        button.image = AppDelegate.makeKhomyakStatusIcon(blinkProgress: 1.0)
+        button.image = AppDelegate.makeMascotStatusIcon(blinkProgress: 1.0)
         
         Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 120_000_000)
             guard let self = self else { return }
-            self.statusItem?.button?.image = AppDelegate.makeKhomyakStatusIcon(blinkProgress: 0.0)
+            self.statusItem?.button?.image = AppDelegate.makeMascotStatusIcon(blinkProgress: 0.0)
             self.scheduleNextBlink()
         }
     }
@@ -564,19 +467,19 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     public func triggerMascotGaze(offset: CGFloat) {
         mascotGazeResetTask?.cancel()
         guard let button = self.statusItem?.button else { return }
-        button.image = AppDelegate.makeKhomyakStatusIcon(eyeGazeX: offset)
+        button.image = AppDelegate.makeMascotStatusIcon(eyeGazeX: offset)
         
         mascotGazeResetTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 350_000_000)
             guard !Task.isCancelled, let self = self else { return }
-            self.statusItem?.button?.image = AppDelegate.makeKhomyakStatusIcon()
+            self.statusItem?.button?.image = AppDelegate.makeMascotStatusIcon()
         }
     }
     
-    /// Generates a resolution-independent, full-color vector status bar icon of the Khomyak mascot
+    /// Generates a resolution-independent, full-color vector status bar icon of the Xomsky mascot
     /// featuring its signature concentric target eyes, red triangle nose, cheek lobes, paws,
     /// dynamic directional gaze tracking, and procedural blinking.
-    public static func makeKhomyakStatusIcon(
+    public static func makeMascotStatusIcon(
         eyeGazeX: CGFloat = 0.0,
         eyeGazeY: CGFloat = 0.0,
         blinkProgress: CGFloat = 0.0
@@ -751,14 +654,23 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         return image
     }
     
+    @available(*, deprecated, renamed: "makeMascotStatusIcon")
+    public static func makeKhomyakStatusIcon(
+        eyeGazeX: CGFloat = 0.0,
+        eyeGazeY: CGFloat = 0.0,
+        blinkProgress: CGFloat = 0.0
+    ) -> NSImage {
+        return makeMascotStatusIcon(eyeGazeX: eyeGazeX, eyeGazeY: eyeGazeY, blinkProgress: blinkProgress)
+    }
+    
     public func updateMenu() {
         let menu = buildStatusMenu()
         statusItem?.menu = menu
     }
     
-    // MARK: - Hamster Mascot Separator View
+    // MARK: - Mascot Separator View
     @MainActor
-    public final class HamsterSeparatorView: NSView {
+    public final class MascotSeparatorView: NSView {
         private let icon: NSImage
         private var bounceOffset: CGFloat = 0.0
         
@@ -830,17 +742,23 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSBezierPath.fill(rightLineRect)
             }
             
-            // Center: Draw Khomyak Mascot
+            // Center: Draw Xomsky Mascot
             icon.draw(in: iconRect)
         }
     }
     
-    private func makeHamsterSeparatorItem() -> NSMenuItem {
+    public typealias HamsterSeparatorView = MascotSeparatorView
+    
+    private func makeMascotSeparatorItem() -> NSMenuItem {
         let item = NSMenuItem()
         item.title = ""
         item.isEnabled = false
-        item.view = HamsterSeparatorView(icon: AppDelegate.makeKhomyakStatusIcon())
+        item.view = MascotSeparatorView(icon: AppDelegate.makeMascotStatusIcon())
         return item
+    }
+    
+    private func makeHamsterSeparatorItem() -> NSMenuItem {
+        return makeMascotSeparatorItem()
     }
     
     private func makeAlignedMenuItem(
@@ -892,9 +810,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let profileEngine = ChromeProfileEngine.shared
         let selectedList = profileEngine.selectedProfiles
         
-        let (rawToolsetItems, rawQuickItems) = AppGroupEngine.pinnedAppItemsGroupedByCategory()
+        let rawPinned = AppGroupEngine.pinnedAppItems()
         
-        // Group items within each category so cyclic siblings (apps sharing the same shortcut letter)
+        // Group items so cyclic siblings (apps sharing the same shortcut letter)
         // are placed directly adjacent to each other for clear Gestalt proximity.
         func groupCyclicSiblings(_ items: [AntigravityItem]) -> [AntigravityItem] {
             var letterGroups: [Character: [AntigravityItem]] = [:]
@@ -909,9 +827,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             return orderedLetters.flatMap { letterGroups[$0] ?? [] }
         }
         
-        let toolsetItems = groupCyclicSiblings(rawToolsetItems)
-        let quickItems = groupCyclicSiblings(rawQuickItems)
-        let allPinned = toolsetItems + quickItems
+        let allPinned = groupCyclicSiblings(rawPinned)
         
         // Track letter frequency to display cyclic signifiers for shared letters
         var letterCounts: [Character: Int] = [:]
@@ -1023,7 +939,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(pItem)
         }
         
-        func appendAppRow(item: AntigravityItem, categoryHelp: String) {
+        func appendAppRow(item: AntigravityItem) {
             let char = Character((item.name.first(where: { $0.isLetter }) ?? "A").uppercased())
             let charStr = String(char).lowercased()
             
@@ -1037,8 +953,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 icon: item.icon,
                 accessibilityLabel: "\(item.name)",
                 accessibilityHelp: total > 1
-                    ? "Hold Caps-Lock and press \(char) to cycle (\(item.name), \(index) of \(total) in \(categoryHelp))"
-                    : "Hold Caps-Lock and press \(char) to switch to \(item.name) (\(categoryHelp))",
+                    ? "Hold Caps-Lock and press \(char) to cycle (\(item.name), \(index) of \(total))"
+                    : "Hold Caps-Lock and press \(char) to switch to \(item.name)",
                 action: #selector(handleCoreAppClick(_:)),
                 target: self,
                 representedObject: item.bundleID
@@ -1063,27 +979,16 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(rowItem)
         }
         
-        // Section 2: Core Toolset (Developer Workstation Apps)
-        if !toolsetItems.isEmpty {
-            menu.addItem(NSMenuItem.separator())
-            let toolsetHeader = NSMenuItem.sectionHeader(title: "Core Toolset")
-            toolsetHeader.isEnabled = false
-            menu.addItem(toolsetHeader)
-            for item in toolsetItems {
-                appendAppRow(item: item, categoryHelp: "Toolset")
-            }
-        }
+        // Signature Mascot Divider bridging Browsers/Profiles and Quick Apps
+        menu.addItem(makeMascotSeparatorItem())
         
-        // Signature Khomyak Mascot Divider bridging Core Toolset and Quick Shortcuts
-        menu.addItem(makeHamsterSeparatorItem())
-        
-        // Section 3: Quick Shortcuts (Auxiliary & Communication Apps)
-        if !quickItems.isEmpty {
-            let quickHeader = NSMenuItem.sectionHeader(title: "Quick Shortcuts")
-            quickHeader.isEnabled = false
-            menu.addItem(quickHeader)
-            for item in quickItems {
-                appendAppRow(item: item, categoryHelp: "Quick Shortcut")
+        // Section 2: Quick Apps (Caps-Lock)
+        if !allPinned.isEmpty {
+            let quickAppsHeader = NSMenuItem.sectionHeader(title: "Quick Apps (Caps-Lock)")
+            quickAppsHeader.isEnabled = false
+            menu.addItem(quickAppsHeader)
+            for item in allPinned {
+                appendAppRow(item: item)
             }
         }
         
@@ -1750,7 +1655,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         Open source under MIT License.
         """
         alert.alertStyle = .informational
-        alert.icon = AppDelegate.makeKhomyakStatusIcon()
+        alert.icon = AppDelegate.makeMascotStatusIcon()
         
         alert.addButton(withTitle: "OK")
         alert.addButton(withTitle: "GitHub ↗")
@@ -1811,7 +1716,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let alert = NSAlert()
         alert.messageText = "New Update Available: v\(latestVersion)"
         alert.alertStyle = .informational
-        alert.icon = AppDelegate.makeKhomyakStatusIcon()
+        alert.icon = AppDelegate.makeMascotStatusIcon()
         
         let highlights = UpdateEngine.parseReleaseHighlights(from: releaseNotes, maxBullets: 4)
         var highlightsBlock = ""
@@ -1867,7 +1772,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.messageText = "Xomsky is Up to Date"
         alert.informativeText = "Version \(currentVersion) is currently the newest version available."
         alert.alertStyle = .informational
-        alert.icon = AppDelegate.makeKhomyakStatusIcon()
+        alert.icon = AppDelegate.makeMascotStatusIcon()
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }

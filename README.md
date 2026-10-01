@@ -16,7 +16,7 @@ brew install unacau/tap/xomsky
 ## Shortcuts
 
 <p align="center">
-  <img src="assets/hero_concepts/concept_c_bento_grid.png" alt="Xomsky Shortcuts & Bento Grid" width="100%">
+  <img src="assets/xomsky_bento_grid.png" alt="Xomsky Shortcuts & Bento Grid" width="100%">
 </p>
 
 | Shortcut | Action | Target / Details |
@@ -46,7 +46,7 @@ brew install unacau/tap/xomsky
 # Build & install from source
 make native install
 
-# Run test suite (99 tests)
+# Run test suite (107 tests)
 make test
 
 # Stream local diagnostics (os_log)

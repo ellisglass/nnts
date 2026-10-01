@@ -1,4 +1,4 @@
-# Khomyak (Хомяк) — Neuroaesthetics Brandbook 🐹
+# Xomsky — Neuroaesthetics Brandbook 🐹
 
 > **Grounded in Cognitive Neuroscience & Empirical Aesthetics**  
 > Based on *Brain, Beauty, & Art: Foundations of Neuroaesthetics* (Anjan Chatterjee & Eileen R. Cardillo, Eds., Oxford University Press, 2022).

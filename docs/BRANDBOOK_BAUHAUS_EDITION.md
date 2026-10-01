@@ -1,4 +1,4 @@
-# Khomyak (Bauhaus Edition) — Constructivist Neuroaesthetics Brandbook 📐🐹
+# Xomsky: Bauhaus Edition — Constructivist Neuroaesthetics Brandbook 📐🐹
 
 > **The Synthesis of Weimar Constructivism & Cognitive Neuroscience**  
 > Grounded in *Brain, Beauty, & Art: Foundations of Neuroaesthetics* (Anjan Chatterjee & Eileen R. Cardillo, Eds., Oxford University Press, 2022)  
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary & Brand Purpose
 
-**Xomsky: Bauhaus Edition** (Хомяк / *Der Hamster*) is a radical functionalist re-imagining of macOS application and workspace switching.
+**Xomsky: Bauhaus Edition** (*Der Hamster*) is a radical functionalist re-imagining of macOS application and workspace switching.
 
 * **Core Positioning:** Утилита для быстрого доступа и интуитивного доступа к выбранным приложениям через **Капслок + Первая Буква Приложения**, со специальной фичей — **быстрый доступ к окнам конкретного хром/брейв профайла через Капс Лок + C/B + 1-4**, и для **копирования текста при выделении** (Copy-on-Select).
 * **The Core Philosophy:** *«Form folgt Fluss»* (*"Form Follows Flow"*). Ornamental skeuomorphism, digital fur textures, and frivolous micro-details are eliminated. In their place stands pure, irreducible geometric constructivism designed to achieve zero cognitive friction.

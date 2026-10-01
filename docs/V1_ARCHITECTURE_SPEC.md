@@ -1,19 +1,18 @@
-# Architecture & Specification: Xomsky (Хомяк) — v1.0.0
+# Architecture & Specification: Xomsky — v1.1.7
 
 ## 1. Vision & Core Objective
-**Xomsky** — утилита для быстрого доступа и интуитивного доступа к выбранным приложениям через **Капслок + Первая Буква Приложения**, со специальной фичей — **быстрый доступ к окнам конкретного хром/брейв профайла через Капс Лок + C/B + 1-4**, и для **копирования текста при выделении** (Copy-on-Select).
+**Xomsky** — утилита для быстрого доступа к окнам конкретного профиля Chrome/Brave через **Капс Лок + C/B + 1-4**, интуитивного доступа к выбранным приложениям через **Капслок + Первая Буква Приложения**, и для **копирования текста при выделении** (Copy-on-Select).
 
 Built in pure native Swift 6 and SwiftUI, it operates as a driverless standalone application providing:
-1. **Быстрый доступ к выбранным приложениям (`Caps-Lock + Первая Буква Приложения`)**: Интуитивное переключение на выбранные приложения по их первой букве (Terminal `T`, IDE `I`, Agent `A`, Notes `N`, Chrome `C`, Brave `B`, Finder `F` и др.) с поддержкой до 4 закрепленных слотов.
-2. **Специальная фича: быстрый доступ к окнам Chrome/Brave профилей (`Caps-Lock + C/B + 1..4`)**: Мгновенный переход к окнам конкретного профиля браузера без скриптов AppleScript и без открытия пустых вкладок.
+1. **Специальная фича (#1 Killer Feature): быстрый доступ к окнам конкретного Chrome/Brave профиля (`Caps-Lock + C/B + 1..4`)**: Мгновенный переход к окнам конкретного профиля браузера без скриптов AppleScript и без открытия пустых вкладок.
+2. **Быстрый доступ к выбранным приложениям (`Caps-Lock + Первая Буква Приложения`)**: Интуитивное переключение на выбранные приложения по их первой букве (`Caps + [A–Z]`: Obsidian `O`, Spotify `S`, Terminal `T`, Notes `N`, Finder `F` и др.) с поддержкой мгновенного циклирования дубликатов (`1/2 ↻`) и до 4 закрепленных слотов (без ограничений в Pro).
 3. **Копирование текста при выделении (Copy-on-Select)**: Автоматическое копирование в буфер обмена в стиле Linux/X11 при выделении текста мышью (>10pt) с тактильным всплывающим уведомлением (HUD toast).
-4. **Dual-Role Caps-Lock**: Tap alone emits `Escape` (`0x35`); hold down acts as a dedicated modifier.
-5. **Non-Activating Floating Bezel HUD**: Visual feedback showing profile/application avatars, dismissible before window focus transitions.
+4. **Non-Activating Floating Bezel HUD**: Visual feedback showing profile/application avatars, dismissible before window focus transitions.
 
 ### 1.1 Architectural Genesis (The 3 Core Frictions)
 Xomsky was engineered around the "missing limb effect" — the visceral friction experienced when the utility is disabled:
 1. **The Root Friction (#1 Killer Feature): Browser Profile Windows (`Caps + C/B + 1..4`)**: macOS cannot natively navigate windows by browser profile. `Cmd + Tab` groups all windows under one process; `Cmd + \`` forces blind sequential cycling across unrelated windows. Xomsky targets profile windows directly by index via `AXUIElement`.
-2. **Focal Continuity (#2): First-Letter Application Jump (`Caps + [Letter]`)**: Once the hand rests on Caps Lock, typing app names into Spotlight or Raycast is redundant cognitive friction. Single-keystroke jump to Terminal (`T`), IDE (`I`), Agent (`A`), Notes (`N`).
+2. **Focal Continuity (#2): First-Letter Application Jump (`Caps + [A–Z]`)**: Once the hand rests on Caps Lock, typing app names into Spotlight or Raycast is redundant cognitive friction. Single-keystroke jump to Obsidian (`O`), Spotify (`S`), Terminal (`T`), Notes (`N`), Finder (`F`) с прозрачным циклированием нескольких приложений на одной букве (`1/2 ↻`).
 3. **Intent-Action Synthesis (#3): Universal Copy-on-Select**: 99.9% of mouse text selections are intended for copying. Xomsky eliminates thousands of redundant `Cmd + C` keystrokes daily.
 
 ---
@@ -37,14 +36,12 @@ Xomsky was engineered around the "missing limb effect" — the visceral friction
   Tapped Alone (<250ms)                                            Held Down
          │                                                               │
          ▼                                                               ▼
- Emit Synthetic Escape                                        Route Active Key Actions:
- (Matching Vim/macOS UX)                                      ├── 'C': Cycle Chrome profiles
-                                                              ├── 'T': Cycle Terminal apps
-                                                              ├── 'I': Cycle IDE apps
-                                                              ├── 'A': Cycle AI Agent apps
-                                                              ├── 'N': Cycle Notes apps
-                                                              ├── '1'..'4': Direct index jump
-                                                              ├── 'Tab' / 'Shift-Tab': Navigate
+   Swallow Event                                              Route Active Key Actions:
+   (No action / No Escape)                                    ├── 'C': Cycle Chrome profiles
+                                                              ├── 'B': Cycle Brave profiles
+                                                              ├── '1'..'4': Direct profile index jump
+                                                              ├── '[A–Z]': Dynamic First-Letter App Jump (with duplicate cycling 1/2 ↻)
+                                                              ├── 'Tab' / 'Shift-Tab': Navigate HUD
                                                               ├── 'Escape': Cancel HUD
                                                               └── Arrows: Navigate Left/Right
 ```
@@ -56,7 +53,7 @@ Xomsky was engineered around the "missing limb effect" — the visceral friction
 ### 3.1 CapsLock Engine (`src/ChromeQuickAccess/Engine/CapsLockEngine.swift`)
 - **Driverless Remapping**: Uses macOS `hidutil property --set` to map Caps-Lock (`0x700000039`) to F18 (`0x70000006D`). Restores default mapping upon application termination.
 - **Head-Insert Event Tap**: Intercepts `keyDown`, `keyUp`, and `flagsChanged` via `.cghidEventTap`.
-- **Modifier State Machine**: Tracks physical F18 events and isolates external Hyper modifier (`Cmd+Opt+Ctrl+Shift`) state, ensuring modifier keys (e.g. Shift during Shift-Tab navigation) never cause premature Caps-Lock release. Physical Caps Lock acts purely as a modifier without synthetic Escape side effects or LED toggling.
+- **Modifier State Machine**: Tracks physical F18 events and isolates external multi-modifier (`Cmd+Opt+Ctrl+Shift`) state, ensuring modifier keys (e.g. Shift during Shift-Tab navigation) never cause premature Caps-Lock release. Physical Caps Lock acts purely as a dedicated modifier without synthetic Escape side effects or LED toggling.
 - **Sleep/Wake Resilience**: Registers an observer for `NSWorkspace.didWakeNotification` to re-apply HID mappings and re-enable event taps upon system wake.
 
 ### 3.2 Chrome Profile Engine (`src/ChromeQuickAccess/Engine/ChromeProfileEngine.swift`)

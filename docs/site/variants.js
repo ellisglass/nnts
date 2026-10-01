@@ -143,6 +143,25 @@
     const companionWidget = document.getElementById("companion-hud-widget");
     const mobileSpacer = document.getElementById("option-c-mobile-spacer");
 
+    // Support deep link or test seek parameter
+    if (videoEl) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const videoParam = urlParams.get("video");
+      if (videoParam === "copy") {
+        videoEl.src = "assets/media/screenrec-select-copy.mp4";
+        tabs.forEach(t => t.classList.toggle("active", (t.getAttribute("data-video-src") || "").includes("select-copy")));
+      }
+      const seekParam = urlParams.get("seek");
+      if (seekParam) {
+        videoEl.addEventListener("loadedmetadata", () => {
+          videoEl.currentTime = parseFloat(seekParam);
+        }, { once: true });
+        if (videoEl.readyState >= 1) {
+          videoEl.currentTime = parseFloat(seekParam);
+        }
+      }
+    }
+
     // Video Tabs
     tabs.forEach((tab) => {
       tab.addEventListener("click", () => {

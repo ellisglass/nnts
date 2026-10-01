@@ -247,18 +247,10 @@ public final class AppGroupEngine: ObservableObject, @unchecked Sendable {
         ]
     )
     
-    /// Notes & Productivity Engine: Obsidian (O), Apple Notes (N), Notion (N), Linear (L), Keynote (K), Bear (B)
+    /// Notes & Productivity Engine: Apple Notes (N), Notion (N), Obsidian (O), Linear (L), Keynote (K), Bear (B)
     public static let notes = AppGroupEngine(
         category: "Notes",
         candidates: [
-            AppCandidate(
-                name: "Obsidian",
-                bundleID: "md.obsidian",
-                defaultPaths: [
-                    "/Applications/Obsidian.app",
-                    "\(NSHomeDirectory())/Applications/Obsidian.app"
-                ]
-            ),
             AppCandidate(
                 name: "Notes",
                 bundleID: "com.apple.Notes",
@@ -273,6 +265,14 @@ public final class AppGroupEngine: ObservableObject, @unchecked Sendable {
                 defaultPaths: [
                     "/Applications/Notion.app",
                     "\(NSHomeDirectory())/Applications/Notion.app"
+                ]
+            ),
+            AppCandidate(
+                name: "Obsidian",
+                bundleID: "md.obsidian",
+                defaultPaths: [
+                    "/Applications/Obsidian.app",
+                    "\(NSHomeDirectory())/Applications/Obsidian.app"
                 ]
             ),
             AppCandidate(
@@ -1001,61 +1001,6 @@ public final class AppGroupEngine: ObservableObject, @unchecked Sendable {
         }
     }
     
-    // MARK: - App Shortcut Categories (Toolset vs Quick)
-    
-    public enum AppShortcutCategory: String, Sendable, CaseIterable {
-        case toolset = "Toolset Shortcuts"
-        case quick = "Quick Shortcuts"
-    }
-    
-    /// Determines whether an application belongs to Toolset Shortcuts (Engineering / Work) or Quick Shortcuts (System / Everyday).
-    public static func category(for bundleID: String) -> AppShortcutCategory {
-        let toolsetCategoryNames: Set<String> = ["Terminal", "IDE", "AI Agent", "Notes"]
-        for engine in allEngines where toolsetCategoryNames.contains(engine.category) {
-            if engine.candidates.contains(where: { $0.bundleID == bundleID }) ||
-               engine.items.contains(where: { $0.bundleID == bundleID }) {
-                return .toolset
-            }
-        }
-        
-        let knownToolsetPrefixes = [
-            "com.apple.dt.Xcode",
-            "com.microsoft.VSCode",
-            "com.googlecode.iterm2",
-            "com.google.antigravity",
-            "md.obsidian",
-            "dev.zed.Zed",
-            "com.sublimetext",
-            "com.postmanlabs.mac",
-            "com.mitchellh.ghostty",
-            "dev.warp.Warp"
-        ]
-        if knownToolsetPrefixes.contains(where: { bundleID.hasPrefix($0) }) {
-            return .toolset
-        }
-        
-        let lowerID = bundleID.lowercased()
-        if lowerID.contains("jetbrains") || lowerID.contains("sublime") || lowerID.contains("postman") || lowerID.contains("docker") || lowerID.contains("xcode") || lowerID.contains("vscode") {
-            return .toolset
-        }
-        
-        return .quick
-    }
-    
-    /// Returns pinned application items divided cleanly into Toolset and Quick shortcuts.
-    public static func pinnedAppItemsGroupedByCategory() -> (toolset: [AntigravityItem], quick: [AntigravityItem]) {
-        let pinned = pinnedAppItems()
-        var toolset: [AntigravityItem] = []
-        var quick: [AntigravityItem] = []
-        for item in pinned {
-            if category(for: item.bundleID) == .toolset {
-                toolset.append(item)
-            } else {
-                quick.append(item)
-            }
-        }
-        return (toolset: toolset, quick: quick)
-    }
     
     /// Discovers and groups all available application items strictly by their first letter.
     public static func discoveredItemsByLetter() -> [Character: [AntigravityItem]] {

@@ -46,6 +46,14 @@
 <body class="liminal-body">
 
   
+  <!-- Fullscreen 60fps Native Video Backdrop -->
+  <div class="hero-video-backdrop" id="hero-video-backdrop">
+    <video class="hero-bg-video" id="cinematic-bg-video" autoplay loop muted playsinline preload="auto">
+      <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
+    </video>
+    <div class="hero-video-scrim"></div>
+  </div>
+
   <!-- Fullscreen 3D WebGL Canvas -->
   <div id="canvas-container"></div>
 
@@ -61,12 +69,6 @@
 
       <nav class="nav-controls" aria-label="Main Navigation">
         <div class="nav-actions">
-          <!-- 60fps Native Proofs Trigger Button -->
-          <button class="open-proofs-btn cam-view-btn" data-video-src="assets/media/screenrec-switch-app.mp4" title="Watch authentic 60fps macOS screen recordings">
-            <span>▶</span>
-            <span>60fps Proofs</span>
-          </button>
-
           <!-- Hamster Camera View Toggle -->
           <button id="cam-view-btn" class="cam-view-btn" title="Toggle Hamster Camera View (V)">
             <span id="cam-view-icon">🍑</span>
@@ -99,125 +101,25 @@
     </header>
 
     <!-- ====================================================================
-         FLAGSHIP: AUTHENTIC 60FPS VIDEO + REACTIVE 3D MASCOT COMPANION
+         FLAGSHIP: 60FPS FULLSCREEN DESKTOP VIDEO + REACTIVE 3D MASCOT
          ==================================================================== -->
     <div class="variant-stage-section" data-variant-section="option-c">
-      <div class="option-c-split-stage">
-        <!-- Mobile 3D Mascot Interactive Spacer (Frames Hamster at top on phones) -->
-        <div class="option-c-mobile-spacer" id="option-c-mobile-spacer" title="Tap the hamster to squish!"></div>
+      <!-- Mobile 3D Mascot Interactive Spacer -->
+      <div class="option-c-mobile-spacer" id="option-c-mobile-spacer" title="Tap the hamster to squish!"></div>
 
-        <!-- Left Stage: Hero Typography, Install Strip, Controls -->
-        <div class="option-c-left-col">
-          <div class="option-c-glass-card">
-            <div class="hero-badge">
-              <span class="hero-badge-dot pulse-dot"></span>
-              <span>Caps Lock + First Letter · Chrome/Brave Profiles · Copy-on-Select</span>
-            </div>
-
-            <h1 class="cinematic-heading">
-              Fast & Intuitive App Access.<br/>
-              <span class="zero-latency-highlight">Caps Lock + First Letter.</span>
-            </h1>
-
-            <p class="cinematic-summary">
-              Instant access to Chrome & Brave profile windows via <kbd class="top-kbd">Caps</kbd> + <kbd class="top-kbd">C/B</kbd> + <kbd class="top-kbd">1..4</kbd>. Launch chosen apps by first letter, and copy text automatically on drag selection.
-            </p>
-
-            <!-- Video Demo Switcher Tabs -->
-            <div class="cinematic-video-tabs">
-              <button class="cinematic-tab-btn active" data-video-src="assets/media/screenrec-switch-app.mp4">
-                <span>🔄</span> <span>App Switcher & Profiles (60fps)</span>
-              </button>
-              <button class="cinematic-tab-btn" data-video-src="assets/media/screenrec-select-copy.mp4">
-                <span>📋</span> <span>Copy on Select (60fps)</span>
-              </button>
-            </div>
-
-            <!-- Action Strip: Download DMG & Brew Install -->
-            <div class="hero-cta-actions">
-              <a href="https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg" class="hero-download-btn" title="Download Xomsky for macOS">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                <span>Download DMG</span>
-                <span class="dmg-pill">2.1 MB</span>
-              </a>
-              <div class="hero-install-strip" title="Click to copy install command">
-                <span class="hero-install-prompt">$</span>
-                <code class="hero-install-cmd">brew install unacau/tap/xomsky</code>
-                <button class="hero-install-copy-btn" title="Copy command">
-                  <span>📋</span>
-                  <span>Copy</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Tactile Pocket Mac Remote Strip -->
-            <div class="cinematic-macro-strip">
-              <span class="macro-label">Tactile Remote:</span>
-              <button class="macro-tap-btn" data-key="1" data-seek="0.5" title="Jump to Personal Profile (Caps + 1)"><span class="kbd-pill">1</span> Personal</button>
-              <button class="macro-tap-btn" data-key="2" data-seek="3.5" title="Jump to Work Profile (Caps + 2)"><span class="kbd-pill">2</span> Work</button>
-              <button class="macro-tap-btn" data-key="t" data-seek="15.0" title="Jump to Terminal (Caps + T)"><span class="kbd-pill">T</span> Terminal</button>
-              <button class="macro-tap-btn" data-key="copy" title="Linux Copy-on-Select Demo"><span class="kbd-pill">📋</span> Copy</button>
-            </div>
-
-            <!-- Touch & Copy Sandbox -->
-            <div class="mobile-copy-sandbox" id="mobile-copy-sandbox" title="Select text to test auto-copy">
-              <div class="sandbox-header">
-                <span class="sandbox-dot"></span>
-                <span>Touch & Copy Sandbox</span>
-              </div>
-              <p class="sandbox-hint">Highlight any text below with your mouse or finger:</p>
-              <div class="sandbox-selectable-text" id="sandbox-selectable-text">
-                Highlight this text with your mouse — it instantly copies to your clipboard without ⌘C.
-              </div>
-            </div>
-          </div>
+      <!-- Floating Demo Switcher Bar at the bottom of the first screen -->
+      <div class="hero-floating-controls">
+        <div class="cinematic-video-tabs">
+          <button class="cinematic-tab-btn active" data-video-src="assets/media/screenrec-switch-app.mp4">
+            <span>🔄</span> <span>Profiles & Apps (60fps)</span>
+          </button>
+          <button class="cinematic-tab-btn" data-video-src="assets/media/screenrec-select-copy.mp4">
+            <span>📋</span> <span>Copy on Select (60fps)</span>
+          </button>
         </div>
-
-        <!-- Right Stage: Authentic 60fps Video in macOS Window Container -->
-        <div class="option-c-right-col">
-          <div class="macos-video-window" id="macos-video-window">
-            <div class="macos-video-titlebar">
-              <div class="mac-traffic-lights">
-                <span class="tl-dot tl-close"></span>
-                <span class="tl-dot tl-min"></span>
-                <span class="tl-dot tl-max"></span>
-              </div>
-              <div class="macos-video-title">
-                <span>📹 Authentic Screen Recording · 60fps</span>
-              </div>
-              <div class="macos-video-chip">
-                <span>Apple Silicon Sonoma</span>
-              </div>
-            </div>
-
-            <div class="macos-video-viewport">
-              <video class="cinematic-bg-video" id="cinematic-bg-video" autoplay loop muted playsinline preload="auto">
-                <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
-              </video>
-            </div>
-
-            <div class="macos-video-footer">
-              <div class="footer-status-line">
-                <span class="live-dot-green">●</span>
-                <span>Native 60 FPS Capture · Raw, unedited macOS recording</span>
-              </div>
-              <div class="footer-hint">
-                <span>Click tabs on left to switch demo</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Reactive Mascot Companion HUD Toast (Desktop only) -->
-      <div class="companion-hud-widget" id="companion-hud-widget" title="Click to squish!">
-        <div class="companion-header">
-          <span class="companion-live-dot"></span>
-          <span class="companion-header-title">Xomsky Live Reaction</span>
-          <span class="companion-status-chip">60fps Live</span>
-        </div>
-        <div class="companion-speech-bubble" id="companion-speech">
-          ⚡ Ready for hotkeys!
+        <div class="hero-capture-chip">
+          <span class="live-dot-green">●</span>
+          <span>Authentic 60 FPS Capture</span>
         </div>
       </div>
     </div>
@@ -252,7 +154,7 @@
             </div>
             <h3 class="pain-heading">Instant App Access by First Letter</h3>
             <p class="pain-desc">
-              Your pinky already rests on Caps Lock. Why type in Spotlight or Raycast? <kbd class="top-kbd">Caps</kbd> + <kbd class="top-kbd">T</kbd> (Terminal), <kbd class="top-kbd">I</kbd> (IDE), <kbd class="top-kbd">A</kbd> (Agent), <kbd class="top-kbd">N</kbd> (Notes) — instant switching with zero context loss.
+              Your pinky already rests on Caps Lock. Why type in Spotlight or Raycast? <kbd class="top-kbd">Caps</kbd> + <kbd class="top-kbd">T</kbd> (Terminal), <kbd class="top-kbd">I</kbd> (IntelliJ IDEA), <kbd class="top-kbd">A</kbd> (Antigravity), <kbd class="top-kbd">N</kbd> (Notes) — instant switching with zero context loss.
             </p>
           </div>
 

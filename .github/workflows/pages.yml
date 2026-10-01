@@ -28,8 +28,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup GitHub Pages
-        uses: actions/configure-pages@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build site assets
+        working-directory: docs/site
+        run: |
+          chmod +x build.sh
+          ./build.sh
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
