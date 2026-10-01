@@ -91,8 +91,13 @@ if [ "${FAST_DEV}" = true ]; then
 
     echo "[2/2] Packaging Info.plist, AppIcon & Code-Signing..."
     cp "src/ChromeQuickAccess/Info.plist" "${CONTENTS_DIR}/Info.plist"
+    if [ -f "src/ChromeQuickAccess/Resources/GlitchBackground.png" ]; then
+        cp "src/ChromeQuickAccess/Resources/GlitchBackground.png" "${RESOURCES_DIR}/GlitchBackground.png"
+    fi
+
     if [ -f "src/ChromeQuickAccess/Resources/AppIcon.icns" ]; then
         cp "src/ChromeQuickAccess/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
+        
     fi
     codesign --force --sign - --identifier "com.almosteleven.xomsky" -r="designated => identifier \"com.almosteleven.xomsky\"" "${APP_BUNDLE}"
 
@@ -146,8 +151,13 @@ lipo -create -output "${MACOS_DIR}/Xomsky" \
 
 echo "[4/5] Packaging Info.plist, AppIcon & Code-Signing..."
 cp "src/ChromeQuickAccess/Info.plist" "${CONTENTS_DIR}/Info.plist"
+    if [ -f "src/ChromeQuickAccess/Resources/GlitchBackground.png" ]; then
+        cp "src/ChromeQuickAccess/Resources/GlitchBackground.png" "${RESOURCES_DIR}/GlitchBackground.png"
+    fi
+
 if [ -f "src/ChromeQuickAccess/Resources/AppIcon.icns" ]; then
     cp "src/ChromeQuickAccess/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
+        
 fi
 if [ -f "src/ChromeQuickAccess/Resources/dmg_background.png" ]; then
     cp "src/ChromeQuickAccess/Resources/dmg_background.png" "${RESOURCES_DIR}/dmg_background.png"
