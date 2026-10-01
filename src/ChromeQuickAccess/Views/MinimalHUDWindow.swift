@@ -188,9 +188,9 @@ public struct ProfileAvatarView: View {
     }
     
     public var body: some View {
-        let avatarSize: CGFloat = isLarge ? 32 : 24
-        let ringSize: CGFloat = isLarge ? 36 : 28
-        let colWidth: CGFloat = isLarge ? 36 : 28
+        let avatarSize: CGFloat = isLarge ? 42 : 34
+        let ringSize: CGFloat = isLarge ? 48 : 40
+        let colWidth: CGFloat = isLarge ? 48 : 40
         
         VStack(spacing: 3) {
             ZStack {
@@ -224,7 +224,7 @@ public struct ProfileAvatarView: View {
                         .frame(width: avatarSize, height: avatarSize)
                         .overlay(
                             Text(String(profile.effectiveName.prefix(1)).uppercased())
-                                .font(.system(size: isLarge ? 13 : 10, weight: .bold))
+                                .font(.system(size: isLarge ? 15 : 12, weight: .bold))
                                 .foregroundColor(.white)
                         )
                 }
@@ -245,12 +245,12 @@ public struct ProfileAvatarView: View {
             .frame(width: ringSize, height: ringSize)
             
             Text("\(slotIndex)")
-                .font(.system(size: isLarge ? 11 : 9, weight: isSelected ? .bold : .medium, design: .monospaced))
+                .font(.system(size: isLarge ? 12 : 10, weight: isSelected ? .bold : .medium, design: .monospaced))
                 .foregroundColor(isSelected ? Color(red: 0.06, green: 0.06, blue: 0.10) : Color.black.opacity(0.42))
                 .shadow(color: Color.white.opacity(isSelected ? 0.65 : 0.30), radius: 1, y: 1)
         }
         .frame(width: colWidth)
-        .padding(.vertical, 2)
+        .padding(.vertical, 2.5)
         .background {
             if isSelected {
                 if let ns = namespace {
@@ -293,13 +293,15 @@ public struct AppChannelItemView: View {
     }
     
     public var body: some View {
-        let avatarSize: CGFloat = 24
-        let ringSize: CGFloat = 28
-        let colWidth: CGFloat = 28
+        let avatarSize: CGFloat = 34
+        let ringSize: CGFloat = 36.5
+        let colWidth: CGFloat = 38
+        let iconCornerRadius: CGFloat = 7.6
+        let ringCornerRadius: CGFloat = 8.85
         
         VStack(spacing: 3) {
             ZStack {
-                Circle()
+                RoundedRectangle(cornerRadius: iconCornerRadius, style: .continuous)
                     .fill(Color.white.opacity(0.14))
                     .frame(width: avatarSize, height: avatarSize)
                 
@@ -307,46 +309,46 @@ public struct AppChannelItemView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: avatarSize, height: avatarSize)
-                    .clipShape(Circle())
+                    .clipShape(RoundedRectangle(cornerRadius: iconCornerRadius, style: .continuous))
                 
-                // Active tactile shadow / black selection ring
+                // Active tactile shadow / black selection ring along the app icon perimeter (tight 1.25pt offset)
                 if isSelected {
-                    Circle()
+                    RoundedRectangle(cornerRadius: ringCornerRadius, style: .continuous)
                         .stroke(Color(red: 0.10, green: 0.10, blue: 0.14), lineWidth: 1.5)
                         .frame(width: ringSize, height: ringSize)
-                        .shadow(color: Color.black.opacity(0.35), radius: 2.5, x: 0, y: 1.5)
+                        .shadow(color: Color.black.opacity(0.35), radius: 2.0, x: 0, y: 1.0)
                         .shadow(color: Color.white.opacity(0.60), radius: 1, x: 0, y: -0.5)
                 } else {
-                    Circle()
+                    RoundedRectangle(cornerRadius: ringCornerRadius - 0.5, style: .continuous)
                         .stroke(Color.black.opacity(0.16), lineWidth: 0.75)
-                        .frame(width: ringSize - 2, height: ringSize - 2)
+                        .frame(width: ringSize - 1.5, height: ringSize - 1.5)
                 }
             }
             .frame(width: ringSize, height: ringSize)
             
             Text("\(channelIndex)")
-                .font(.system(size: 9, weight: isSelected ? .bold : .medium, design: .monospaced))
+                .font(.system(size: 10, weight: isSelected ? .bold : .medium, design: .monospaced))
                 .foregroundColor(isSelected ? Color(red: 0.06, green: 0.06, blue: 0.10) : Color.black.opacity(0.42))
                 .shadow(color: Color.white.opacity(isSelected ? 0.65 : 0.30), radius: 1, y: 1)
         }
         .frame(width: colWidth)
-        .padding(.vertical, 2)
+        .padding(.vertical, 2.5)
         .background {
             if isSelected {
                 if let ns = namespace {
-                    Capsule()
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .fill(Color.black.opacity(0.07))
                         .overlay(
-                            Capsule()
+                            RoundedRectangle(cornerRadius: 11, style: .continuous)
                                 .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
                         )
                         .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
                         .matchedGeometryEffect(id: "activeAppChannelCapsule", in: ns)
                 } else {
-                    Capsule()
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .fill(Color.black.opacity(0.07))
                         .overlay(
-                            Capsule()
+                            RoundedRectangle(cornerRadius: 11, style: .continuous)
                                 .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
                         )
                         .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
@@ -586,7 +588,7 @@ public struct CRTScanlinesView: View {
                 for i in 0..<count {
                     let y = CGFloat(i) * step
                     let lineRect = CGRect(x: 0, y: y, width: size.width, height: 1.0)
-                    context.fill(Path(lineRect), with: .color(Color.black.opacity(0.26)))
+                    context.fill(Path(lineRect), with: .color(Color.black.opacity(0.10)))
                 }
             }
         }
@@ -725,8 +727,8 @@ public struct MinimalHUDView: View {
     @Namespace private var selectionNamespace
     
     /// Deterministic size-invariant CRT screen frame
-    public static let hudWidth: CGFloat = 260
-    public static let hudHeight: CGFloat = 236
+    public static let hudWidth: CGFloat = 300
+    public static let hudHeight: CGFloat = 270
     
     public init() {}
     
@@ -773,10 +775,10 @@ public struct MinimalHUDView: View {
                 
                 // 1. Center Hero Display (Large App Icon with Chromatic Aberration + Title)
                 VStack(spacing: 7) {
-                    CRTChromaticAberrationIcon(icon: activeIcon, size: 78)
+                    CRTChromaticAberrationIcon(icon: activeIcon, size: 84)
                     
                     Text(activeName)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundColor(Color(red: 0.10, green: 0.10, blue: 0.14))
                         .shadow(color: Color.white.opacity(0.65), radius: 1, y: 1)
                         .lineLimit(1)
@@ -808,7 +810,7 @@ public struct MinimalHUDView: View {
                 Spacer()
                 
                 // 2. Bottom Channel Presets Row (Apps on same letter or Chrome profiles)
-                HStack(spacing: 7) {
+                HStack(spacing: 9) {
                     let isCurrentBrowser = isBrowser(state.selectedAppItem ?? AntigravityItem(name: "", bundleID: "", path: "", icon: NSImage(), index: 0))
                     if state.mode == .chrome || (!state.profiles.isEmpty && isCurrentBrowser) {
                         ForEach(Array(state.profiles.enumerated()), id: \.element.id) { idx, profile in
@@ -838,23 +840,23 @@ public struct MinimalHUDView: View {
                         )
                     }
                 }
-                .frame(height: 42)
-                .padding(.bottom, 14)
+                .frame(height: 58)
+                .padding(.bottom, 16)
             }
             .frame(width: Self.hudWidth, height: Self.hudHeight)
             .background(
                 ZStack {
                     // 1. Frosted ultra-thin material for native macOS glass blur
-                    KinescopeShape(cornerRadius: 32, bulge: 7)
+                    KinescopeShape(cornerRadius: 34, bulge: 8)
                         .fill(.ultraThinMaterial)
                     
-                    // 2. Tactile CRT Gray Base (matching IMG_4735.PNG aesthetic)
-                    KinescopeShape(cornerRadius: 32, bulge: 7)
+                    // 2. Tactile CRT Light Gray Base (much lighter, refined phosphor tube glass)
+                    KinescopeShape(cornerRadius: 34, bulge: 8)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color(red: 0.83, green: 0.83, blue: 0.85).opacity(0.92),
-                                    Color(red: 0.76, green: 0.76, blue: 0.79).opacity(0.95)
+                                    Color(red: 0.95, green: 0.95, blue: 0.96).opacity(0.96),
+                                    Color(red: 0.89, green: 0.89, blue: 0.91).opacity(0.97)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -863,69 +865,125 @@ public struct MinimalHUDView: View {
                     
                     // 3. Phosphor Aperture Grille Scanlines
                     CRTScanlinesView()
-                        .clipShape(KinescopeShape(cornerRadius: 32, bulge: 7))
+                        .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
                     
-                    // 4. CRT Corner & Edge Vignette
-                    KinescopeShape(cornerRadius: 32, bulge: 7)
+                    // 4. CRT Corner & Edge Soft Vignette
+                    KinescopeShape(cornerRadius: 34, bulge: 8)
                         .fill(
                             RadialGradient(
                                 gradient: Gradient(colors: [
                                     Color.clear,
-                                    Color.black.opacity(0.18)
+                                    Color.black.opacity(0.08)
                                 ]),
                                 center: UnitPoint(x: 0.5, y: 0.5),
-                                startRadius: 75,
-                                endRadius: 155
+                                startRadius: 90,
+                                endRadius: 185
                             )
                         )
                     
                     // 5. Convex Kinescope Face Lighting (Radial specular highlight across upper curved glass)
-                    KinescopeShape(cornerRadius: 32, bulge: 7)
+                    KinescopeShape(cornerRadius: 34, bulge: 8)
                         .fill(
                             RadialGradient(
                                 gradient: Gradient(colors: [
-                                    Color.white.opacity(0.35),
-                                    Color.white.opacity(0.08),
+                                    Color.white.opacity(0.55),
+                                    Color.white.opacity(0.15),
                                     Color.clear
                                 ]),
-                                center: UnitPoint(x: 0.5, y: 0.10),
+                                center: UnitPoint(x: 0.5, y: 0.08),
                                 startRadius: 0,
-                                endRadius: 180
+                                endRadius: 210
                             )
                         )
                     
                     // 6. Subtle CRT phosphor tube bottom depth
-                    KinescopeShape(cornerRadius: 32, bulge: 7)
+                    KinescopeShape(cornerRadius: 34, bulge: 8)
                         .fill(
                             LinearGradient(
                                 colors: [
                                     Color.clear,
-                                    Color.black.opacity(0.12)
+                                    Color.black.opacity(0.05)
                                 ],
                                 startPoint: .center,
                                 endPoint: .bottom
                             )
                         )
                 }
-                .clipShape(KinescopeShape(cornerRadius: 32, bulge: 7))
+                .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
             )
             .overlay(
                 // Curved Outer Kinescope Bezel Rim (Dual-tone lighting with specular highlight and deep shadow)
-                KinescopeShape(cornerRadius: 32, bulge: 7)
+                KinescopeShape(cornerRadius: 34, bulge: 8)
                     .strokeBorder(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.85),
-                                Color.white.opacity(0.40),
-                                Color.white.opacity(0.12),
-                                Color.black.opacity(0.20),
-                                Color.black.opacity(0.45)
+                                Color.white.opacity(0.92),
+                                Color.white.opacity(0.50),
+                                Color.white.opacity(0.18),
+                                Color.black.opacity(0.14),
+                                Color.black.opacity(0.35)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         ),
-                        lineWidth: 0.75
+                        lineWidth: 1.25
                     )
+            )
+            .overlay(
+                // CRT Glass Effect Overlay (Organic glass gloss, dome glare, and refraction rim)
+                ZStack {
+                    // 1. Diagonal ambient glass gloss across kinescope face
+                    KinescopeShape(cornerRadius: 34, bulge: 8)
+                        .fill(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.35), location: 0.0),
+                                    .init(color: Color.white.opacity(0.14), location: 0.22),
+                                    .init(color: Color.white.opacity(0.04), location: 0.42),
+                                    .init(color: Color.clear, location: 0.60)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    // 2. Upper bulb glass dome reflection (convex lens glare)
+                    GeometryReader { geo in
+                        Ellipse()
+                            .fill(
+                                RadialGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.white.opacity(0.30),
+                                        Color.white.opacity(0.08),
+                                        Color.clear
+                                    ]),
+                                    center: UnitPoint(x: 0.5, y: 0.0),
+                                    startRadius: 0,
+                                    endRadius: geo.size.width * 0.55
+                                )
+                            )
+                            .frame(width: geo.size.width * 1.2, height: geo.size.height * 0.65)
+                            .position(x: geo.size.width / 2, y: geo.size.height * 0.15)
+                    }
+                    
+                    // 3. Top inner glass refraction rim highlight
+                    KinescopeShape(cornerRadius: 34, bulge: 8)
+                        .inset(by: 1.5)
+                        .stroke(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.75), location: 0.0),
+                                    .init(color: Color.white.opacity(0.30), location: 0.25),
+                                    .init(color: Color.white.opacity(0.0), location: 0.55)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1.0
+                        )
+                }
+                .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
+                .allowsHitTesting(false)
             )
             .overlay(
                 // CRT phosphor green vector arc trace strictly along the outer left edge

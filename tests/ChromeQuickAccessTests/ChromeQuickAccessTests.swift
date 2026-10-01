@@ -2501,9 +2501,9 @@ struct ChromeQuickAccessUnitTests {
 
     @Test @MainActor
     func testRetroCRTChannelSwitcherHUDInvariants() {
-        // 1. Deterministic size invariance: HUD must always be fixed 260pt x 236pt
-        #expect(MinimalHUDView.hudWidth == 260)
-        #expect(MinimalHUDView.hudHeight == 236)
+        // 1. Deterministic size invariance: HUD must always be fixed 300pt x 270pt
+        #expect(MinimalHUDView.hudWidth == 300)
+        #expect(MinimalHUDView.hudHeight == 270)
         
         let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
         let appItem = AntigravityItem(name: "Telegram", bundleID: "ru.keepcoder.Telegram", path: "/Applications/Telegram.app", icon: dummyIcon, index: 1)
@@ -2514,14 +2514,14 @@ struct ChromeQuickAccessUnitTests {
         #expect(channelItem.channelIndex == 1)
         
         // 3. CRT Chromatic Aberration and Vector Arc components
-        let aberrationView = CRTChromaticAberrationIcon(icon: dummyIcon, size: 76)
-        #expect(aberrationView.size == 76)
+        let aberrationView = CRTChromaticAberrationIcon(icon: dummyIcon, size: 84)
+        #expect(aberrationView.size == 84)
         
         let arcView = CRTVectorArcView()
         #expect(arcView != nil)
         
         let leftArcShape = CRTLeftEdgeArcShape(insetAmount: 1.0)
-        let arcPath = leftArcShape.path(in: CGRect(x: 0, y: 0, width: 260, height: 236))
+        let arcPath = leftArcShape.path(in: CGRect(x: 0, y: 0, width: 300, height: 270))
         #expect(!arcPath.isEmpty)
         #expect(arcPath.boundingRect.minX >= 0.5)
         #expect(arcPath.boundingRect.minX <= 25.0)
