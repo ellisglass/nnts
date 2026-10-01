@@ -10,10 +10,34 @@ MACOS_DIR="${CONTENTS_DIR}/MacOS"
 BUILD_DIR="${DIST_DIR}/build_native"
 DMG_PATH="${DIST_DIR}/Xomsky.dmg"
 
-echo "=================================================="
-echo " Building Native ${APP_NAME} (.app)               "
-echo " Target: Universal (arm64 & x86_64) macOS 14.0+   "
-echo "=================================================="
+FAST_DEV=false
+RELAUNCH=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --fast|--dev)
+            FAST_DEV=true
+            ;;
+        --run)
+            FAST_DEV=true
+            RELAUNCH=true
+            ;;
+        *)
+            ;;
+    esac
+done
+
+if [ "${FAST_DEV}" = true ]; then
+    echo "=================================================="
+    echo " Building Native ${APP_NAME} (.app) [FAST DEV]   "
+    echo " Target: Host ($(uname -m)) macOS 14.0+           "
+    echo "=================================================="
+else
+    echo "=================================================="
+    echo " Building Native ${APP_NAME} (.app)               "
+    echo " Target: Universal (arm64 & x86_64) macOS 14.0+   "
+    echo "=================================================="
+fi
 
 rm -rf "${APP_BUNDLE}" "${BUILD_DIR}"
 mkdir -p "${MACOS_DIR}" "${CONTENTS_DIR}" "${RESOURCES_DIR}" "${BUILD_DIR}/temp"
@@ -47,6 +71,53 @@ FRAMEWORKS=(
     "-framework" "UniformTypeIdentifiers"
     "-framework" "Security"
 )
+
+if [ "${FAST_DEV}" = true ]; then
+    HOST_ARCH=$(uname -m)
+    if [ "${HOST_ARCH}" = "arm64" ]; then
+        TARGET_TRIPLE="arm64-apple-macos14.0"
+    else
+        TARGET_TRIPLE="x86_64-apple-macos14.0"
+    fi
+
+    echo "[1/2] Compiling ${HOST_ARCH} slice for local testing..."
+    swiftc \
+        -parse-as-library \
+        -target "${TARGET_TRIPLE}" \
+        "${SOURCES[@]}" \
+        -o "${MACOS_DIR}/Xomsky" \
+        "${FRAMEWORKS[@]}" \
+        -O
+
+    echo "[2/2] Packaging Info.plist, AppIcon & Code-Signing..."
+    cp "src/ChromeQuickAccess/Info.plist" "${CONTENTS_DIR}/Info.plist"
+    if [ -f "src/ChromeQuickAccess/Resources/AppIcon.icns" ]; then
+        cp "src/ChromeQuickAccess/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
+    fi
+    codesign --force --sign - --identifier "com.almosteleven.xomsky" -r="designated => identifier \"com.almosteleven.xomsky\"" "${APP_BUNDLE}"
+
+    rm -rf "${BUILD_DIR}"
+
+    if [ "${RELAUNCH}" = true ]; then
+        echo "[*] Updating /Applications/${APP_NAME}.app and relaunching..."
+        pkill -x "${APP_NAME}" 2>/dev/null || true
+        sleep 0.3
+        rm -rf "/Applications/${APP_NAME}.app"
+        cp -R "${APP_BUNDLE}" "/Applications/${APP_NAME}.app"
+        xattr -cr "/Applications/${APP_NAME}.app" 2>/dev/null || true
+        open "/Applications/${APP_NAME}.app"
+        echo "=================================================="
+        echo " 🚀 ${APP_NAME} updated & running in /Applications!"
+        echo " Ready to test instantly without password prompts."
+        echo "=================================================="
+    else
+        echo "=================================================="
+        echo " ✅ Fast Dev Build Succeeded!"
+        echo " App: ${APP_BUNDLE}"
+        echo "=================================================="
+    fi
+    exit 0
+fi
 
 echo "[1/5] Compiling arm64 slice (Apple Silicon)..."
 mkdir -p "${BUILD_DIR}/temp"

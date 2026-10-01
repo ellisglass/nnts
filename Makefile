@@ -1,14 +1,22 @@
-.PHONY: all build native package test health validate checksums monitor diagnostics clean bump-major bump-minor bump-patch install release
+.PHONY: all run dev build native package test health validate checksums monitor diagnostics clean bump-major bump-minor bump-patch install release help
 
+# Default target
 all: validate test native checksums health
 
-build: native
+# ==============================================================================
+# 🚀 Developer Inner Loop (Instant Testing without password or DMG)
+# ==============================================================================
+run:
+	@./build_native_app.sh --run
 
-native:
-	@./build_native_app.sh
+dev: run
 
-package: native
+test:
+	@./tests/run_tests.sh
 
+# ==============================================================================
+# 🛡️ Quality & Validation Gates
+# ==============================================================================
 validate:
 	@echo "Checking version synchronization..."
 	@V_TXT=$$(cat VERSION.txt | tr -d '[:space:]'); \
@@ -25,11 +33,24 @@ validate:
 	@bash -n release.sh build_native_app.sh bump_version.sh install.sh scripts/*.sh tests/*.sh
 	@echo "✅ All shell scripts valid"
 
-test:
-	@./tests/run_tests.sh
-
 health:
 	@./scripts/health_check.sh
+
+# ==============================================================================
+# 📦 Packaging & Distribution
+# ==============================================================================
+native:
+	@./build_native_app.sh
+
+build: native
+
+package: native
+
+install:
+	@./install.sh --no-settings
+
+release:
+	@./release.sh
 
 checksums:
 	@if [ -f "dist/Xomsky.dmg" ]; then \
@@ -38,12 +59,18 @@ checksums:
 		echo "ℹ️ dist/Xomsky.dmg not built yet. Run 'make native' first."; \
 	fi
 
+# ==============================================================================
+# 📊 Observability & Diagnostics
+# ==============================================================================
 monitor:
 	@./scripts/monitor_telemetry.sh stream
 
 diagnostics:
 	@./scripts/monitor_telemetry.sh summary 1h
 
+# ==============================================================================
+# 🏷️ Versioning
+# ==============================================================================
 bump-major:
 	@./bump_version.sh major
 
@@ -53,11 +80,20 @@ bump-minor:
 bump-patch:
 	@./bump_version.sh patch
 
-release:
-	@./release.sh
-
-install:
-	@./install.sh
-
+# ==============================================================================
+# 🧹 Housekeeping & Help
+# ==============================================================================
 clean:
 	@rm -rf dist .build
+
+help:
+	@echo "Xomsky Developer Commands:"
+	@echo "  make dev / make run  - Fast build (host arch) + update /Applications + relaunch app (no password)"
+	@echo "  make test            - Run all automated unit tests"
+	@echo "  make validate        - Verify version alignment & shell scripts"
+	@echo "  make native          - Full universal build (arm64+x86_64) + DMG"
+	@echo "  make install         - Install to /Applications via installer script"
+	@echo "  make release         - Run release tagging & cloud release"
+	@echo "  make monitor         - Stream real-time macOS unified logs"
+	@echo "  make clean           - Remove build artifacts"
+

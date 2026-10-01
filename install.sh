@@ -17,6 +17,7 @@ DMG_NAME="${APP_NAME}.dmg"
 
 NO_BUILD=false
 NO_OPEN=false
+NO_SETTINGS=false
 FORCE_REMOTE=false
 
 for arg in "$@"; do
@@ -26,6 +27,9 @@ for arg in "$@"; do
             ;;
         --no-open)
             NO_OPEN=true
+            ;;
+        --no-settings|--skip-settings)
+            NO_SETTINGS=true
             ;;
         --remote)
             FORCE_REMOTE=true
@@ -171,8 +175,10 @@ if [ "${NO_OPEN}" = false ]; then
     echo "[*] Launching ${APP_NAME}..."
     open "${TARGET_APP}" || true
 
-    echo "[*] Opening macOS Accessibility Preferences..."
-    open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility" || true
+    if [ "${NO_SETTINGS}" = false ]; then
+        echo "[*] Opening macOS Accessibility Preferences..."
+        open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility" || true
+    fi
 fi
 
 echo "=================================================="
