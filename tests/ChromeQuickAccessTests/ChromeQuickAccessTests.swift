@@ -236,7 +236,7 @@ struct ChromeQuickAccessUnitTests {
     @Test @MainActor
     func testCopyOnSelectDefaultParameters() {
         let engine = CopyOnSelectEngine()
-        #expect(engine.isEnabled == false)
+        #expect(engine.isEnabled == true)
         #expect(engine.dragThreshold == 10.0)
         #expect(engine.copyDelayMs == 150)
     }

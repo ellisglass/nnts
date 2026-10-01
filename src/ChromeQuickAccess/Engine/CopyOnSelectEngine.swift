@@ -37,7 +37,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         "co.zeit.hyper"
     ]
     
-    public var isEnabled: Bool = false
+    public var isEnabled: Bool = true
     
     // 10.0pt threshold prevents false positive copies during micro-jitters or single clicks
     public var dragThreshold: CGFloat = 10.0
@@ -66,14 +66,15 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
     }
     
     public var isInteractingWithXomskyWindow: Bool {
-        if NSApp.isActive { return true }
+        guard let app = (NSApp as NSApplication?) else { return false }
+        if app.isActive { return true }
         if let frontID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
            let myID = Bundle.main.bundleIdentifier,
            frontID == myID {
             return true
         }
         let mouseLoc = NSEvent.mouseLocation
-        return NSApp.windows.contains { window in
+        return app.windows.contains { window in
             window.isVisible && !(window is CopyToastWindow) && !(window is MinimalHUDWindow) && NSPointInRect(mouseLoc, window.frame)
         }
     }
