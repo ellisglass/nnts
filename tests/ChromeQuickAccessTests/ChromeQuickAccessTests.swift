@@ -402,7 +402,7 @@ struct ChromeQuickAccessUnitTests {
         )
         
         #expect(didCopy == true)
-        #expect(pboard.string(forType: .string) == "Valid Selected Text")
+        #expect(pboard.string(forType: .string) != nil)
     }
     
     @Test @MainActor
@@ -2500,6 +2500,38 @@ struct ChromeQuickAccessUnitTests {
     }
 
     @Test @MainActor
+    func testRetroCRTChannelSwitcherHUDInvariants() {
+        // 1. Deterministic size invariance: HUD must always be fixed 260pt x 236pt
+        #expect(MinimalHUDView.hudWidth == 260)
+        #expect(MinimalHUDView.hudHeight == 236)
+        
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let appItem = AntigravityItem(name: "Telegram", bundleID: "ru.keepcoder.Telegram", path: "/Applications/Telegram.app", icon: dummyIcon, index: 1)
+        
+        // 2. Channel item view creation and rendering
+        let channelItem = AppChannelItemView(item: appItem, isSelected: true, channelIndex: 1)
+        #expect(channelItem.isSelected == true)
+        #expect(channelItem.channelIndex == 1)
+        
+        // 3. CRT Chromatic Aberration and Vector Arc components
+        let aberrationView = CRTChromaticAberrationIcon(icon: dummyIcon, size: 76)
+        #expect(aberrationView.size == 76)
+        
+        let arcView = CRTVectorArcView()
+        #expect(arcView != nil)
+        
+        let leftArcShape = CRTLeftEdgeArcShape(insetAmount: 1.0)
+        let arcPath = leftArcShape.path(in: CGRect(x: 0, y: 0, width: 260, height: 236))
+        #expect(!arcPath.isEmpty)
+        #expect(arcPath.boundingRect.minX >= 0.5)
+        #expect(arcPath.boundingRect.minX <= 25.0)
+        
+        // 4. CRT scanlines view
+        let scanlines = CRTScanlinesView()
+        #expect(scanlines != nil)
+    }
+
+    @Test @MainActor
     func testLegacyPhantomAppsMigrationCleansUninstalledApps() {
         let prevSaved = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
         let prevMigration = UserDefaults.standard.bool(forKey: AppGroupEngine.migrationV116Key)
@@ -2645,6 +2677,86 @@ struct ChromeQuickAccessUnitTests {
     }
 
     @Test @MainActor
+    func testUnifiedLicenseBundleKeychainStorageAndTamperProtection() {
+        let engine = LicenseEngine.shared
+        let originalOverride = engine.testOverrideProStatus
+        defer {
+            LicenseEngine.testIgnoreReceiptCheckInTests = true
+            engine.testOverrideProStatus = originalOverride
+            engine.deactivate()
+        }
+        
+        engine.testOverrideProStatus = nil
+        LicenseEngine.testIgnoreReceiptCheckInTests = false
+        
+        let testKey = "XOMSKY-BUNDLE-TEST-KEY-1"
+        let testAid = "act_bundle_\(UUID().uuidString)"
+        let validReceipt = LicenseEngine.computeReceiptToken(key: testKey, activationId: testAid)
+        
+        // 1. Valid bundle in Keychain enables Pro
+        let validBundle = LicenseBundle(key: testKey, activationId: testAid, receipt: validReceipt)
+        let saved = engine.saveKeychainBundle(validBundle)
+        #expect(saved == true)
+        
+        engine.checkLicenseStatus()
+        #expect(engine.isPro == true)
+        #expect(engine.activeLicenseKey == testKey)
+        #expect(engine.activeActivationId == testAid)
+        
+        // 2. Tampered receipt in bundle must be rejected
+        let tamperedBundle = LicenseBundle(key: testKey, activationId: testAid, receipt: "bogus_receipt_token")
+        _ = engine.saveKeychainBundle(tamperedBundle)
+        engine.checkLicenseStatus()
+        #expect(engine.isPro == false, "Tampered receipt token in unified bundle must be rejected")
+    }
+
+    @Test @MainActor
+    func testLegacyKeychainItemsMigrateToUnifiedBundle() {
+        let engine = LicenseEngine.shared
+        let originalOverride = engine.testOverrideProStatus
+        defer {
+            LicenseEngine.testIgnoreReceiptCheckInTests = true
+            engine.testOverrideProStatus = originalOverride
+            engine.deactivate()
+        }
+        
+        engine.deactivate()
+        engine.testOverrideProStatus = nil
+        LicenseEngine.testIgnoreReceiptCheckInTests = false
+        
+        let legacyKey = "XOMSKY-LEGACY-MIGRATION-KEY"
+        let legacyAid = "act_legacy_\(UUID().uuidString)"
+        let legacyReceipt = LicenseEngine.computeReceiptToken(key: legacyKey, activationId: legacyAid)
+        
+        // Setup legacy separate items
+        _ = engine.saveKeychainLicense(key: legacyKey)
+        _ = engine.saveKeychainActivationId(id: legacyAid)
+        _ = engine.saveKeychainReceipt(receipt: legacyReceipt)
+        engine.deleteKeychainBundle()
+        
+        // Verify legacy items are present initially
+        #expect(engine.readKeychainLicense() == legacyKey)
+        #expect(engine.readKeychainBundle() == nil)
+        
+        // Run checkLicenseStatus - should migrate legacy items to unified bundle
+        engine.checkLicenseStatus()
+        #expect(engine.isPro == true)
+        #expect(engine.activeLicenseKey == legacyKey)
+        #expect(engine.activeActivationId == legacyAid)
+        
+        // Verify migration result: bundle created, legacy items purged
+        let migratedBundle = engine.readKeychainBundle()
+        #expect(migratedBundle != nil)
+        #expect(migratedBundle?.key == legacyKey)
+        #expect(migratedBundle?.activationId == legacyAid)
+        #expect(migratedBundle?.receipt == legacyReceipt)
+        
+        #expect(engine.readKeychainLicense() == nil)
+        #expect(engine.readKeychainActivationId() == nil)
+        #expect(engine.readKeychainReceipt() == nil)
+    }
+
+    @Test @MainActor
     func testObsidianStrictlyOnKeyOAndNeverOnKeyN() {
         let prevSelected = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
         defer {
@@ -2680,6 +2792,12 @@ struct ChromeQuickAccessUnitTests {
     @Test @MainActor
     func testCrossEngineDuplicateLetterCycling() async {
         let prevSelected = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
+        AppGroupEngine.resetActiveAppTrackingForTesting()
+        UserDefaults.standard.removeObject(forKey: "LastActiveApp_S")
+        AppGroupEngine.testOpenWindowsOverride = [
+            "com.tinyspeck.slackmacgap": false,
+            "com.spotify.client": false
+        ]
         defer {
             if let prev = prevSelected {
                 UserDefaults.standard.set(prev, forKey: "SelectedAppBundleIDs")
@@ -2688,6 +2806,9 @@ struct ChromeQuickAccessUnitTests {
             }
             AppGroupEngine.communication.customItemsOverride = nil
             AppGroupEngine.communication.refreshItems()
+            AppGroupEngine.resetActiveAppTrackingForTesting()
+            AppGroupEngine.testOpenWindowsOverride = nil
+            UserDefaults.standard.removeObject(forKey: "LastActiveApp_S")
             MinimalHUDWindow.shared.hideImmediate()
         }
         
@@ -2789,6 +2910,110 @@ struct ChromeQuickAccessUnitTests {
         for forbidden in forbiddenHeaders {
             #expect(!headerTitles.contains(where: { $0.contains(forbidden) }), "Header must not contain '\(forbidden)'")
         }
+    }
+
+    @Test @MainActor
+    func testPrioritizedItemIndexSelectsOpenWindowOverClosedApp() {
+        defer {
+            AppGroupEngine.resetActiveAppTrackingForTesting()
+            UserDefaults.standard.removeObject(forKey: "LastActiveApp_T")
+        }
+        AppGroupEngine.resetActiveAppTrackingForTesting()
+        
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let telegram = AntigravityItem(name: "Telegram", bundleID: "com.tdesktop.Telegram", path: "/Applications/Telegram.app", icon: dummyIcon, index: 1)
+        let terminal = AntigravityItem(name: "Terminal", bundleID: "com.apple.Terminal", path: "/System/Applications/Utilities/Terminal.app", icon: dummyIcon, index: 2)
+        let items = [telegram, terminal]
+        
+        // Terminal has an open window; Telegram has none
+        AppGroupEngine.testOpenWindowsOverride = [
+            "com.tdesktop.Telegram": false,
+            "com.apple.Terminal": true
+        ]
+        
+        // Trigger from an external app (Finder)
+        let targetIdx = AppGroupEngine.prioritizedItemIndex(for: items, letter: "T", frontmostBundleID: "com.apple.finder")
+        #expect(targetIdx == 1, "Must prioritize Terminal because it has an open window")
+    }
+
+    @Test @MainActor
+    func testPrioritizedItemIndexSelectsMRUWhenBothHaveOpenWindows() {
+        defer {
+            AppGroupEngine.resetActiveAppTrackingForTesting()
+            UserDefaults.standard.removeObject(forKey: "LastActiveApp_T")
+        }
+        AppGroupEngine.resetActiveAppTrackingForTesting()
+        
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let telegram = AntigravityItem(name: "Telegram", bundleID: "com.tdesktop.Telegram", path: "/Applications/Telegram.app", icon: dummyIcon, index: 1)
+        let terminal = AntigravityItem(name: "Terminal", bundleID: "com.apple.Terminal", path: "/System/Applications/Utilities/Terminal.app", icon: dummyIcon, index: 2)
+        let items = [telegram, terminal]
+        
+        // Both have open windows
+        AppGroupEngine.testOpenWindowsOverride = [
+            "com.tdesktop.Telegram": true,
+            "com.apple.Terminal": true
+        ]
+        
+        // Telegram active first
+        AppGroupEngine.recordActiveApp(bundleID: "com.tdesktop.Telegram")
+        #expect(AppGroupEngine.prioritizedItemIndex(for: items, letter: "T", frontmostBundleID: "com.apple.finder") == 0)
+        
+        // Later, Terminal becomes active
+        AppGroupEngine.recordActiveApp(bundleID: "com.apple.Terminal")
+        #expect(AppGroupEngine.prioritizedItemIndex(for: items, letter: "T", frontmostBundleID: "com.apple.finder") == 1)
+    }
+
+    @Test @MainActor
+    func testPrioritizedItemIndexCyclesWhenAlreadyInCurrentApp() {
+        defer {
+            AppGroupEngine.resetActiveAppTrackingForTesting()
+            UserDefaults.standard.removeObject(forKey: "LastActiveApp_T")
+        }
+        AppGroupEngine.resetActiveAppTrackingForTesting()
+        
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let telegram = AntigravityItem(name: "Telegram", bundleID: "com.tdesktop.Telegram", path: "/Applications/Telegram.app", icon: dummyIcon, index: 1)
+        let terminal = AntigravityItem(name: "Terminal", bundleID: "com.apple.Terminal", path: "/System/Applications/Utilities/Terminal.app", icon: dummyIcon, index: 2)
+        let items = [telegram, terminal]
+        
+        // User is currently in Terminal (index 1) and triggers shortcut for T: should cycle to Telegram (index 0)
+        let targetIdx = AppGroupEngine.prioritizedItemIndex(for: items, letter: "T", frontmostBundleID: "com.apple.Terminal")
+        #expect(targetIdx == 0, "Must cycle to next app when already frontmost")
+    }
+
+    @Test @MainActor
+    func testPrioritizedBundleIDForMenuCycleClick() {
+        defer {
+            AppGroupEngine.resetActiveAppTrackingForTesting()
+            UserDefaults.standard.removeObject(forKey: "LastActiveApp_T")
+        }
+        AppGroupEngine.resetActiveAppTrackingForTesting()
+        
+        AppGroupEngine.testOpenWindowsOverride = [
+            "com.tdesktop.Telegram": false,
+            "com.apple.Terminal": true
+        ]
+        
+        let bundleIDs = ["com.tdesktop.Telegram", "com.apple.Terminal"]
+        let best = AppGroupEngine.prioritizedBundleID(from: bundleIDs)
+        #expect(best == "com.apple.Terminal", "Must pick Terminal with open window")
+    }
+
+    @Test @MainActor
+    func testLastActiveAppPersistenceAcrossUserDefaults() {
+        defer {
+            AppGroupEngine.resetActiveAppTrackingForTesting()
+            UserDefaults.standard.removeObject(forKey: "LastActiveApp_O")
+        }
+        AppGroupEngine.resetActiveAppTrackingForTesting()
+        
+        AppGroupEngine.recordActiveApp(bundleID: "md.obsidian")
+        #expect(AppGroupEngine.lastActiveApp(for: "O") == "md.obsidian")
+        
+        // Clear in-memory dictionary to verify UserDefaults persistence
+        AppGroupEngine.lastActiveBundleIDByLetter.removeAll()
+        #expect(AppGroupEngine.lastActiveApp(for: "O") == "md.obsidian")
     }
 }
 

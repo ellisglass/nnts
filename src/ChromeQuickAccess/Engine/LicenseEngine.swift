@@ -3,6 +3,18 @@ import Security
 import CryptoKit
 import os
 
+public struct LicenseBundle: Codable, Equatable, Sendable {
+    public let key: String
+    public let activationId: String
+    public let receipt: String
+    
+    public init(key: String, activationId: String, receipt: String) {
+        self.key = key
+        self.activationId = activationId
+        self.receipt = receipt
+    }
+}
+
 @MainActor
 public final class LicenseEngine: ObservableObject, @unchecked Sendable {
     public static let shared = LicenseEngine()
@@ -26,6 +38,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         return .standard
     }
     
+    public static let bundleAccount = "pro_license_bundle"
     public static let licenseAccount = "pro_license_key"
     public static let activationAccount = "pro_activation_id"
     public static let receiptAccount = "pro_receipt_token"
@@ -81,7 +94,22 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
             return
         }
         
-        // 1. Try reading from macOS Keychain (Requires valid activationId and cryptographic receipt verification)
+        // 1. Try reading unified bundle from macOS Keychain (1 single access)
+        if let bundle = readKeychainBundle(),
+           validateLicenseKey(bundle.key),
+           !bundle.activationId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let expectedReceipt = Self.computeReceiptToken(key: bundle.key, activationId: bundle.activationId)
+            if bundle.receipt == expectedReceipt || (Self.isRunningTests && Self.testIgnoreReceiptCheckInTests) {
+                self.internalIsPro = true
+                self.activeLicenseKey = bundle.key
+                self.activeActivationId = bundle.activationId
+                return
+            } else {
+                logger.warning("Tampered or unverified Keychain license bundle detected; ignoring.")
+            }
+        }
+        
+        // 2. Migration fallback: Check legacy separate Keychain items if unified bundle is absent
         if let key = readKeychainLicense(),
            validateLicenseKey(key),
            let aid = readKeychainActivationId() ?? Self.storage.string(forKey: "XomskyProActivationId"),
@@ -92,13 +120,22 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
                 self.internalIsPro = true
                 self.activeLicenseKey = key
                 self.activeActivationId = aid
+                
+                // Migrate to unified bundle and cleanup legacy items
+                let migratedBundle = LicenseBundle(key: key, activationId: aid, receipt: savedReceipt ?? expectedReceipt)
+                if saveKeychainBundle(migratedBundle) {
+                    deleteKeychainLicense()
+                    deleteKeychainActivationId()
+                    deleteKeychainReceipt()
+                    logger.info("Successfully migrated legacy Keychain license to unified bundle.")
+                }
                 return
             } else {
                 logger.warning("Tampered or unverified Keychain license detected; ignoring.")
             }
         }
         
-        // 2. Fallback to UserDefaults (Requires valid activationId and cryptographic receipt verification)
+        // 3. Fallback to UserDefaults (Requires valid activationId and cryptographic receipt verification)
         if let fallbackKey = Self.storage.string(forKey: "XomskyProLicenseKey"),
            validateLicenseKey(fallbackKey),
            let fallbackAid = Self.storage.string(forKey: "XomskyProActivationId"),
@@ -109,6 +146,9 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
                 self.internalIsPro = true
                 self.activeLicenseKey = fallbackKey
                 self.activeActivationId = fallbackAid
+                // Promote UserDefaults license to unified Keychain bundle
+                let promotedBundle = LicenseBundle(key: fallbackKey, activationId: fallbackAid, receipt: savedReceipt ?? expectedReceipt)
+                _ = saveKeychainBundle(promotedBundle)
                 return
             } else {
                 logger.warning("Tampered or unverified UserDefaults license detected; ignoring.")
@@ -300,15 +340,21 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
     
     private func activateOffline(key: String, activationId: String? = nil) -> Bool {
         let effectiveAid = activationId ?? self.activeActivationId ?? (Self.isRunningTests ? "act_test_\(UUID().uuidString)" : "")
-        _ = saveKeychainLicense(key: key)
         Self.storage.set(key, forKey: "XomskyProLicenseKey")
         if !effectiveAid.isEmpty {
-            _ = saveKeychainActivationId(id: effectiveAid)
             Self.storage.set(effectiveAid, forKey: "XomskyProActivationId")
             let receipt = Self.computeReceiptToken(key: key, activationId: effectiveAid)
-            _ = saveKeychainReceipt(receipt: receipt)
             Self.storage.set(receipt, forKey: "XomskyProReceiptToken")
+            let bundle = LicenseBundle(key: key, activationId: effectiveAid, receipt: receipt)
+            _ = saveKeychainBundle(bundle)
+            deleteKeychainLicense()
+            deleteKeychainActivationId()
+            deleteKeychainReceipt()
             self.activeActivationId = effectiveAid
+        } else {
+            let receipt = Self.computeReceiptToken(key: key, activationId: "")
+            let bundle = LicenseBundle(key: key, activationId: "", receipt: receipt)
+            _ = saveKeychainBundle(bundle)
         }
         self.testOverrideProStatus = nil
         self.internalIsPro = true
@@ -321,6 +367,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         if let key = activeLicenseKey, let aid = activeActivationId {
             deactivateOnPolar(key: key, activationId: aid)
         }
+        deleteKeychainBundle()
         deleteKeychainLicense()
         deleteKeychainActivationId()
         deleteKeychainReceipt()
@@ -362,6 +409,50 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
     }
     
     // MARK: - Keychain Operations
+    public func readKeychainBundle() -> LicenseBundle? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: Self.serviceName,
+            kSecAttrAccount as String: Self.bundleAccount,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        guard status == errSecSuccess, let data = item as? Data else {
+            return nil
+        }
+        return try? JSONDecoder().decode(LicenseBundle.self, from: data)
+    }
+    
+    @discardableResult
+    public func saveKeychainBundle(_ bundle: LicenseBundle) -> Bool {
+        guard let data = try? JSONEncoder().encode(bundle) else { return false }
+        
+        deleteKeychainBundle()
+        
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: Self.serviceName,
+            kSecAttrAccount as String: Self.bundleAccount,
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+        ]
+        
+        let status = SecItemAdd(query as CFDictionary, nil)
+        return status == errSecSuccess
+    }
+    
+    public func deleteKeychainBundle() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: Self.serviceName,
+            kSecAttrAccount as String: Self.bundleAccount
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+    
     public func readKeychainLicense() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

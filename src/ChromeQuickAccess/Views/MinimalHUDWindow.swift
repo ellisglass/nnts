@@ -229,16 +229,16 @@ public struct ProfileAvatarView: View {
                         )
                 }
                 
-                // Active neon violet-pink glowing selection ring (matching ArtistManagement aesthetic)
+                // Active tactile shadow / black selection ring
                 if isSelected {
                     Circle()
-                        .stroke(CRTTheme.neonVioletPink, lineWidth: 1.1)
+                        .stroke(Color(red: 0.10, green: 0.10, blue: 0.14), lineWidth: 1.5)
                         .frame(width: ringSize, height: ringSize)
-                        .shadow(color: CRTTheme.neonVioletPink.opacity(0.85), radius: 2)
-                        .shadow(color: CRTTheme.neonVioletPink.opacity(0.50), radius: 4)
+                        .shadow(color: Color.black.opacity(0.35), radius: 2.5, x: 0, y: 1.5)
+                        .shadow(color: Color.white.opacity(0.60), radius: 1, x: 0, y: -0.5)
                 } else {
                     Circle()
-                        .stroke(Color.white.opacity(0.20), lineWidth: 0.75)
+                        .stroke(Color.black.opacity(0.16), lineWidth: 0.75)
                         .frame(width: ringSize - 2, height: ringSize - 2)
                 }
             }
@@ -246,8 +246,8 @@ public struct ProfileAvatarView: View {
             
             Text("\(slotIndex)")
                 .font(.system(size: isLarge ? 11 : 9, weight: isSelected ? .bold : .medium, design: .monospaced))
-                .foregroundColor(isSelected ? CRTTheme.neonVioletPink : .white.opacity(0.68))
-                .shadow(color: Color.black.opacity(0.35), radius: 1, y: 1)
+                .foregroundColor(isSelected ? Color(red: 0.06, green: 0.06, blue: 0.10) : Color.black.opacity(0.42))
+                .shadow(color: Color.white.opacity(isSelected ? 0.65 : 0.30), radius: 1, y: 1)
         }
         .frame(width: colWidth)
         .padding(.vertical, 2)
@@ -255,19 +255,21 @@ public struct ProfileAvatarView: View {
             if isSelected {
                 if let ns = namespace {
                     Capsule()
-                        .fill(CRTTheme.neonVioletPink.opacity(0.14))
+                        .fill(Color.black.opacity(0.07))
                         .overlay(
                             Capsule()
-                                .stroke(CRTTheme.neonVioletPink.opacity(0.30), lineWidth: 0.5)
+                                .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
                         )
+                        .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
                         .matchedGeometryEffect(id: "activeSlotCapsule", in: ns)
                 } else {
                     Capsule()
-                        .fill(CRTTheme.neonVioletPink.opacity(0.14))
+                        .fill(Color.black.opacity(0.07))
                         .overlay(
                             Capsule()
-                                .stroke(CRTTheme.neonVioletPink.opacity(0.30), lineWidth: 0.5)
+                                .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
                         )
+                        .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
                 }
             }
         }
@@ -307,15 +309,16 @@ public struct AppChannelItemView: View {
                     .frame(width: avatarSize, height: avatarSize)
                     .clipShape(Circle())
                 
+                // Active tactile shadow / black selection ring
                 if isSelected {
                     Circle()
-                        .stroke(CRTTheme.neonVioletPink, lineWidth: 1.1)
+                        .stroke(Color(red: 0.10, green: 0.10, blue: 0.14), lineWidth: 1.5)
                         .frame(width: ringSize, height: ringSize)
-                        .shadow(color: CRTTheme.neonVioletPink.opacity(0.85), radius: 2)
-                        .shadow(color: CRTTheme.neonVioletPink.opacity(0.50), radius: 4)
+                        .shadow(color: Color.black.opacity(0.35), radius: 2.5, x: 0, y: 1.5)
+                        .shadow(color: Color.white.opacity(0.60), radius: 1, x: 0, y: -0.5)
                 } else {
                     Circle()
-                        .stroke(Color.white.opacity(0.20), lineWidth: 0.75)
+                        .stroke(Color.black.opacity(0.16), lineWidth: 0.75)
                         .frame(width: ringSize - 2, height: ringSize - 2)
                 }
             }
@@ -323,8 +326,8 @@ public struct AppChannelItemView: View {
             
             Text("\(channelIndex)")
                 .font(.system(size: 9, weight: isSelected ? .bold : .medium, design: .monospaced))
-                .foregroundColor(isSelected ? CRTTheme.neonVioletPink : .white.opacity(0.68))
-                .shadow(color: Color.black.opacity(0.35), radius: 1, y: 1)
+                .foregroundColor(isSelected ? Color(red: 0.06, green: 0.06, blue: 0.10) : Color.black.opacity(0.42))
+                .shadow(color: Color.white.opacity(isSelected ? 0.65 : 0.30), radius: 1, y: 1)
         }
         .frame(width: colWidth)
         .padding(.vertical, 2)
@@ -332,19 +335,21 @@ public struct AppChannelItemView: View {
             if isSelected {
                 if let ns = namespace {
                     Capsule()
-                        .fill(CRTTheme.neonVioletPink.opacity(0.14))
+                        .fill(Color.black.opacity(0.07))
                         .overlay(
                             Capsule()
-                                .stroke(CRTTheme.neonVioletPink.opacity(0.30), lineWidth: 0.5)
+                                .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
                         )
+                        .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
                         .matchedGeometryEffect(id: "activeAppChannelCapsule", in: ns)
                 } else {
                     Capsule()
-                        .fill(CRTTheme.neonVioletPink.opacity(0.14))
+                        .fill(Color.black.opacity(0.07))
                         .overlay(
                             Capsule()
-                                .stroke(CRTTheme.neonVioletPink.opacity(0.30), lineWidth: 0.5)
+                                .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
                         )
+                        .shadow(color: Color.black.opacity(0.06), radius: 2, y: 1)
                 }
             }
         }
@@ -772,29 +777,30 @@ public struct MinimalHUDView: View {
                     
                     Text(activeName)
                         .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .shadow(color: Color.black.opacity(0.45), radius: 2, y: 1)
+                        .foregroundColor(Color(red: 0.10, green: 0.10, blue: 0.14))
+                        .shadow(color: Color.white.opacity(0.65), radius: 1, y: 1)
                         .lineLimit(1)
                     
                     if let prof = activeProfile {
                         HStack(spacing: 4) {
                             Circle()
-                                .fill(CRTTheme.neonVioletPink)
-                                .frame(width: 4, height: 4)
-                                .shadow(color: CRTTheme.neonVioletPink.opacity(0.75), radius: 1.5)
+                                .fill(Color(red: 0.12, green: 0.12, blue: 0.16))
+                                .frame(width: 4.5, height: 4.5)
+                                .shadow(color: Color.black.opacity(0.35), radius: 1, y: 0.5)
                             Text(prof.effectiveName)
                                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.92))
+                                .foregroundColor(Color(red: 0.10, green: 0.10, blue: 0.14))
                         }
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, 7)
                         .padding(.vertical, 2.5)
                         .background(
                             Capsule()
-                                .fill(Color.white.opacity(0.10))
+                                .fill(Color.white.opacity(0.45))
                                 .overlay(
                                     Capsule()
-                                        .stroke(CRTTheme.neonVioletPink.opacity(0.30), lineWidth: 0.5)
+                                        .stroke(Color.black.opacity(0.18), lineWidth: 0.75)
                                 )
+                                .shadow(color: Color.black.opacity(0.08), radius: 2, y: 1)
                         )
                     }
                 }
@@ -842,28 +848,18 @@ public struct MinimalHUDView: View {
                     KinescopeShape(cornerRadius: 32, bulge: 7)
                         .fill(.ultraThinMaterial)
                     
-                    // 2. Deep Obsidian CRT Face (dark cathode ray tube glass)
+                    // 2. Tactile CRT Gray Base (matching IMG_4735.PNG aesthetic)
                     KinescopeShape(cornerRadius: 32, bulge: 7)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color(red: 0.08, green: 0.09, blue: 0.12).opacity(0.95),
-                                    Color(red: 0.04, green: 0.05, blue: 0.07).opacity(0.98)
+                                    Color(red: 0.83, green: 0.83, blue: 0.85).opacity(0.92),
+                                    Color(red: 0.76, green: 0.76, blue: 0.79).opacity(0.95)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                         )
-                    
-                    // 2.5. Glitch Effect Background (from IMG_4735.PNG)
-                    if let glitchImg = NSImage(named: "GlitchBackground") ?? NSImage(contentsOfFile: Bundle.main.path(forResource: "GlitchBackground", ofType: "png") ?? "") {
-                        Image(nsImage: glitchImg)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .clipShape(KinescopeShape(cornerRadius: 32, bulge: 7))
-                            .opacity(0.85)
-                            .blendMode(.screen)
-                    }
                     
                     // 3. Phosphor Aperture Grille Scanlines
                     CRTScanlinesView()
@@ -875,11 +871,11 @@ public struct MinimalHUDView: View {
                             RadialGradient(
                                 gradient: Gradient(colors: [
                                     Color.clear,
-                                    Color.black.opacity(0.55)
+                                    Color.black.opacity(0.18)
                                 ]),
                                 center: UnitPoint(x: 0.5, y: 0.5),
-                                startRadius: 70,
-                                endRadius: 150
+                                startRadius: 75,
+                                endRadius: 155
                             )
                         )
                     
@@ -888,28 +884,42 @@ public struct MinimalHUDView: View {
                         .fill(
                             RadialGradient(
                                 gradient: Gradient(colors: [
-                                    Color.white.opacity(0.20),
-                                    Color.white.opacity(0.04),
+                                    Color.white.opacity(0.35),
+                                    Color.white.opacity(0.08),
                                     Color.clear
                                 ]),
-                                center: UnitPoint(x: 0.5, y: 0.08),
+                                center: UnitPoint(x: 0.5, y: 0.10),
                                 startRadius: 0,
-                                endRadius: 160
+                                endRadius: 180
+                            )
+                        )
+                    
+                    // 6. Subtle CRT phosphor tube bottom depth
+                    KinescopeShape(cornerRadius: 32, bulge: 7)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.clear,
+                                    Color.black.opacity(0.12)
+                                ],
+                                startPoint: .center,
+                                endPoint: .bottom
                             )
                         )
                 }
                 .clipShape(KinescopeShape(cornerRadius: 32, bulge: 7))
             )
             .overlay(
-                // Curved Outer Kinescope Bezel Rim (Dual-tone lighting with subtle neon violet-pink reflection)
+                // Curved Outer Kinescope Bezel Rim (Dual-tone lighting with specular highlight and deep shadow)
                 KinescopeShape(cornerRadius: 32, bulge: 7)
                     .strokeBorder(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.55),
-                                CRTTheme.neonVioletPink.opacity(0.25),
-                                Color.black.opacity(0.40),
-                                Color.black.opacity(0.70)
+                                Color.white.opacity(0.85),
+                                Color.white.opacity(0.40),
+                                Color.white.opacity(0.12),
+                                Color.black.opacity(0.20),
+                                Color.black.opacity(0.45)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -931,10 +941,9 @@ public struct MinimalHUDView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            // Accent Violet Halo (Ореол) matching user request
-            .shadow(color: CRTTheme.neonVioletPink.opacity(0.85), radius: 2)
-            .shadow(color: CRTTheme.neonVioletPink.opacity(0.45), radius: 14, x: 0, y: 4)
-            .shadow(color: Color.black.opacity(0.40), radius: 28, x: 0, y: 14)
+            // Convex 3D drop shadow (ambient + deep directional)
+            .shadow(color: Color.black.opacity(0.45), radius: 28, x: 0, y: 14)
+            .shadow(color: Color.black.opacity(0.22), radius: 8, x: 0, y: 3)
             .scaleEffect(state.isVisible ? 1.0 : 0.93)
             .opacity(state.isVisible ? 1.0 : 0.0)
             .animation(XomskyMotion.interactiveSnap, value: state.isVisible)

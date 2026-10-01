@@ -2,11 +2,16 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
+public final class FeedbackViewModel: ObservableObject {
+    @Published public var zipURL: URL? = nil
+    @Published public var isPreparingArchive: Bool = true
+    @Published public var errorMessage: String? = nil
+    @Published public var copiedNotice: Bool = false
+    public init() {}
+}
+
 public struct FeedbackWindowView: View {
-    @State private var zipURL: URL? = nil
-    @State private var isPreparingArchive: Bool = true
-    @State private var errorMessage: String? = nil
-    @State private var copiedNotice: Bool = false
+    @ObservedObject private var viewModel = FeedbackViewModel()
 
     private let telegramSupportURL = URL(string: "https://t.me/xomsky_app")!
 
@@ -37,10 +42,10 @@ public struct FeedbackWindowView: View {
 
             // Diagnostic File Card with Drag and Drop
             VStack(spacing: 12) {
-                if isPreparingArchive {
+                if viewModel.isPreparingArchive {
                     ProgressView("Packaging diagnostics...")
                         .frame(height: 90)
-                } else if let zipURL = zipURL {
+                } else if let zipURL = viewModel.zipURL {
                     VStack(spacing: 8) {
                         Image(systemName: "doc.zipper")
                             .resizable()
@@ -68,7 +73,7 @@ public struct FeedbackWindowView: View {
                         provider.suggestedName = "xomsky-diagnostic.zip"
                         return provider
                     }
-                } else if let error = errorMessage {
+                } else if let error = viewModel.errorMessage {
                     VStack(spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.red)
@@ -124,10 +129,10 @@ public struct FeedbackWindowView: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderless)
-                    .disabled(zipURL == nil)
+                    .disabled(viewModel.zipURL == nil)
 
                     Button(action: copyDiagnosticsToClipboard) {
-                        Label(copiedNotice ? "Copied! ✅" : "Copy Raw Log", systemImage: "doc.on.doc")
+                        Label(viewModel.copiedNotice ? "Copied! ✅" : "Copy Raw Log", systemImage: "doc.on.doc")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderless)
@@ -145,11 +150,11 @@ public struct FeedbackWindowView: View {
         Task { @MainActor in
             do {
                 let url = try DiagnosticBundleService.createDiagnosticArchive()
-                self.zipURL = url
-                self.isPreparingArchive = false
+                viewModel.zipURL = url
+                viewModel.isPreparingArchive = false
             } catch {
-                self.errorMessage = "Failed to bundle diagnostics: \(error.localizedDescription)"
-                self.isPreparingArchive = false
+                viewModel.errorMessage = "Failed to bundle diagnostics: \(error.localizedDescription)"
+                viewModel.isPreparingArchive = false
             }
         }
     }
@@ -165,7 +170,7 @@ public struct FeedbackWindowView: View {
     }
 
     private func revealInFinder() {
-        guard let zipURL = zipURL else { return }
+        guard let zipURL = viewModel.zipURL else { return }
         NSWorkspace.shared.activateFileViewerSelecting([zipURL])
     }
 
@@ -174,11 +179,11 @@ public struct FeedbackWindowView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
         withAnimation {
-            copiedNotice = true
+            viewModel.copiedNotice = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             withAnimation {
-                copiedNotice = false
+                viewModel.copiedNotice = false
             }
         }
     }

@@ -65,6 +65,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         if CopyOnSelectEngine.shared.isEnabled && !CopyOnSelectEngine.shared.isStarted {
             CopyOnSelectEngine.shared.start()
         }
+        AppGroupEngine.startGlobalAppSwitchObserver()
         updateDynamicShortcuts()
         updateMenu()
     }
@@ -157,19 +158,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 initialProfIdx = profiles.firstIndex(where: { $0.dir == activeDir }) ?? 0
             }
             
-            if items.count > 1 {
-                let frontBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-                if let currentIdx = items.firstIndex(where: { item in
-                    if item.bundleID == frontBundleID { return true }
-                    let itemIsBrowser = item.bundleID == profileEngine.browserBundleID ||
-                                        ChromeProfileEngine.supportedBrowsers.contains(where: { $0.bundleID == item.bundleID })
-                    let frontIsBrowser = frontBundleID == profileEngine.browserBundleID ||
-                                         (frontBundleID != nil && ChromeProfileEngine.supportedBrowsers.contains(where: { $0.bundleID == frontBundleID! }))
-                    return itemIsBrowser && frontIsBrowser
-                }) {
-                    initialIdx = (currentIdx + 1) % items.count
-                }
-            }
+            let frontBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            initialIdx = AppGroupEngine.prioritizedItemIndex(for: items, letter: char, frontmostBundleID: frontBundleID)
             
             MinimalHUDWindow.shared.showAppGroup(mode: .antigravity, items: items, selectedIndex: initialIdx, profileIndex: initialProfIdx)
         } else {
@@ -207,6 +197,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func focusApp(bundleID: String) {
+        AppGroupEngine.recordActiveApp(bundleID: bundleID)
         if bundleID == ChromeProfileEngine.shared.browserBundleID ||
            ChromeProfileEngine.supportedBrowsers.contains(where: { $0.bundleID == bundleID }) {
             ChromeProfileEngine.shared.focusChrome()
@@ -323,6 +314,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.logger.info("Caps-Lock + \(digit) triggered.")
                 TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Caps-Lock + \(digit) profile select triggered.")
                 self.triggerMascotGaze(offset: digit <= 2 ? -0.8 : 0.8)
+                
+                if self.isCyclingHUDActive && self.activeMode != .chrome && !ChromeSwitcherState.shared.antigravityItems.isEmpty {
+                    let appItems = ChromeSwitcherState.shared.antigravityItems
+                    let targetAppIdx = max(0, min(digit - 1, appItems.count - 1))
+                    MinimalHUDWindow.shared.updateSelection(to: targetAppIdx)
+                    return
+                }
                 
                 let profiles = profileEngine.selectedProfiles
                 guard !profiles.isEmpty else { return }
@@ -1389,8 +1387,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func handleMultiAppCycleClick(_ sender: NSMenuItem) {
         guard let repr = sender.representedObject as? String else { return }
         let bundleIDs = repr.split(separator: ",").map(String.init)
-        guard let first = bundleIDs.first else { return }
-        self.focusApp(bundleID: first)
+        guard let targetBundleID = AppGroupEngine.prioritizedBundleID(from: bundleIDs) ?? bundleIDs.first else { return }
+        self.focusApp(bundleID: targetBundleID)
     }
     
     @objc private func handleUnpinAppClick(_ sender: NSMenuItem) {
