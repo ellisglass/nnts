@@ -180,15 +180,17 @@
   const TV_CHANNELS = {
     1: {
       id: 1,
-      name: "CH 01 • PROFILES & APPS",
-      desc: "Caps + C/B + 1..4 Window Raise",
+      ch: "CH 01",
+      name: "Profiles & Quick Apps",
+      desc: "Caps + C/B + 1..4 to raise profile window",
       src: "assets/media/screenrec-switch-app.mp4",
       badge: "REC 60FPS"
     },
     2: {
       id: 2,
-      name: "CH 02 • COPY-ON-SELECT",
-      desc: "Highlight text to auto-copy (>10pt)",
+      ch: "CH 02",
+      name: "Copy-on-Select",
+      desc: "Drag selection to copy text automatically",
       src: "assets/media/screenrec-select-copy.mp4",
       badge: "REC 60FPS"
     }
@@ -206,6 +208,7 @@
       this.screenGlass = document.getElementById("tv-screen-glass");
       this.standbyScreen = document.getElementById("tv-standby-screen");
       this.osdOverlay = document.getElementById("tv-osd-overlay");
+      this.osdNum = document.getElementById("tv-osd-num");
       this.osdChannelLabel = document.getElementById("tv-osd-channel-label");
       this.osdSubLabel = document.getElementById("tv-osd-sub-label");
       this.powerLed = document.getElementById("tv-power-led");
@@ -255,14 +258,17 @@
 
     showOsd(chObj) {
       if (!this.osdOverlay || !chObj) return;
+      if (this.osdNum) this.osdNum.textContent = chObj.ch || `CH 0${chObj.id}`;
       if (this.osdChannelLabel) this.osdChannelLabel.textContent = chObj.name;
       if (this.osdSubLabel) this.osdSubLabel.textContent = chObj.desc;
 
       this.osdOverlay.style.opacity = "1";
+      this.osdOverlay.style.transform = "translateY(0)";
       if (this.osdTimer) clearTimeout(this.osdTimer);
       this.osdTimer = setTimeout(() => {
         this.osdOverlay.style.opacity = "0";
-      }, 2800);
+        this.osdOverlay.style.transform = "translateY(-4px)";
+      }, 3400);
     }
 
     setPower(turnOn) {
@@ -311,6 +317,11 @@
         this.isPowerOn = false;
         this.flashIr();
         audio.playTvPowerOff();
+
+        if (this.osdOverlay) {
+          this.osdOverlay.style.opacity = "0";
+          this.osdOverlay.style.transform = "translateY(-4px)";
+        }
 
         // Screen Turn Off Collapse Animation
         if (this.screenGlass) {
