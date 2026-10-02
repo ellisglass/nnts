@@ -109,73 +109,194 @@
       </div>
 
       <!-- ====================================================================
-           THE INTERACTIVE TRINITRON CONSOLE (ULTRA-LEAN PRECISION INSTRUMENT)
+           HERO RETRO TV & REMOTE COCKPIT (SONY TRINITRON TV + RM-NNTS REMOTE)
            ==================================================================== -->
-      <div class="trinitron-lean-deck">
-        <!-- Left Phosphor Green Beam Arc Trace -->
-        <div class="crt-vector-arc" id="crt-vector-arc" aria-hidden="true"></div>
+      <div class="hero-tv-station" id="hero-tv-station">
 
-        <!-- Upper Row: Controller Emblem + Live Display Stage -->
-        <div class="lean-stage-row">
-          
-          <!-- Left: Canonical Remote Control Artifact -->
-          <div class="lean-rc-unit">
-            <img src="assets/nnts/canonical_realistic_rc_emblem.png" alt="Sony Trinitron Remote Control" class="lean-rc-disc" width="92" height="92">
-            <div class="lean-rc-meta">
-              <span class="lean-rc-led" aria-hidden="true"></span>
-              <span class="lean-rc-label">RM-NNTS</span>
-            </div>
+        <!-- =======================
+             THE REMOTE CONTROL (ПУЛЬТ)
+             ======================= -->
+        <div class="tv-remote-handset" id="tv-remote-handset" aria-label="Remote Control / Пульт ДУ">
+          <!-- Infrared Emitter Lens -->
+          <div class="remote-top-lens">
+            <div class="remote-ir-diode" id="remote-ir-led" aria-hidden="true"></div>
           </div>
 
-          <!-- Middle: Active App & Profile Focus -->
-          <div class="lean-focus-unit" id="crt-app-card">
-            <div class="lean-icon-wrap">
-              <img src="assets/images/icon_chrome.png" alt="App Icon" class="lean-app-icon" id="crt-main-icon">
-              <div class="lean-avatar-badge" id="crt-profile-badge">
-                <img src="assets/images/profiles/igor.png" alt="Avatar" class="profile-avatar-img" id="crt-avatar-img">
+          <div class="remote-body">
+            <!-- Remote Header: Status LED & Model -->
+            <div class="remote-header-bar">
+              <span class="remote-status-led" id="remote-tx-led" title="IR TX Signal"></span>
+              <span class="remote-model-label">RM-NNTS</span>
+            </div>
+
+            <!-- Primary Power & Audio Row -->
+            <div class="remote-power-row">
+              <button class="remote-btn remote-power-btn pulsing" id="remote-power-btn" title="Turn TV ON / OFF (Power)" aria-label="Power TV">
+                <span class="power-sym">⏻</span>
+                <span class="btn-subtext">POWER</span>
+              </button>
+              <button class="remote-btn remote-mute-btn" id="remote-mute-btn" title="Mute / Audio" aria-label="Mute Audio">
+                <span class="mute-sym" id="remote-mute-icon">🔊</span>
+                <span class="btn-subtext">AUDIO</span>
+              </button>
+            </div>
+
+            <!-- Number Keypad (Channels 1 & 2) -->
+            <div class="remote-num-grid">
+              <button class="remote-btn remote-ch-num active" data-channel="1" id="remote-num-1" title="CH 1: Profiles & Apps">
+                <span class="num-digit">1</span>
+                <span class="num-desc">APPS</span>
+              </button>
+              <button class="remote-btn remote-ch-num" data-channel="2" id="remote-num-2" title="CH 2: Copy-on-Select">
+                <span class="num-digit">2</span>
+                <span class="num-desc">COPY</span>
+              </button>
+            </div>
+
+            <!-- Rocker / Navigation Cluster -->
+            <div class="remote-rocker-pad">
+              <button class="remote-btn remote-rocker-btn rocker-up" id="remote-ch-up" title="Next Channel">
+                <span class="rocker-arrow">▲</span>
+                <span class="rocker-text">CH +</span>
+              </button>
+              <div class="rocker-center-badge">
+                <span class="rocker-badge-txt">60 FPS</span>
               </div>
+              <button class="remote-btn remote-rocker-btn rocker-down" id="remote-ch-down" title="Previous Channel">
+                <span class="rocker-arrow">▼</span>
+                <span class="rocker-text">CH &minus;</span>
+              </button>
             </div>
-            <div class="lean-focus-text">
-              <div class="lean-app-title" id="crt-hero-label">Google Chrome</div>
-              <div class="lean-profile-desc" id="crt-hero-sublabel">Work Profile &bull; Engineering & PRs</div>
+
+            <!-- Remote Footer Branding -->
+            <div class="remote-footer-brand">
+              <span class="remote-brand-text">SONY TRINITRON</span>
+              <span class="remote-sub-text">COMMANDER</span>
             </div>
           </div>
-
-          <!-- Right: Direct Hotkey Indicator -->
-          <div class="lean-hotkey-unit">
-            <div class="lean-hotkey-badge" id="crt-hero-hotkey">
-              <kbd>Caps</kbd>+<kbd>C</kbd>+<kbd>1</kbd>
-            </div>
-            <div class="lean-ch-readout">
-              <span class="osd-mode-tag" id="osd-mode-tag">TV [C]</span>
-              <span class="osd-ch-tag" id="osd-ch-indicator">CH 01 / 05</span>
-            </div>
-          </div>
-
         </div>
 
-        <!-- Lower Row: 5-Channel Tactile Switcher Dock -->
-        <div class="lean-channels-dock" id="deck-channels-dock">
-          <button class="lean-channel-chip active" data-channel="1">
-            <span class="ch-num">1</span>
-            <span class="ch-name">Work</span>
-          </button>
-          <button class="lean-channel-chip" data-channel="2">
-            <span class="ch-num">2</span>
-            <span class="ch-name">Personal</span>
-          </button>
-          <button class="lean-channel-chip" data-channel="3">
-            <span class="ch-num">3</span>
-            <span class="ch-name">Client</span>
-          </button>
-          <button class="lean-channel-chip" data-channel="4">
-            <span class="ch-num">4</span>
-            <span class="ch-name">Dev / Comms</span>
-          </button>
-          <button class="lean-channel-chip" data-channel="5">
-            <span class="ch-num">5</span>
-            <span class="ch-name">Obsidian</span>
-          </button>
+        <!-- =======================
+             THE TELEVISION (ТЕЛИК)
+             ======================= -->
+        <div class="retro-tv-chassis" id="retro-tv-chassis">
+
+          <!-- TV Cabinet Top Trim -->
+          <div class="tv-cabinet-header">
+            <div class="tv-brand-badge">
+              <span class="badge-sony">SONY</span>
+              <span class="badge-trinitron">Trinitron</span>
+              <span class="badge-model">KV-21XRT</span>
+            </div>
+            <div class="tv-cabinet-grill" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <!-- Main TV CRT Screen & Hardware Panel Container -->
+          <div class="tv-main-display-row">
+
+            <!-- CRT Screen Bezel -->
+            <div class="tv-screen-bezel" id="tv-screen-bezel">
+
+              <!-- CRT Cathode Tube Glass -->
+              <div class="tv-screen-glass" id="tv-screen-glass">
+
+                <!-- Authentic CRT Left Phosphor Trace (Trinitron signature) -->
+                <div class="crt-vector-arc" aria-hidden="true"></div>
+
+                <!-- CRT Screen Scanline & Curvature Vignette -->
+                <div class="tv-scanlines-layer" aria-hidden="true"></div>
+                <div class="tv-phosphor-glow-layer" aria-hidden="true"></div>
+
+                <!-- Standby Screen (Shown when TV is OFF) -->
+                <div class="tv-standby-screen" id="tv-standby-screen">
+                  <div class="standby-content">
+                    <div class="standby-logo-glow">SONY TRINITRON KV-21</div>
+                    <div class="standby-status-pill">
+                      <span class="standby-blink-dot">●</span>
+                      <span>STANDBY</span>
+                    </div>
+                    <div class="standby-instructions">
+                      <span class="instruction-arrow">▶</span>
+                      <span>PRESS <strong class="glow-key">⏻ POWER</strong> ON REMOTE TO TURN ON</span>
+                    </div>
+                    <div class="standby-telemetry">
+                      <span>VIDEO ARCHIVE: 60 FPS RECORDING READY</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- The Live Video Recording Player -->
+                <video id="tv-video-player" class="tv-video-element" loop muted playsinline preload="auto" poster="assets/images/video-poster-hud.png">
+                  <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
+                </video>
+
+                <!-- On-Screen Display (OSD) Overlay -->
+                <div class="tv-osd-overlay" id="tv-osd-overlay">
+                  <div class="osd-top-line">
+                    <span class="osd-green-tag" id="tv-osd-channel-label">CH 01 • PROFILES & APPS</span>
+                    <span class="osd-rec-tag"><span class="rec-red-dot">●</span> REC 60FPS</span>
+                  </div>
+                  <div class="osd-sub-line" id="tv-osd-sub-label">
+                    Caps + C/B + 1..4 Window Raise
+                  </div>
+                </div>
+
+                <!-- CRT Power-On / Power-Off Flash Layer -->
+                <div class="crt-power-flash" id="crt-power-flash" aria-hidden="true"></div>
+
+              </div>
+            </div>
+
+            <!-- TV Right Hardware Control Panel -->
+            <div class="tv-side-panel">
+              <!-- Physical TV Power Button & LED -->
+              <div class="tv-panel-power-group">
+                <button class="tv-hardware-power-btn" id="tv-hardware-power-btn" title="TV Power On/Off">
+                  <span class="tv-hw-power-icon">⏻</span>
+                </button>
+                <div class="tv-power-indicator-wrap">
+                  <span class="tv-power-led standby" id="tv-power-led" title="Power / Standby"></span>
+                  <span class="tv-led-caption" id="tv-led-caption">STANDBY</span>
+                </div>
+              </div>
+
+              <!-- Infrared Receiver Window -->
+              <div class="tv-ir-sensor-eye" id="tv-ir-eye" title="Remote IR Receiver Sensor">
+                <div class="sensor-glow"></div>
+                <span class="sensor-label">SENSOR</span>
+              </div>
+
+              <!-- Quick Channel Selectors on TV Frame -->
+              <div class="tv-hardware-channel-strip">
+                <button class="tv-hw-ch-btn active" data-channel="1" id="tv-hw-ch-1" title="Channel 1: Profiles & Apps">
+                  <span>CH 1</span>
+                </button>
+                <button class="tv-hw-ch-btn" data-channel="2" id="tv-hw-ch-2" title="Channel 2: Copy on Select">
+                  <span>CH 2</span>
+                </button>
+              </div>
+
+              <!-- Vent Louvers -->
+              <div class="tv-side-vents" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- TV Cabinet Bottom Base Strip with Channel Guide -->
+          <div class="tv-cabinet-footer">
+            <div class="tv-footer-status">
+              <span class="footer-chip" id="tv-footer-mode">TV: STANDBY</span>
+              <span class="footer-hint">Remote: <kbd>P</kbd> Power &bull; <kbd>1</kbd> / <kbd>2</kbd> Channels</span>
+            </div>
+            <div class="tv-footer-specs">
+              <span>APERTURE GRILLE &bull; 60Hz TRINITRON TUBE</span>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -313,34 +434,25 @@
 
 
     <!-- ====================================================================
-         SECTION 3: AUTHENTIC 60FPS VIDEO PROOFS (REAL MACOS CAPTURES)
+         SECTION 3: DIRECT CATHODE CHANNEL GUIDE
          ==================================================================== -->
     <section class="nnts-section nnts-video-section" id="proofs">
       <div class="section-header">
-        <h2 class="section-heading">Proof (60fps)</h2>
-        
+        <h2 class="section-heading">Recording Channels (60fps)</h2>
+        <p class="section-description">Select a channel to play the live recording in the Sony Trinitron TV above.</p>
       </div>
 
-      <div class="video-cathode-chassis">
-        <!-- Video Selector Tabs -->
-        <div class="video-channel-tuner-bar">
-          <button class="video-tuner-btn active" data-src="assets/media/screenrec-switch-app.mp4">
+      <div class="video-cathode-chassis" style="max-width: 600px; margin: 0 auto; padding: 1rem;">
+        <!-- Video Selector Tabs that tune the Hero TV -->
+        <div class="video-channel-tuner-bar" style="margin-bottom: 0;">
+          <button class="video-tuner-btn active" data-channel="1" id="section-tuner-1">
             <span class="tuner-led">●</span>
             <span class="tuner-title">CH 01 &bull; Profile & App Switching</span>
           </button>
-          <button class="video-tuner-btn" data-src="assets/media/screenrec-select-copy.mp4">
+          <button class="video-tuner-btn" data-channel="2" id="section-tuner-2">
             <span class="tuner-led">●</span>
             <span class="tuner-title">CH 02 &bull; Copy-on-Select</span>
           </button>
-        </div>
-
-        <!-- Video Player Inside CRT Frame -->
-        <div class="video-screen-container">
-          <video id="proof-video-player" class="proof-video" src="assets/media/screenrec-switch-app.mp4" autoplay loop muted playsinline preload="auto" poster="assets/images/video-poster-hud.png">
-            <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
-          </video>
-          <div class="video-scanlines" aria-hidden="true"></div>
-          <div class="video-corner-badge">SONY TRINITRON 60Hz</div>
         </div>
       </div>
     </section>

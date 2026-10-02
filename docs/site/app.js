@@ -1,6 +1,6 @@
 /**
- * NNTS — CYBER-BRUTALIST TRINITRON CRT INTERACTIVE ENGINE
- * Authentic Audio Synthesizer, Live Cathode Simulator, and Copy-on-Select Engine.
+ * NNTS — RETRO TRINITRON CRT & RM-NNTS REMOTE CONTROL ENGINE
+ * Authentic Web Audio Synthesizer, TV Power Switcher, and 60FPS Video Channel Tuner.
  */
 
 (function () {
@@ -40,7 +40,7 @@
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
 
-        // Mechanical relay switch: sharp high impulse + resonant click
+        // Mechanical relay impulse
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = "sine";
@@ -68,6 +68,65 @@
       } catch (e) {}
     }
 
+    playTvPowerOn() {
+      if (!this.soundEnabled) return;
+      try {
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // 1. Heavy mechanical power switch clunk
+        const clunk = this.ctx.createOscillator();
+        const clunkGain = this.ctx.createGain();
+        clunk.type = "sine";
+        clunk.frequency.setValueAtTime(160, now);
+        clunk.frequency.exponentialRampToValueAtTime(30, now + 0.09);
+        clunkGain.gain.setValueAtTime(0.4, now);
+        clunkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        clunk.connect(clunkGain);
+        clunkGain.connect(this.ctx.destination);
+        clunk.start(now);
+        clunk.stop(now + 0.11);
+
+        // 2. High-pitch CRT flyback transformer whine & degauss sweep
+        const whine = this.ctx.createOscillator();
+        const whineGain = this.ctx.createGain();
+        whine.type = "sawtooth";
+        whine.frequency.setValueAtTime(120, now + 0.02);
+        whine.frequency.exponentialRampToValueAtTime(1200, now + 0.14);
+        whine.frequency.exponentialRampToValueAtTime(2600, now + 0.28);
+        whineGain.gain.setValueAtTime(0.02, now + 0.02);
+        whineGain.gain.linearRampToValueAtTime(0.14, now + 0.12);
+        whineGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+        whine.connect(whineGain);
+        whineGain.connect(this.ctx.destination);
+        whine.start(now + 0.02);
+        whine.stop(now + 0.4);
+      } catch (e) {}
+    }
+
+    playTvPowerOff() {
+      if (!this.soundEnabled) return;
+      try {
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Power disconnect click + capacitor discharge chirp
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.06);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } catch (e) {}
+    }
+
     playDegaussChirp() {
       if (!this.soundEnabled) return;
       try {
@@ -75,7 +134,7 @@
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
 
-        // Cathode ray tube channel switch frequency sweep
+        // CRT channel switch frequency sweep
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = "sawtooth";
@@ -116,146 +175,327 @@
   const audio = new TactileAudioEngine();
 
   // ==========================================================================
-  // 2. INTERACTIVE TRINITRON COCKPIT CHANNELS DATA & CONTROLLER
+  // 2. RETRO TRINITRON TV & RM-NNTS REMOTE CONTROLLER
   // ==========================================================================
-  const CHANNELS_DATABASE = [
-    {
+  const TV_CHANNELS = {
+    1: {
       id: 1,
-      key: "C",
-      modeTag: "TV [C]",
-      channelStr: "CH 01 / 05",
-      appTitle: "Google Chrome",
-      subTitle: "Work Profile",
-      osdTitle: "CHROME • WORK PROFILE",
-      hotkeyHtml: "<kbd>Caps</kbd> + <kbd>C</kbd> + <kbd>1</kbd>",
-      iconSrc: "assets/images/icon_chrome.png",
-      avatarSrc: "assets/images/profiles/igor.png",
-      hasAvatar: true
+      name: "CH 01 • PROFILES & APPS",
+      desc: "Caps + C/B + 1..4 Window Raise",
+      src: "assets/media/screenrec-switch-app.mp4",
+      badge: "REC 60FPS"
     },
-    {
+    2: {
       id: 2,
-      key: "C",
-      modeTag: "TV [C]",
-      channelStr: "CH 02 / 05",
-      appTitle: "Google Chrome",
-      subTitle: "Personal Profile",
-      osdTitle: "CHROME • PERSONAL PROFILE",
-      hotkeyHtml: "<kbd>Caps</kbd> + <kbd>C</kbd> + <kbd>2</kbd>",
-      iconSrc: "assets/images/icon_chrome.png",
-      avatarSrc: "assets/images/profiles/nastya.png",
-      hasAvatar: true
-    },
-    {
-      id: 3,
-      key: "B",
-      modeTag: "TV [B]",
-      channelStr: "CH 03 / 05",
-      appTitle: "Brave Browser",
-      subTitle: "Client Profile",
-      osdTitle: "BRAVE • CLIENT PROFILE",
-      hotkeyHtml: "<kbd>Caps</kbd> + <kbd>B</kbd> + <kbd>3</kbd>",
-      iconSrc: "assets/images/icon_chrome.png",
-      avatarSrc: "assets/images/profiles/gcp.png",
-      hasAvatar: true
-    },
-    {
-      id: 4,
-      key: "T",
-      modeTag: "TV [T]",
-      channelStr: "CH 04 / 05",
-      appTitle: "Telegram / Terminal",
-      subTitle: "Dev & Comms",
-      osdTitle: "APPS • KEY [T] CYCLING",
-      hotkeyHtml: "<kbd>Caps</kbd> + <kbd>T</kbd>",
-      iconSrc: "assets/images/icon_telegram.png",
-      avatarSrc: "assets/images/icon_terminal.png",
-      hasAvatar: true
-    },
-    {
-      id: 5,
-      key: "O",
-      modeTag: "TV [O]",
-      channelStr: "CH 05 / 05",
-      appTitle: "Obsidian Notes",
-      subTitle: "Vault",
-      osdTitle: "APP • OBSIDIAN VAULT",
-      hotkeyHtml: "<kbd>Caps</kbd> + <kbd>O</kbd>",
-      iconSrc: "assets/images/icon_obsidian.png",
-      avatarSrc: null,
-      hasAvatar: false
+      name: "CH 02 • COPY-ON-SELECT",
+      desc: "Highlight text to auto-copy (>10pt)",
+      src: "assets/media/screenrec-select-copy.mp4",
+      badge: "REC 60FPS"
     }
-  ];
+  };
 
-  let currentChannelIndex = 0; // 0-indexed (Channel 1)
+  class RetroTvController {
+    constructor() {
+      this.isPowerOn = false;
+      this.currentChannel = 1;
+      this.isMuted = true;
+      this.osdTimer = null;
 
-  function updateCockpitUI(channelObj) {
-    const osdModeTag = document.getElementById("osd-mode-tag");
-    const osdTitleText = document.getElementById("osd-title-text");
-    const osdChIndicator = document.getElementById("osd-ch-indicator");
-    const crtMainIcon = document.getElementById("crt-main-icon");
-    const crtProfileBadge = document.getElementById("crt-profile-badge");
-    const crtAvatarImg = document.getElementById("crt-avatar-img");
-    const crtHeroLabel = document.getElementById("crt-hero-label");
-    const crtHeroSublabel = document.getElementById("crt-hero-sublabel");
-    const crtHeroHotkey = document.getElementById("crt-hero-hotkey");
-    const crtScreenFace = document.getElementById("crt-screen-face");
-    const crtAppCard = document.getElementById("crt-app-card");
+      // DOM Elements
+      this.video = document.getElementById("tv-video-player");
+      this.screenGlass = document.getElementById("tv-screen-glass");
+      this.standbyScreen = document.getElementById("tv-standby-screen");
+      this.osdOverlay = document.getElementById("tv-osd-overlay");
+      this.osdChannelLabel = document.getElementById("tv-osd-channel-label");
+      this.osdSubLabel = document.getElementById("tv-osd-sub-label");
+      this.powerLed = document.getElementById("tv-power-led");
+      this.ledCaption = document.getElementById("tv-led-caption");
+      this.footerMode = document.getElementById("tv-footer-mode");
+      this.irEye = document.getElementById("tv-ir-eye");
 
-    if (osdModeTag) osdModeTag.textContent = channelObj.modeTag;
-    if (osdTitleText) osdTitleText.textContent = channelObj.osdTitle;
-    if (osdChIndicator) osdChIndicator.textContent = channelObj.channelStr;
-    if (crtHeroLabel) crtHeroLabel.textContent = channelObj.appTitle;
-    if (crtHeroSublabel) crtHeroSublabel.textContent = channelObj.subTitle;
+      // Remote Elements
+      this.remotePowerBtn = document.getElementById("remote-power-btn");
+      this.remoteMuteBtn = document.getElementById("remote-mute-btn");
+      this.remoteMuteIcon = document.getElementById("remote-mute-icon");
+      this.remoteIrLed = document.getElementById("remote-ir-led");
+      this.remoteTxLed = document.getElementById("remote-tx-led");
+      this.remoteNum1 = document.getElementById("remote-num-1");
+      this.remoteNum2 = document.getElementById("remote-num-2");
+      this.remoteChUp = document.getElementById("remote-ch-up");
+      this.remoteChDown = document.getElementById("remote-ch-down");
 
-    if (crtHeroHotkey && channelObj.hotkeyHtml) {
-      crtHeroHotkey.innerHTML = channelObj.hotkeyHtml;
+      // TV Hardware Controls
+      this.hwPowerBtn = document.getElementById("tv-hardware-power-btn");
+      this.hwCh1 = document.getElementById("tv-hw-ch-1");
+      this.hwCh2 = document.getElementById("tv-hw-ch-2");
+
+      // Section Tuner Controls
+      this.secTuner1 = document.getElementById("section-tuner-1");
+      this.secTuner2 = document.getElementById("section-tuner-2");
     }
 
-    if (crtMainIcon) crtMainIcon.src = channelObj.iconSrc;
+    init() {
+      this.bindEvents();
+    }
 
-    if (crtProfileBadge) {
-      if (channelObj.hasAvatar && channelObj.avatarSrc) {
-        crtProfileBadge.style.display = "block";
-        if (crtAvatarImg) crtAvatarImg.src = channelObj.avatarSrc;
-      } else {
-        crtProfileBadge.style.display = "none";
+    flashIr() {
+      if (this.remoteIrLed) {
+        this.remoteIrLed.classList.add("firing");
+        setTimeout(() => this.remoteIrLed.classList.remove("firing"), 130);
+      }
+      if (this.remoteTxLed) {
+        this.remoteTxLed.classList.add("active");
+        setTimeout(() => this.remoteTxLed.classList.remove("active"), 130);
+      }
+      if (this.irEye) {
+        this.irEye.classList.add("pulse");
+        setTimeout(() => this.irEye.classList.remove("pulse"), 130);
       }
     }
 
-    // Trigger CRT Screen Glitch / Cathode Flicker Effect
-    if (crtScreenFace) {
-      crtScreenFace.style.filter = "brightness(1.4) contrast(1.2)";
-      setTimeout(() => {
-        crtScreenFace.style.filter = "none";
-      }, 70);
+    showOsd(chObj) {
+      if (!this.osdOverlay || !chObj) return;
+      if (this.osdChannelLabel) this.osdChannelLabel.textContent = chObj.name;
+      if (this.osdSubLabel) this.osdSubLabel.textContent = chObj.desc;
+
+      this.osdOverlay.style.opacity = "1";
+      if (this.osdTimer) clearTimeout(this.osdTimer);
+      this.osdTimer = setTimeout(() => {
+        this.osdOverlay.style.opacity = "0";
+      }, 2800);
     }
 
-    if (crtAppCard) {
-      crtAppCard.style.transform = "scale(0.97)";
-      setTimeout(() => {
-        crtAppCard.style.transform = "scale(1)";
-      }, 90);
-    }
+    setPower(turnOn) {
+      if (turnOn) {
+        this.isPowerOn = true;
+        this.flashIr();
+        audio.playTvPowerOn();
 
-    // Update Channel Dock buttons
-    const dockBtns = document.querySelectorAll(".channel-dock-btn, .lean-channel-chip");
-    dockBtns.forEach((btn) => {
-      const chNum = parseInt(btn.getAttribute("data-channel"), 10);
-      if (chNum === channelObj.id) {
-        btn.classList.add("active");
+        // Update TV Indicators
+        if (this.powerLed) {
+          this.powerLed.classList.remove("standby");
+          this.powerLed.classList.add("active");
+        }
+        if (this.ledCaption) this.ledCaption.textContent = "ACTIVE";
+        if (this.footerMode) this.footerMode.textContent = `TV: CH 0${this.currentChannel} (ACTIVE)`;
+
+        // Update Remote Power Button
+        if (this.remotePowerBtn) {
+          this.remotePowerBtn.classList.remove("pulsing");
+          this.remotePowerBtn.classList.add("active");
+        }
+
+        // Screen Turn On Animation
+        if (this.screenGlass) {
+          this.screenGlass.classList.remove("crt-screen-power-off");
+          this.screenGlass.classList.add("crt-screen-power-on");
+        }
+
+        // Hide Standby Screen
+        if (this.standbyScreen) {
+          this.standbyScreen.style.display = "none";
+        }
+
+        // Play Video
+        if (this.video) {
+          const chObj = TV_CHANNELS[this.currentChannel];
+          if (this.video.getAttribute("src") !== chObj.src) {
+            this.video.src = chObj.src;
+          }
+          this.video.muted = this.isMuted;
+          this.video.play().catch(() => {});
+        }
+
+        this.showOsd(TV_CHANNELS[this.currentChannel]);
       } else {
-        btn.classList.remove("active");
-      }
-    });
-  }
+        this.isPowerOn = false;
+        this.flashIr();
+        audio.playTvPowerOff();
 
-  function tuneToChannel(channelId) {
-    const target = CHANNELS_DATABASE.find((c) => c.id === channelId);
-    if (!target) return;
-    currentChannelIndex = CHANNELS_DATABASE.indexOf(target);
-    audio.playRelayClick();
-    audio.playDegaussChirp();
-    updateCockpitUI(target);
+        // Screen Turn Off Collapse Animation
+        if (this.screenGlass) {
+          this.screenGlass.classList.remove("crt-screen-power-on");
+          this.screenGlass.classList.add("crt-screen-power-off");
+        }
+
+        setTimeout(() => {
+          if (this.video) {
+            this.video.pause();
+          }
+          if (this.standbyScreen) {
+            this.standbyScreen.style.display = "flex";
+          }
+          if (this.screenGlass) {
+            this.screenGlass.classList.remove("crt-screen-power-off");
+          }
+          if (this.powerLed) {
+            this.powerLed.classList.remove("active");
+            this.powerLed.classList.add("standby");
+          }
+          if (this.ledCaption) this.ledCaption.textContent = "STANDBY";
+          if (this.footerMode) this.footerMode.textContent = "TV: STANDBY";
+          if (this.remotePowerBtn) {
+            this.remotePowerBtn.classList.remove("active");
+            this.remotePowerBtn.classList.add("pulsing");
+          }
+        }, 250);
+      }
+    }
+
+    togglePower() {
+      this.setPower(!this.isPowerOn);
+    }
+
+    tuneChannel(chId) {
+      this.flashIr();
+      audio.playRelayClick();
+      audio.playDegaussChirp();
+
+      if (!this.isPowerOn) {
+        this.setPower(true);
+      }
+
+      this.currentChannel = chId;
+      const chObj = TV_CHANNELS[chId];
+      if (!chObj) return;
+
+      // CRT Channel Switch Flicker
+      if (this.screenGlass) {
+        this.screenGlass.style.filter = "brightness(1.5) contrast(1.2)";
+        setTimeout(() => {
+          this.screenGlass.style.filter = "none";
+        }, 70);
+      }
+
+      // Switch Video
+      if (this.video) {
+        if (this.video.getAttribute("src") !== chObj.src) {
+          this.video.src = chObj.src;
+        }
+        this.video.play().catch(() => {});
+      }
+
+      // Update Remote Channel Buttons
+      if (this.remoteNum1) {
+        this.remoteNum1.classList.toggle("active", chId === 1);
+      }
+      if (this.remoteNum2) {
+        this.remoteNum2.classList.toggle("active", chId === 2);
+      }
+
+      // Update TV Hardware Channel Buttons
+      if (this.hwCh1) {
+        this.hwCh1.classList.toggle("active", chId === 1);
+      }
+      if (this.hwCh2) {
+        this.hwCh2.classList.toggle("active", chId === 2);
+      }
+
+      // Update Section Tuner Buttons
+      if (this.secTuner1) {
+        this.secTuner1.classList.toggle("active", chId === 1);
+      }
+      if (this.secTuner2) {
+        this.secTuner2.classList.toggle("active", chId === 2);
+      }
+
+      if (this.footerMode) {
+        this.footerMode.textContent = `TV: CH 0${chId} (ACTIVE)`;
+      }
+
+      this.showOsd(chObj);
+    }
+
+    nextChannel() {
+      this.tuneChannel(this.currentChannel === 1 ? 2 : 1);
+    }
+
+    toggleMute() {
+      this.flashIr();
+      audio.playRelayClick();
+      this.isMuted = !this.isMuted;
+      if (this.video) {
+        this.video.muted = this.isMuted;
+      }
+      if (this.remoteMuteIcon) {
+        this.remoteMuteIcon.textContent = this.isMuted ? "🔇" : "🔊";
+      }
+    }
+
+    bindEvents() {
+      // Remote Power Button
+      if (this.remotePowerBtn) {
+        this.remotePowerBtn.addEventListener("click", () => this.togglePower());
+      }
+
+      // Remote Mute Button
+      if (this.remoteMuteBtn) {
+        this.remoteMuteBtn.addEventListener("click", () => this.toggleMute());
+      }
+
+      // Remote Channel Buttons
+      if (this.remoteNum1) {
+        this.remoteNum1.addEventListener("click", () => this.tuneChannel(1));
+      }
+      if (this.remoteNum2) {
+        this.remoteNum2.addEventListener("click", () => this.tuneChannel(2));
+      }
+      if (this.remoteChUp) {
+        this.remoteChUp.addEventListener("click", () => this.nextChannel());
+      }
+      if (this.remoteChDown) {
+        this.remoteChDown.addEventListener("click", () => this.nextChannel());
+      }
+
+      // TV Hardware Power Button
+      if (this.hwPowerBtn) {
+        this.hwPowerBtn.addEventListener("click", () => this.togglePower());
+      }
+
+      // TV Hardware Channel Buttons
+      if (this.hwCh1) {
+        this.hwCh1.addEventListener("click", () => this.tuneChannel(1));
+      }
+      if (this.hwCh2) {
+        this.hwCh2.addEventListener("click", () => this.tuneChannel(2));
+      }
+
+      // Standby Screen Click -> Turn TV ON
+      if (this.standbyScreen) {
+        this.standbyScreen.addEventListener("click", () => this.setPower(true));
+      }
+
+      // Video Screen Click -> Toggle Channel
+      if (this.video) {
+        this.video.addEventListener("click", () => this.nextChannel());
+      }
+
+      // Section Tuner Buttons
+      if (this.secTuner1) {
+        this.secTuner1.addEventListener("click", () => {
+          this.tuneChannel(1);
+          const st = document.getElementById("hero-tv-station");
+          if (st) st.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      }
+      if (this.secTuner2) {
+        this.secTuner2.addEventListener("click", () => {
+          this.tuneChannel(2);
+          const st = document.getElementById("hero-tv-station");
+          if (st) st.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      }
+
+      // Section 2 Pain Cards -> Tune TV & Scroll Up
+      const rackItems = document.querySelectorAll(".rack-item");
+      rackItems.forEach((item) => {
+        item.addEventListener("click", () => {
+          this.tuneChannel(1);
+          const st = document.getElementById("hero-tv-station");
+          if (st) st.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      });
+    }
   }
 
   // ==========================================================================
@@ -294,30 +534,7 @@
   }
 
   // ==========================================================================
-  // 4. 60FPS VIDEO PROOFS CHANNEL SWITCHER
-  // ==========================================================================
-  function setupVideoProofsSwitcher() {
-    const videoBtns = document.querySelectorAll(".video-tuner-btn");
-    const player = document.getElementById("proof-video-player");
-    if (!player || !videoBtns.length) return;
-
-    videoBtns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        videoBtns.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        const src = btn.getAttribute("data-src");
-        if (src && player.getAttribute("src") !== src) {
-          audio.playRelayClick();
-          player.src = src;
-          player.play().catch(() => {});
-        }
-      });
-    });
-  }
-
-  // ==========================================================================
-  // 5. 1-CLICK BREW INSTALL COPY
+  // 4. 1-CLICK BREW INSTALL COPY
   // ==========================================================================
   function setupBrewInstallCopy() {
     const brewPill = document.getElementById("brew-copy-pill");
@@ -348,89 +565,59 @@
   }
 
   // ==========================================================================
-  // 6. KEYBOARD EVENT LISTENERS (PHYSICAL KEY HOOK)
+  // 5. GLOBAL KEYBOARD HOOKS
   // ==========================================================================
-  function setupKeyboardListener() {
+  function setupKeyboardListener(tv) {
     window.addEventListener("keydown", (e) => {
       // Avoid intercepting when user types in inputs
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
 
       const key = e.key.toLowerCase();
-      if (key === "1") {
-        tuneToChannel(1);
+      if (key === "p" || key === " ") {
+        if (key === " ") e.preventDefault();
+        tv.togglePower();
+      } else if (key === "1") {
+        tv.tuneChannel(1);
       } else if (key === "2") {
-        tuneToChannel(2);
-      } else if (key === "3") {
-        tuneToChannel(3);
-      } else if (key === "4") {
-        tuneToChannel(4);
-      } else if (key === "5") {
-        tuneToChannel(5);
-      } else if (key === "c") {
-        tuneToChannel(currentChannelIndex === 0 ? 2 : 1);
-      } else if (key === "b") {
-        tuneToChannel(3);
-      } else if (key === "t") {
-        tuneToChannel(4);
-      } else if (key === "o") {
-        tuneToChannel(5);
+        tv.tuneChannel(2);
+      } else if (key === "m") {
+        tv.toggleMute();
+      } else if (key === "arrowup" || key === "arrowdown") {
+        e.preventDefault();
+        tv.nextChannel();
       }
     });
   }
 
   // ==========================================================================
-  // 7. INITIALIZATION & BINDINGS
+  // 6. INITIALIZATION & BINDINGS
   // ==========================================================================
   document.addEventListener("DOMContentLoaded", () => {
     // 1. Audio Button Toggle
     const audioBtn = document.getElementById("audio-toggle-btn");
-    const audioLabel = document.getElementById("audio-label");
     if (audioBtn) {
-      
       audioBtn.addEventListener("click", () => {
         const state = audio.toggle();
-        
         if (state) audio.playRelayClick();
       });
     }
 
-    // 2. Channel Dock Bindings
-    const dockBtns = document.querySelectorAll(".channel-dock-btn, .lean-channel-chip");
-    dockBtns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const ch = parseInt(btn.getAttribute("data-channel"), 10);
-        if (ch) tuneToChannel(ch);
-      });
-    });
+    // 2. TV & Remote Controller
+    const tv = new RetroTvController();
+    tv.init();
 
-    // 3. Remote Control Prop Direct Click Cycling
-    const rcUnit = document.querySelector(".lean-rc-unit");
-    if (rcUnit) {
-      rcUnit.style.cursor = "pointer";
-      rcUnit.setAttribute("title", "Click remote to cycle channels");
-      rcUnit.addEventListener("click", () => {
-        const nextIdx = (currentChannelIndex + 1) % CHANNELS_DATABASE.length;
-        tuneToChannel(CHANNELS_DATABASE[nextIdx].id);
-      });
+    // Check URL parameters for power=1 or channel=2
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("channel") === "2") {
+      tv.tuneChannel(2);
+    }
+    if (urlParams.get("power") === "1" || urlParams.get("on") === "1") {
+      tv.setPower(true);
     }
 
-    // 5. Profiles Rack Items Clickable
-    const rackItems = document.querySelectorAll(".rack-item");
-    rackItems.forEach((item, idx) => {
-      item.addEventListener("click", () => {
-        rackItems.forEach((r) => r.classList.remove("active"));
-        item.classList.add("active");
-        if (idx < 3) tuneToChannel(idx + 1);
-      });
-    });
-
-    // 6. Live Simulators & Proofs
+    // 3. Simulators & Proofs
     setupCopyOnSelectSimulator();
-    setupVideoProofsSwitcher();
     setupBrewInstallCopy();
-    setupKeyboardListener();
-
-    // Initial render
-    updateCockpitUI(CHANNELS_DATABASE[0]);
+    setupKeyboardListener(tv);
   });
 })();

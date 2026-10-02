@@ -46,7 +46,7 @@ brew install unacau/tap/xomsky
 # Build & install from source
 make native install
 
-# Run test suite (107 tests)
+# Run test suite (118 tests)
 make test
 
 # Stream local diagnostics (os_log)

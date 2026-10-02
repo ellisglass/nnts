@@ -432,20 +432,17 @@ body.nnts-body {
    THE INTERACTIVE TRINITRON COCKPIT (HERO DEMO)
    ========================================================================== */
 /* ==========================================================================
-   THE INTERACTIVE TRINITRON CONSOLE (ULTRA-LEAN PRECISION INSTRUMENT)
+   HERO RETRO TV & REMOTE COCKPIT
    ========================================================================== */
-.trinitron-lean-deck {
-  width: 100%;
-  max-width: 650px;
-  margin: 0 auto;
-  background: radial-gradient(circle at 50% 30%, #0e0d16 0%, #06060a 80%, #020204 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 0.75rem 1.1rem 0.65rem 1.25rem;
+.hero-tv-station {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  max-width: 980px;
+  margin: 1.5rem auto 0;
   position: relative;
-  overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.9), 0 0 32px rgba(200, 55, 171, 0.08);
-  text-align: left;
+  z-index: 10;
 }
 
 /* Oscilloscope Green Vector Beam along Left Rim */
@@ -469,264 +466,882 @@ body.nnts-body {
   z-index: 5;
 }
 
-/* Upper Stage: Horizontal Triptych (RC + App Focus + Hotkey) */
-.lean-stage-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.9rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Left: Compact Remote Prop */
-.lean-rc-unit {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
+/* --------------------------------------------------------------------------
+   THE REMOTE CONTROL HANDSET (ПУЛЬТ ДУ)
+   -------------------------------------------------------------------------- */
+.tv-remote-handset {
+  width: 148px;
   flex-shrink: 0;
-}
-
-.lean-rc-disc {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-  border-radius: 50%;
-  box-shadow: 0 0 14px rgba(0, 0, 0, 0.9), 0 0 10px rgba(200, 55, 171, 0.2);
-  transition: transform 0.2s ease;
-}
-
-.lean-rc-disc:hover {
-  transform: scale(1.05);
-}
-
-.lean-rc-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.lean-rc-led {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background-color: var(--phosphor-green);
-  box-shadow: 0 0 6px var(--phosphor-green);
-}
-
-.lean-rc-label {
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  color: var(--titanium-text-dim);
-  letter-spacing: 0.12em;
-  font-weight: 700;
-}
-
-/* Middle: Active Focus (App Icon + Name + Profile) */
-.lean-focus-unit {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-  min-width: 0;
-  transition: transform 0.15s var(--ease-elastic);
-}
-
-.lean-icon-wrap {
+  background: linear-gradient(175deg, #181826 0%, #101018 55%, #08080f 100%);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 0.65rem 0.65rem 0.85rem 0.65rem;
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.85),
+    0 0 24px rgba(200, 55, 171, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.7);
   position: relative;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-}
-
-.lean-app-icon {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.8));
-}
-
-.lean-avatar-badge {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1.2px solid var(--phosphor-green);
-  box-shadow: 0 0 6px var(--phosphor-green-glow);
-  background: #111;
-  overflow: hidden;
-}
-
-.profile-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.lean-focus-text {
-  min-width: 0;
-}
-
-.lean-app-title {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--titanium-white);
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lean-profile-desc {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--phosphor-green);
-  text-shadow: 0 0 6px rgba(57, 255, 20, 0.35);
-  margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Right: Crisp Hotkey Badge & Channel Indicator */
-.lean-hotkey-unit {
+  user-select: none;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0.3rem;
-  flex-shrink: 0;
+  gap: 0.5rem;
 }
 
-.lean-hotkey-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  background: rgba(57, 255, 20, 0.08);
-  border: 1px solid rgba(57, 255, 20, 0.4);
-  border-radius: 5px;
-  padding: 0.22rem 0.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  color: var(--phosphor-green);
-  text-shadow: 0 0 6px rgba(57, 255, 20, 0.35);
-  box-shadow: 0 0 10px rgba(57, 255, 20, 0.12);
-}
-
-.lean-hotkey-badge kbd {
-  background: rgba(0, 0, 0, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.08rem 0.28rem;
-  border-radius: 3px;
-  color: var(--titanium-white);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-shadow: none;
-}
-
-.lean-ch-readout {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-family: var(--font-mono);
-  font-size: 0.64rem;
-}
-
-.osd-mode-tag {
-  color: var(--titanium-text-dim);
-}
-
-.osd-ch-tag {
-  color: var(--phosphor-green);
-  font-weight: 700;
-  text-shadow: 0 0 6px var(--phosphor-green-glow);
-}
-
-/* Lower Row: 5-Channel Tactile Switcher Dock */
-.lean-channels-dock {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.35rem;
-  padding-top: 0.55rem;
-}
-
-.lean-channel-chip {
-  background: #12121a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 5px;
-  padding: 0.32rem 0.25rem;
+/* Infrared Transmitter Lens on Remote Top */
+.remote-top-lens {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 8px;
+  background: #09090e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  cursor: pointer;
-  transition: all 0.12s ease;
 }
 
-.lean-channel-chip:hover {
-  background: #1b1b26;
-  border-color: rgba(57, 255, 20, 0.4);
-  transform: translateY(-1px);
+.remote-ir-diode {
+  width: 10px;
+  height: 4px;
+  border-radius: 2px;
+  background: #1a1a24;
+  transition: all 0.08s ease;
 }
 
-.lean-channel-chip.active {
-  background: rgba(57, 255, 20, 0.12);
-  border-color: var(--phosphor-green);
-  box-shadow: 0 0 12px rgba(57, 255, 20, 0.25);
+.remote-ir-diode.firing {
+  background: #00F0FF;
+  box-shadow: 0 0 12px #00F0FF, 0 0 20px #39FF14, 0 0 30px #ffffff;
 }
 
-.ch-num {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 800;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 0.05rem 0.25rem;
-  border-radius: 3px;
-  color: var(--titanium-white);
+/* Remote Body Header */
+.remote-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
-.lean-channel-chip.active .ch-num {
-  background: var(--phosphor-green);
-  color: var(--void-deep);
-}
-
-.ch-name {
-  font-size: 0.68rem;
-  color: var(--titanium-text-dim);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.lean-channel-chip.active .ch-name {
-  color: var(--titanium-white);
-  font-weight: 700;
-}
-
-.crt-status-footer {
+.remote-header-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.75rem;
+  padding: 0.15rem 0.35rem 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.remote-status-led {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #444;
+  transition: all 0.1s ease;
+}
+
+.remote-status-led.active {
+  background-color: var(--phosphor-green);
+  box-shadow: 0 0 8px var(--phosphor-green);
+}
+
+.remote-model-label {
   font-family: var(--font-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--titanium-text-dim);
+}
+
+/* Remote Buttons Common Styling */
+.remote-btn {
+  background: #181824;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--titanium-white);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s var(--ease-sharp);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.remote-btn:hover {
+  background: #222232;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.remote-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Power & Audio Row */
+.remote-power-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 0.45rem;
+}
+
+.remote-power-btn {
+  background: radial-gradient(circle at 35% 35%, #ff4b4b 0%, #c91424 70%, #850010 100%);
+  border: 1px solid #ff7777;
+  padding: 0.5rem 0.25rem;
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(255, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.remote-power-btn:hover {
+  background: radial-gradient(circle at 35% 35%, #ff6666 0%, #e0182c 70%, #990014 100%);
+  box-shadow: 0 0 16px rgba(255, 75, 75, 0.7);
+}
+
+.remote-power-btn.pulsing {
+  animation: remote-power-pulse 2s infinite ease-in-out;
+}
+
+@keyframes remote-power-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 75, 75, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 75, 75, 0.9), 0 0 35px rgba(255, 50, 50, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  }
+}
+
+.remote-power-btn.active {
+  background: radial-gradient(circle at 35% 35%, #2eff55 0%, #16a337 70%, #0d6321 100%);
+  border-color: #55ff77;
+  box-shadow: 0 0 14px var(--phosphor-green-glow);
+}
+
+.power-sym {
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.btn-subtext {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+  opacity: 0.9;
+}
+
+.remote-mute-btn {
+  padding: 0.5rem 0.25rem;
+}
+
+.mute-sym {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+/* Number Grid (Channels 1 & 2) */
+.remote-num-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.remote-ch-num {
+  padding: 0.45rem 0.2rem;
+  border-radius: 8px;
+}
+
+.num-digit {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.num-desc {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.05em;
+  color: var(--titanium-text-dim);
+  margin-top: 2px;
+}
+
+.remote-ch-num.active {
+  background: rgba(57, 255, 20, 0.12);
+  border-color: var(--phosphor-green);
+  box-shadow: 0 0 12px rgba(57, 255, 20, 0.3);
+}
+
+.remote-ch-num.active .num-digit {
+  color: var(--phosphor-green);
+  text-shadow: 0 0 6px var(--phosphor-green-glow);
+}
+
+/* Rocker Pad */
+.remote-rocker-pad {
+  background: #0c0b12;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.remote-rocker-btn {
+  padding: 0.38rem 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.rocker-arrow {
   font-size: 0.65rem;
+}
+
+.rocker-center-badge {
+  text-align: center;
+  padding: 0.15rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--phosphor-green);
+  letter-spacing: 0.08em;
+}
+
+/* Remote Footer Branding */
+.remote-footer-brand {
+  text-align: center;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.remote-brand-text {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #bbb;
+}
+
+.remote-sub-text {
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  letter-spacing: 0.14em;
+  color: var(--titanium-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   THE TELEVISION CHASSIS (ТЕЛИК - SONY TRINITRON CRT)
+   -------------------------------------------------------------------------- */
+.retro-tv-chassis {
+  flex: 1;
+  min-width: 0;
+  max-width: 760px;
+  background: #0c0b14;
+  border: 3px solid #242332;
+  border-radius: 18px;
+  padding: 0.85rem;
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.95),
+    0 0 40px rgba(57, 255, 20, 0.04),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+/* TV Cabinet Header */
+.tv-cabinet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 0.65rem;
+}
+
+.tv-brand-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.badge-sony {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #d1d5db;
+}
+
+.badge-trinitron {
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--titanium-white);
+}
+
+.badge-model {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--titanium-text-muted);
+  letter-spacing: 0.1em;
+}
+
+.tv-cabinet-grill {
+  display: flex;
+  gap: 3px;
+}
+
+.tv-cabinet-grill span {
+  width: 22px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1px;
+}
+
+/* TV Main Display Row (CRT Screen + Hardware Side Panel) */
+.tv-main-display-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+/* CRT Screen Bezel */
+.tv-screen-bezel {
+  flex: 1;
+  min-width: 0;
+  background: #040407;
+  border: 3px solid #1a1926;
+  border-radius: 14px;
+  padding: 4px;
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.95),
+    0 2px 4px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  position: relative;
+}
+
+/* CRT Cathode Glass Frame */
+.tv-screen-glass {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+/* TV Screen Scanlines & Phosphor Glow Layers */
+.tv-scanlines-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 3px;
+  opacity: 0.8;
+}
+
+.tv-phosphor-glow-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.65) 100%);
+}
+
+/* Live Video Player Element */
+.tv-video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Standby Screen (Shown when TV is OFF) */
+.tv-standby-screen {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, #080a0f 0%, #020204 100%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.25s ease;
+}
+
+.standby-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1.5rem;
+}
+
+.standby-logo-glow {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--titanium-text-muted);
+}
+
+.standby-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(255, 0, 0, 0.12);
+  border: 1px solid rgba(255, 75, 75, 0.4);
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ff5566;
+  letter-spacing: 0.1em;
+}
+
+.standby-blink-dot {
+  font-size: 0.6rem;
+  color: #ff3344;
+  animation: standby-blink 1.2s infinite ease-in-out;
+}
+
+@keyframes standby-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.standby-instructions {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--phosphor-green);
+  text-shadow: 0 0 10px var(--phosphor-green-glow);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.instruction-arrow {
+  color: var(--phosphor-green);
+  animation: arrow-bounce 1s infinite alternate;
+}
+
+@keyframes arrow-bounce {
+  from { transform: translateX(0); }
+  to { transform: translateX(3px); }
+}
+
+.glow-key {
+  color: #ff4b4b;
+  text-shadow: 0 0 10px rgba(255, 75, 75, 0.7);
+}
+
+.standby-telemetry {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--titanium-text-dim);
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+
+/* On-Screen Display (OSD) Overlay */
+.tv-osd-overlay {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 5;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  border-radius: 5px;
+  padding: 0.35rem 0.65rem;
+  transition: opacity 0.4s ease;
+  opacity: 1;
+}
+
+.osd-top-line {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.osd-green-tag {
+  color: var(--phosphor-green);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-shadow: 0 0 6px var(--phosphor-green-glow);
+  letter-spacing: 0.05em;
+}
+
+.osd-rec-tag {
+  color: var(--titanium-white);
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rec-red-dot {
+  color: #ff3344;
+  animation: rec-blink 1s infinite;
+}
+
+@keyframes rec-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.osd-sub-line {
+  color: var(--titanium-text-dim);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+}
+
+/* CRT Turn-On / Turn-Off Animations */
+.crt-screen-power-on {
+  animation: crtTurnOn 0.4s var(--ease-sharp) forwards;
+}
+
+.crt-screen-power-off {
+  animation: crtTurnOff 0.28s var(--ease-sharp) forwards;
+}
+
+@keyframes crtTurnOn {
+  0% {
+    transform: scale(1, 0.005);
+    filter: brightness(25) contrast(2);
+    opacity: 1;
+  }
+  35% {
+    transform: scale(1, 0.04);
+    filter: brightness(8) contrast(1.5);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1, 1.02);
+    filter: brightness(2) contrast(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1, 1);
+    filter: brightness(1) contrast(1);
+    opacity: 1;
+  }
+}
+
+@keyframes crtTurnOff {
+  0% {
+    transform: scale(1, 1);
+    filter: brightness(1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1, 0.005);
+    filter: brightness(10);
+    opacity: 1;
+  }
+  80% {
+    transform: scale(0.005, 0.005);
+    filter: brightness(30);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0, 0);
+    filter: brightness(0);
+    opacity: 0;
+  }
+}
+
+/* TV Right Hardware Panel */
+.tv-side-panel {
+  width: 72px;
+  flex-shrink: 0;
+  background: #090810;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 0.55rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tv-panel-power-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tv-hardware-power-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #2a2a3a 0%, #161622 70%, #0a0a14 100%);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  color: var(--titanium-white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transition: all 0.12s ease;
+}
+
+.tv-hardware-power-btn:hover {
+  border-color: var(--phosphor-green);
+  transform: scale(1.04);
+}
+
+.tv-hw-power-icon {
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.tv-power-indicator-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.tv-power-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.tv-power-led.standby {
+  background-color: #ff3344;
+  box-shadow: 0 0 8px rgba(255, 51, 68, 0.8);
+}
+
+.tv-power-led.active {
+  background-color: var(--phosphor-green);
+  box-shadow: 0 0 10px var(--phosphor-green), 0 0 20px rgba(57, 255, 20, 0.5);
+}
+
+.tv-led-caption {
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  color: var(--titanium-text-muted);
+  letter-spacing: 0.08em;
+}
+
+/* TV IR Sensor Window */
+.tv-ir-sensor-eye {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0.35rem 0;
+}
+
+.tv-ir-sensor-eye .sensor-glow {
+  width: 14px;
+  height: 6px;
+  background: #14141c;
+  border-radius: 2px;
+  border: 1px solid #333;
+  transition: all 0.08s ease;
+}
+
+.tv-ir-sensor-eye.pulse .sensor-glow {
+  background: #00F0FF;
+  box-shadow: 0 0 10px #00F0FF;
+}
+
+.sensor-label {
+  font-family: var(--font-mono);
+  font-size: 0.45rem;
   color: var(--titanium-text-muted);
   letter-spacing: 0.06em;
 }
 
-.status-hint kbd {
+/* Hardware Channel Buttons on TV */
+.tv-hardware-channel-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.tv-hw-ch-btn {
+  background: #14141e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  padding: 0.32rem 0;
+  color: var(--titanium-text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.tv-hw-ch-btn:hover {
+  background: #1e1e2c;
+  color: var(--titanium-white);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.tv-hw-ch-btn.active {
+  background: rgba(57, 255, 20, 0.12);
+  border-color: var(--phosphor-green);
+  color: var(--phosphor-green);
+  box-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
+}
+
+/* Side Vent Louvers */
+.tv-side-vents {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 80%;
+}
+
+.tv-side-vents span {
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+}
+
+/* TV Cabinet Bottom Footer */
+.tv-cabinet-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+}
+
+.tv-footer-status {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.footer-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  color: var(--phosphor-green);
+  font-weight: 700;
+}
+
+.footer-hint {
+  color: var(--titanium-text-muted);
+}
+
+.footer-hint kbd {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 0.05rem 0.25rem;
   border-radius: 3px;
   color: var(--titanium-white);
-  font-size: 0.62rem;
+  font-size: 0.6rem;
 }
 
-.status-sync {
-  color: var(--phosphor-green);
-  opacity: 0.75;
+.tv-footer-specs {
+  color: var(--titanium-text-muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+}
+
+/* Responsive TV and Remote */
+@media (max-width: 860px) {
+  .hero-tv-station {
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .tv-remote-handset {
+    width: 100%;
+    max-width: 380px;
+    border-radius: 16px;
+    padding: 0.75rem;
+  }
+
+  .remote-body {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .remote-header-bar {
+    width: 100%;
+  }
+
+  .remote-power-row {
+    flex: 1;
+  }
+
+  .remote-num-grid {
+    flex: 1;
+  }
+
+  .remote-rocker-pad {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .remote-footer-brand {
+    width: 100%;
+  }
+
+  .tv-main-display-row {
+    flex-direction: column;
+  }
+
+  .tv-side-panel {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+  }
+
+  .tv-hardware-channel-strip {
+    flex-direction: row;
+    width: auto;
+  }
+
+  .tv-side-vents {
+    display: none;
+  }
 }
 
 /* ==========================================================================
