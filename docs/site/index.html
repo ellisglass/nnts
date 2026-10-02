@@ -169,9 +169,7 @@
           <!-- TV Cabinet Top Trim -->
           <div class="tv-cabinet-header">
             <div class="tv-brand-badge">
-              <span class="badge-sony">SONY</span>
-              <span class="badge-trinitron">Trinitron</span>
-              <span class="badge-model">KV-21XRT</span>
+              <span class="badge-nnts">NNTS</span>
             </div>
             <div class="tv-cabinet-grill" aria-hidden="true">
               <span></span><span></span><span></span><span></span><span></span>
@@ -194,23 +192,8 @@
                 <div class="tv-scanlines-layer" aria-hidden="true"></div>
                 <div class="tv-phosphor-glow-layer" aria-hidden="true"></div>
 
-                <!-- Standby Screen (Shown when TV is OFF) -->
-                <div class="tv-standby-screen" id="tv-standby-screen">
-                  <div class="standby-content">
-                    <div class="standby-logo-glow">SONY TRINITRON KV-21</div>
-                    <div class="standby-status-pill">
-                      <span class="standby-blink-dot">●</span>
-                      <span>STANDBY</span>
-                    </div>
-                    <div class="standby-instructions">
-                      <span class="instruction-arrow">▶</span>
-                      <span>PRESS <strong class="glow-key">⏻ POWER</strong> ON REMOTE TO TURN ON</span>
-                    </div>
-                    <div class="standby-telemetry">
-                      <span>VIDEO ARCHIVE: 60 FPS RECORDING READY</span>
-                    </div>
-                  </div>
-                </div>
+                <!-- Standby Screen (Shown when TV is OFF) — Clean dark CRT glass, zero text -->
+                <div class="tv-standby-screen" id="tv-standby-screen"></div>
 
                 <!-- The Live Video Recording Player -->
                 <video id="tv-video-player" class="tv-video-element" loop muted playsinline preload="auto" poster="assets/images/video-poster-hud.png">
@@ -243,24 +226,12 @@
                 </button>
                 <div class="tv-power-indicator-wrap">
                   <span class="tv-power-led standby" id="tv-power-led" title="Power / Standby"></span>
-                  <span class="tv-led-caption" id="tv-led-caption">STANDBY</span>
                 </div>
               </div>
 
               <!-- Infrared Receiver Window -->
               <div class="tv-ir-sensor-eye" id="tv-ir-eye" title="Remote IR Receiver Sensor">
                 <div class="sensor-glow"></div>
-                <span class="sensor-label">SENSOR</span>
-              </div>
-
-              <!-- Quick Channel Selectors on TV Frame -->
-              <div class="tv-hardware-channel-strip">
-                <button class="tv-hw-ch-btn active" data-channel="1" id="tv-hw-ch-1" title="Channel 1: Profiles & Apps">
-                  <span>CH 1</span>
-                </button>
-                <button class="tv-hw-ch-btn" data-channel="2" id="tv-hw-ch-2" title="Channel 2: Copy on Select">
-                  <span>CH 2</span>
-                </button>
               </div>
 
               <!-- Vent Louvers -->
@@ -269,17 +240,6 @@
               </div>
             </div>
 
-          </div>
-
-          <!-- TV Cabinet Bottom Base Strip with Channel Guide -->
-          <div class="tv-cabinet-footer">
-            <div class="tv-footer-status">
-              <span class="footer-chip" id="tv-footer-mode">TV: STANDBY</span>
-              <span class="footer-hint">Remote: <kbd>P</kbd> Power &bull; <kbd>1</kbd> / <kbd>2</kbd> Channels</span>
-            </div>
-            <div class="tv-footer-specs">
-              <span>APERTURE GRILLE &bull; 60Hz TRINITRON TUBE</span>
-            </div>
           </div>
 
         </div>
