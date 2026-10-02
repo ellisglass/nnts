@@ -45,7 +45,6 @@ public final class ChromeSwitcherState: ObservableObject {
     }
     @Published public var selectedProfileIndex: Int = 0
     @Published public var isVisible: Bool = false
-    @Published public var isMascotPeeking: Bool = false
     
     public var selectedProfile: ChromeProfile? {
         guard !profiles.isEmpty else { return nil }
@@ -171,6 +170,7 @@ public struct ProfileAvatarView: View {
     public let isSelected: Bool
     public let slotIndex: Int
     public let isLarge: Bool
+    public let isCompact: Bool
     public var namespace: Namespace.ID?
     
     public init(
@@ -178,29 +178,33 @@ public struct ProfileAvatarView: View {
         isSelected: Bool,
         slotIndex: Int = 0,
         isLarge: Bool = false,
+        isCompact: Bool = false,
         namespace: Namespace.ID? = nil
     ) {
         self.profile = profile
         self.isSelected = isSelected
         self.slotIndex = slotIndex > 0 ? slotIndex : profile.index
         self.isLarge = isLarge
+        self.isCompact = isCompact
         self.namespace = namespace
     }
     
     public var body: some View {
-        let avatarSize: CGFloat = isLarge ? 42 : 34
-        let ringSize: CGFloat = isLarge ? 48 : 40
-        let colWidth: CGFloat = isLarge ? 48 : 40
+        let avatarSize: CGFloat = isLarge ? 42 : (isCompact ? 24 : 34)
+        let ringSize: CGFloat = isLarge ? 48 : (isCompact ? 29 : 40)
+        let colWidth: CGFloat = isLarge ? 48 : (isCompact ? 30 : 40)
         
-        VStack(spacing: 3) {
+        VStack(spacing: isCompact ? 2 : 3) {
             ZStack {
-                // Frosted light circular plate
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .frame(width: avatarSize, height: avatarSize)
                 Circle()
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.38),
-                                Color.white.opacity(0.24)
+                                Color.white.opacity(0.35),
+                                Color.white.opacity(0.18)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -224,55 +228,33 @@ public struct ProfileAvatarView: View {
                         .frame(width: avatarSize, height: avatarSize)
                         .overlay(
                             Text(String(profile.effectiveName.prefix(1)).uppercased())
-                                .font(.system(size: isLarge ? 15 : 12, weight: .bold))
+                                .font(.system(size: isLarge ? 15 : (isCompact ? 10 : 12), weight: .bold))
                                 .foregroundColor(.white)
                         )
                 }
                 
-                // Active glassmorphic selection ring
+                // Active liquid glass selection ring
                 if isSelected {
                     Circle()
-                        .stroke(Color.white, lineWidth: 1.75)
+                        .strokeBorder(Color.white, lineWidth: 2.0)
                         .frame(width: ringSize, height: ringSize)
-                        .shadow(color: Color.white.opacity(0.60), radius: 4, x: 0, y: 0)
-                        .shadow(color: Color.black.opacity(0.35), radius: 2.5, x: 0, y: 1.5)
+                        .shadow(color: Color.white.opacity(0.95), radius: 5, x: 0, y: 0)
+                        .shadow(color: Color(red: 0.40, green: 0.80, blue: 1.0).opacity(0.60), radius: 8, x: 0, y: 0)
                 } else {
                     Circle()
-                        .stroke(Color.white.opacity(0.24), lineWidth: 0.75)
+                        .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
                         .frame(width: ringSize - 2, height: ringSize - 2)
                 }
             }
             .frame(width: ringSize, height: ringSize)
             
             Text("\(slotIndex)")
-                .font(.system(size: isLarge ? 12 : 10, weight: isSelected ? .bold : .medium, design: .monospaced))
-                .foregroundColor(isSelected ? .white : .white.opacity(0.65))
-                .shadow(color: Color.black.opacity(0.45), radius: 1.5, y: 1)
+                .font(.system(size: isLarge ? 12 : (isCompact ? 9 : 10), weight: isSelected ? .bold : .medium, design: .monospaced))
+                .foregroundColor(isSelected ? .white : .white.opacity(0.75))
+                .shadow(color: Color.black.opacity(0.40), radius: 1.5, y: 1)
         }
         .frame(width: colWidth)
-        .padding(.vertical, 2.5)
-        .background {
-            if isSelected {
-                if let ns = namespace {
-                    Capsule()
-                        .fill(Color.white.opacity(0.22))
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.white.opacity(0.38), lineWidth: 0.75)
-                        )
-                        .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
-                        .matchedGeometryEffect(id: "activeSlotCapsule", in: ns)
-                } else {
-                    Capsule()
-                        .fill(Color.white.opacity(0.22))
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.white.opacity(0.38), lineWidth: 0.75)
-                        )
-                        .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
-                }
-            }
-        }
+        .padding(.vertical, isCompact ? 1.5 : 2.5)
         .scaleEffect(isSelected ? 1.05 : 0.96)
         .animation(XomskyMotion.magneticGlide, value: isSelected)
     }
@@ -335,23 +317,24 @@ public struct AppChannelItemView: View {
         .padding(.vertical, 2.5)
         .background {
             if isSelected {
+                let capsuleShape = RoundedRectangle(cornerRadius: 11, style: .continuous)
+                let capsuleContent = ZStack {
+                    capsuleShape
+                        .fill(.ultraThinMaterial)
+                    capsuleShape
+                        .fill(Color.white.opacity(0.18))
+                }
+                .overlay(
+                    capsuleShape
+                        .stroke(Color.white.opacity(0.38), lineWidth: 0.75)
+                )
+                .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
+
                 if let ns = namespace {
-                    RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(Color.white.opacity(0.22))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .stroke(Color.white.opacity(0.38), lineWidth: 0.75)
-                        )
-                        .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
+                    capsuleContent
                         .matchedGeometryEffect(id: "activeAppChannelCapsule", in: ns)
                 } else {
-                    RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(Color.white.opacity(0.22))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .stroke(Color.white.opacity(0.38), lineWidth: 0.75)
-                        )
-                        .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
+                    capsuleContent
                 }
             }
         }
@@ -500,13 +483,18 @@ public struct HUDCardView: View {
         .frame(width: cardWidth, height: cardHeight)
         .background {
             if isSelected && !isSingleCard {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(0.18))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.white.opacity(0.24), lineWidth: 1)
-                    )
-                    .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
+                let cardShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+                ZStack {
+                    cardShape
+                        .fill(.ultraThinMaterial)
+                    cardShape
+                        .fill(Color.white.opacity(0.16))
+                }
+                .overlay(
+                    cardShape
+                        .stroke(Color.white.opacity(0.32), lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.16), radius: 6, x: 0, y: 3)
             }
         }
         .scaleEffect(isSelected ? 1.02 : 0.98)
@@ -679,63 +667,25 @@ public struct CRTVectorArcView: View {
 }
 
 
-// MARK: - CRT Chromatic Aberration App Icon
-public struct CRTChromaticAberrationIcon: View {
-    public let icon: NSImage
-    public let size: CGFloat
-    
-    public init(icon: NSImage, size: CGFloat = 78) {
-        self.icon = icon
-        self.size = size
-    }
-    
-    public var body: some View {
-        ZStack {
-            // Magenta / Red CRT convergence error offset
-            Image(nsImage: icon)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: size, height: size)
-                .colorMultiply(Color(red: 1.0, green: 0.16, blue: 0.42))
-                .opacity(0.42)
-                .offset(x: -1.6, y: -0.6)
-                .blendMode(.screen)
-            
-            // Cyan / Green CRT convergence error offset
-            Image(nsImage: icon)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: size, height: size)
-                .colorMultiply(Color(red: 0.16, green: 0.95, blue: 0.85))
-                .opacity(0.42)
-                .offset(x: 1.6, y: 0.6)
-                .blendMode(.screen)
-            
-            // Primary sharp icon layer with ambient shadow
-            Image(nsImage: icon)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: size, height: size)
-                .shadow(color: Color.black.opacity(0.50), radius: 6, x: 0, y: 3)
-        }
-        .frame(width: size + 6, height: size + 6)
-    }
-}
+
 
 // MARK: - Visual Effect Blur (Native macOS Behind-Window Frosted Glass)
 public struct VisualEffectBlur: NSViewRepresentable {
     public var material: NSVisualEffectView.Material
     public var blendingMode: NSVisualEffectView.BlendingMode
     public var state: NSVisualEffectView.State
+    public var cornerRadius: CGFloat
 
     public init(
         material: NSVisualEffectView.Material = .popover,
         blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
-        state: NSVisualEffectView.State = .active
+        state: NSVisualEffectView.State = .active,
+        cornerRadius: CGFloat = 30
     ) {
         self.material = material
         self.blendingMode = blendingMode
         self.state = state
+        self.cornerRadius = cornerRadius
     }
 
     public func makeNSView(context: Context) -> NSVisualEffectView {
@@ -744,6 +694,8 @@ public struct VisualEffectBlur: NSViewRepresentable {
         view.blendingMode = blendingMode
         view.state = state
         view.wantsLayer = true
+        view.layer?.cornerRadius = cornerRadius
+        view.layer?.masksToBounds = true
         return view
     }
 
@@ -751,6 +703,120 @@ public struct VisualEffectBlur: NSViewRepresentable {
         nsView.material = material
         nsView.blendingMode = blendingMode
         nsView.state = state
+        nsView.layer?.cornerRadius = cornerRadius
+        nsView.layer?.masksToBounds = true
+    }
+}
+
+// MARK: - Mac Native Liquid Glass (Tahoe / Sequoia Native Liquid Glass System)
+public struct MacNativeLiquidGlassBackground: View {
+    public var cornerRadius: CGFloat
+    public var material: NSVisualEffectView.Material
+    
+    public init(cornerRadius: CGFloat = 28, material: NSVisualEffectView.Material = .popover) {
+        self.cornerRadius = cornerRadius
+        self.material = material
+    }
+    
+    public var body: some View {
+        ZStack {
+            // 1. Native macOS Behind-Window Visual Effect (dynamic desktop/window sampling blur)
+            VisualEffectBlur(material: material, blendingMode: .behindWindow, state: .active, cornerRadius: cornerRadius)
+            
+            // 2. Liquid Glass Translucent Luminous Sheen (crystal clarity, light passing through, NEVER black!)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color.white.opacity(0.36), location: 0.0),
+                            .init(color: Color.white.opacity(0.14), location: 0.28),
+                            .init(color: Color.white.opacity(0.04), location: 0.60),
+                            .init(color: Color.white.opacity(0.20), location: 1.0)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            // 3. Diagonal Liquid Specular Glaze (wet glossy reflection across surface)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color.white.opacity(0.48), location: 0.0),
+                            .init(color: Color.white.opacity(0.18), location: 0.22),
+                            .init(color: Color.clear, location: 0.52)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            // 4. Upper Bulb/Dome Lens Reflection (convex liquid glare)
+            GeometryReader { geo in
+                Ellipse()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color.white.opacity(0.36),
+                                Color.white.opacity(0.10),
+                                Color.clear
+                            ],
+                            center: .top,
+                            startRadius: 0,
+                            endRadius: geo.size.width * 0.65
+                        )
+                    )
+                    .frame(width: geo.size.width * 1.3, height: geo.size.height * 0.45)
+                    .position(x: geo.size.width / 2, y: geo.size.height * 0.08)
+            }
+            
+            // 5. Specular Inner Refraction Rim Highlight
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .inset(by: 1.0)
+                .strokeBorder(
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color.white.opacity(0.92), location: 0.0),
+                            .init(color: Color.white.opacity(0.45), location: 0.25),
+                            .init(color: Color.white.opacity(0.15), location: 0.60),
+                            .init(color: Color.white.opacity(0.50), location: 1.0)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.0
+                )
+        }
+        .overlay(
+            // 6. Hairline Outer Specular Border with subtle cyan-to-violet dispersion
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color(red: 0.70, green: 0.88, blue: 1.0).opacity(0.80), location: 0.0),
+                            .init(color: Color.white.opacity(0.80), location: 0.18),
+                            .init(color: Color.white.opacity(0.25), location: 0.50),
+                            .init(color: Color(red: 0.88, green: 0.72, blue: 1.0).opacity(0.55), location: 1.0)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.0
+                )
+        )
+        // 7. Multi-layered Floating Glass Elevation Shadow
+        .shadow(color: Color.black.opacity(0.22), radius: 32, x: 0, y: 16)
+        .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 3)
+        .shadow(color: Color.white.opacity(0.30), radius: 1, x: 0, y: -0.5)
+    }
+}
+
+extension View {
+    public func macNativeLiquidGlass(cornerRadius: CGFloat = 28, material: NSVisualEffectView.Material = .popover) -> some View {
+        self.background(
+            MacNativeLiquidGlassBackground(cornerRadius: cornerRadius, material: material)
+        )
     }
 }
 
@@ -801,205 +867,143 @@ public struct MinimalHUDView: View {
         return nil
     }
     
+    private var isCurrentBrowser: Bool {
+        if state.mode == .chrome { return true }
+        guard let item = state.selectedAppItem else { return false }
+        return isBrowser(item)
+    }
+    
+    private var hasMultipleApps: Bool {
+        state.antigravityItems.count > 1
+    }
+    
+    private var showProfilesRow: Bool {
+        (state.mode == .chrome || isCurrentBrowser) && !state.profiles.isEmpty
+    }
+    
+    private var cycleIndicator: String? {
+        guard state.antigravityItems.count > 1 else { return nil }
+        let current = state.selectedIndex + 1
+        let total = state.antigravityItems.count
+        return "\(current)/\(total) ↻"
+    }
+    
+    private var shortcutChar: Character {
+        if let item = state.selectedAppItem {
+            return item.name.first(where: { $0.isLetter }) ?? "C"
+        }
+        return "C"
+    }
+    
     public var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                Spacer()
-                
-                // 1. Center Hero Display (Large App Icon with Chromatic Aberration + Title)
-                VStack(spacing: 7) {
-                    CRTChromaticAberrationIcon(icon: activeIcon, size: 84)
-                    
-                    Text(activeName)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .shadow(color: Color.black.opacity(0.50), radius: 3, y: 1.5)
-                        .lineLimit(1)
-                }
-                
-                Spacer().frame(height: 16)
-                
-                // 2. Bottom Channel Presets Row (Apps on same letter or Chrome profiles)
-                VStack(spacing: 6) {
-                    HStack(spacing: 9) {
-                        let isCurrentBrowser = isBrowser(state.selectedAppItem ?? AntigravityItem(name: "", bundleID: "", path: "", icon: NSImage(), index: 0))
-                        if state.mode == .chrome || (!state.profiles.isEmpty && isCurrentBrowser) {
-                            ForEach(Array(state.profiles.enumerated()), id: \.element.id) { idx, profile in
-                                ProfileAvatarView(
-                                    profile: profile,
-                                    isSelected: idx == state.selectedProfileIndex,
-                                    slotIndex: idx + 1,
-                                    isLarge: false,
-                                    namespace: selectionNamespace
+                // 1. Top Apps Row (Clear indicator of what's on this hotkey)
+                if hasMultipleApps {
+                    HStack(spacing: 12) {
+                        ForEach(Array(state.antigravityItems.enumerated()), id: \.element.id) { idx, item in
+                            let isCurrent = idx == state.selectedIndex
+                            Image(nsImage: item.icon)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: isCurrent ? 28 : 22, height: isCurrent ? 28 : 22)
+                                .opacity(isCurrent ? 1.0 : 0.40)
+                                .shadow(color: Color.black.opacity(isCurrent ? 0.25 : 0), radius: 2, y: 1)
+                                .background(
+                                    isCurrent ?
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .fill(Color.white.opacity(0.28))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                    .strokeBorder(Color.white.opacity(0.55), lineWidth: 0.75)
+                                            )
+                                            .frame(width: 38, height: 38)
+                                        : nil
                                 )
-                            }
-                        } else if state.antigravityItems.count > 1 {
-                            ForEach(Array(state.antigravityItems.enumerated()), id: \.element.id) { idx, item in
-                                AppChannelItemView(
-                                    item: item,
-                                    isSelected: idx == state.selectedIndex,
-                                    channelIndex: idx + 1,
-                                    namespace: selectionNamespace
-                                )
-                            }
-                        } else if let single = state.antigravityItems.first {
-                            AppChannelItemView(
-                                item: single,
-                                isSelected: true,
-                                channelIndex: 1,
-                                namespace: selectionNamespace
-                            )
                         }
                     }
-                    .frame(height: 60)
+                    .padding(.top, 16)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                } else {
+                    Color.clear.frame(height: 16)
+                }
+                
+                Spacer()
+                
+                // 2. Center Hero Display (Large App Icon + Title)
+                VStack(spacing: 6) {
+                    Image(nsImage: activeIcon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: showProfilesRow ? 62 : 76, height: showProfilesRow ? 62 : 76)
+                        .shadow(color: Color.black.opacity(0.30), radius: 12, y: 6)
                     
-                    // Profile name placed directly under the profiles icons, or clear spacer to lock baseline
-                    if let prof = activeProfile {
-                        HStack(spacing: 4.5) {
+                    Text(activeName)
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .shadow(color: Color.black.opacity(0.40), radius: 3, y: 1.5)
+                        .lineLimit(1)
+                    
+                    // Chrome active profile pill (if applicable)
+                    if showProfilesRow, let prof = activeProfile {
+                        HStack(spacing: 5) {
                             Circle()
-                                .fill(Color(red: 0.30, green: 0.85, blue: 0.60))
+                                .fill(Color(red: 0.25, green: 0.90, blue: 0.55))
                                 .frame(width: 5, height: 5)
-                                .shadow(color: Color(red: 0.30, green: 0.85, blue: 0.60).opacity(0.65), radius: 2)
+                                .shadow(color: Color(red: 0.25, green: 0.90, blue: 0.55).opacity(0.85), radius: 3)
                             Text(prof.effectiveName)
-                                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.95))
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .foregroundColor(.white)
                         }
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                        .padding(.vertical, 3.5)
                         .background(
                             Capsule()
-                                .fill(Color.white.opacity(0.20))
+                                .fill(Color.white.opacity(0.24))
                                 .overlay(
                                     Capsule()
-                                        .stroke(Color.white.opacity(0.36), lineWidth: 0.75)
+                                        .strokeBorder(
+                                            LinearGradient(
+                                                colors: [Color.white.opacity(0.75), Color.white.opacity(0.25)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 0.75
+                                        )
                                 )
                                 .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
                         )
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                    } else {
-                        Color.clear
-                            .frame(height: 20.5)
                     }
                 }
-                .padding(.bottom, 16)
+                
+                Spacer()
+                
+                // 3. Bottom Presets Row (Chrome Profiles)
+                if showProfilesRow {
+                    HStack(spacing: 8) {
+                        ForEach(Array(state.profiles.enumerated()), id: \.element.id) { idx, profile in
+                            ProfileAvatarView(
+                                profile: profile,
+                                isSelected: idx == state.selectedProfileIndex,
+                                slotIndex: idx + 1,
+                                isLarge: false,
+                                isCompact: false,
+                                namespace: selectionNamespace
+                            )
+                        }
+                    }
+                    .padding(.bottom, 18)
+                } else {
+                    Color.clear
+                        .frame(height: 18)
+                }
             }
             .frame(width: Self.hudWidth, height: Self.hudHeight)
             .background(
-                ZStack {
-                    // 1. Native macOS Behind-Window Frosted Glass Blur
-                    VisualEffectBlur(material: .popover, blendingMode: .behindWindow, state: .active)
-                    
-                    // 2. Frosted ultra-thin material for native macOS glass blur & vibrancy
-                    KinescopeShape(cornerRadius: 34, bulge: 8)
-                        .fill(.ultraThinMaterial)
-                    
-                    // 3. Translucent luminous liquid glass tint (lighter & brighter with true optical depth)
-                    KinescopeShape(cornerRadius: 34, bulge: 8)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.18),
-                                    Color(red: 0.22, green: 0.25, blue: 0.35).opacity(0.30)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    
-                    // 4. Subtle phosphor aperture grille scanlines for optical texture
-                    CRTScanlinesView()
-                        .opacity(0.10)
-                        .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
-                    
-                    // 5. Diagonal Ambient Glass Gloss across face
-                    KinescopeShape(cornerRadius: 34, bulge: 8)
-                        .fill(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity(0.32), location: 0.0),
-                                    .init(color: Color.white.opacity(0.12), location: 0.28),
-                                    .init(color: Color.white.opacity(0.04), location: 0.52),
-                                    .init(color: Color.clear, location: 0.72)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    
-                    // 6. Upper bulb glass dome reflection (convex lens glare)
-                    GeometryReader { geo in
-                        Ellipse()
-                            .fill(
-                                RadialGradient(
-                                    gradient: Gradient(colors: [
-                                        Color.white.opacity(0.28),
-                                        Color.white.opacity(0.08),
-                                        Color.clear
-                                    ]),
-                                    center: UnitPoint(x: 0.5, y: 0.0),
-                                    startRadius: 0,
-                                    endRadius: geo.size.width * 0.55
-                                )
-                            )
-                            .frame(width: geo.size.width * 1.2, height: geo.size.height * 0.65)
-                            .position(x: geo.size.width / 2, y: geo.size.height * 0.12)
-                    }
-                    
-                    // 7. Top inner glass refraction rim highlight
-                    KinescopeShape(cornerRadius: 34, bulge: 8)
-                        .inset(by: 1.0)
-                        .stroke(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity(0.75), location: 0.0),
-                                    .init(color: Color.white.opacity(0.30), location: 0.28),
-                                    .init(color: Color.clear, location: 0.60)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 1.0
-                        )
-                }
-                .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
+                MacNativeLiquidGlassBackground(cornerRadius: 28, material: .popover)
             )
-            .overlay(
-                // Curved Outer Glass Refraction Rim (Multi-stop specular highlight and subtle shadow)
-                KinescopeShape(cornerRadius: 34, bulge: 8)
-                    .strokeBorder(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.white.opacity(0.80), location: 0.0),
-                                .init(color: Color.white.opacity(0.40), location: 0.35),
-                                .init(color: Color.white.opacity(0.18), location: 0.70),
-                                .init(color: Color.white.opacity(0.35), location: 1.0)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.25
-                    )
-            )
-            .overlay(
-                // CRT phosphor green vector arc trace strictly along the outer left edge
-                CRTVectorArcView()
-                    .opacity(0.55)
-            )
-            .overlay(alignment: .top) {
-                if state.isMascotPeeking {
-                    Image(nsImage: AppDelegate.makeMascotStatusIcon())
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 24, height: 24)
-                        .offset(y: -14)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-            // Multi-layered floating glass drop shadow
-            .shadow(color: Color.black.opacity(0.25), radius: 28, x: 0, y: 14)
-            .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 3)
-            .shadow(color: Color.white.opacity(0.15), radius: 1, x: 0, y: -0.5)
-            .scaleEffect(state.isVisible ? 1.0 : 0.93)
+            .scaleEffect(state.isVisible ? 1.0 : 0.94)
             .opacity(state.isVisible ? 1.0 : 0.0)
             .animation(XomskyMotion.interactiveSnap, value: state.isVisible)
         }
@@ -1011,10 +1015,10 @@ public struct MinimalHUDView: View {
 // MARK: - Minimal HUD Window
 @MainActor
 public final class MinimalHUDWindow: NSPanel {
+
     public static let shared = MinimalHUDWindow()
     
     private let hostingView: NSHostingView<MinimalHUDView>
-    private var peekTask: Task<Void, Never>?
     
     public init() {
         let hosting = NSHostingView(rootView: MinimalHUDView())
@@ -1039,18 +1043,6 @@ public final class MinimalHUDWindow: NSPanel {
         self.contentView = hosting
     }
     
-    private func resetAndSchedulePeek() {
-        peekTask?.cancel()
-        ChromeSwitcherState.shared.isMascotPeeking = false
-        peekTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
-            guard !Task.isCancelled, let _ = self, ChromeSwitcherState.shared.isVisible else { return }
-            withAnimation(XomskyMotion.tactileBop) {
-                ChromeSwitcherState.shared.isMascotPeeking = true
-            }
-        }
-    }
-    
     public func show(profiles: [ChromeProfile], selectedIndex: Int) {
         withAnimation(XomskyMotion.interactiveSnap) {
             ChromeSwitcherState.shared.mode = .chrome
@@ -1063,7 +1055,6 @@ public final class MinimalHUDWindow: NSPanel {
         }
         
         reposition()
-        resetAndSchedulePeek()
         self.alphaValue = 1.0
         self.orderFrontRegardless()
         triggerSensoryFeedback()
@@ -1099,7 +1090,6 @@ public final class MinimalHUDWindow: NSPanel {
         }
         
         reposition()
-        resetAndSchedulePeek()
         self.alphaValue = 1.0
         self.orderFrontRegardless()
         triggerSensoryFeedback()
@@ -1116,8 +1106,6 @@ public final class MinimalHUDWindow: NSPanel {
     private func reposition() {
         let screen = currentScreen()
         let screenRect = screen.frame
-        // Deterministic window sizing: 880pt width x 380pt height accommodates up to 5 cards
-        // plus margins to cleanly contain the drop shadow without clipping.
         let windowWidth: CGFloat = 880
         let windowHeight: CGFloat = 380
         let x = screenRect.midX - (windowWidth / 2)
@@ -1130,13 +1118,11 @@ public final class MinimalHUDWindow: NSPanel {
     }
     
     private func triggerSensoryFeedback() {
-        // 1. Tactile haptic feedback on Force Touch trackpads
         NSHapticFeedbackManager.defaultPerformer.perform(
             .alignment,
             performanceTime: .default
         )
         
-        // 2. VoiceOver announcement
         let announcementText: String
         if ChromeSwitcherState.shared.mode == .chrome {
             let prof = ChromeSwitcherState.shared.selectedProfile?.effectiveName ?? "Profile"
@@ -1162,78 +1148,40 @@ public final class MinimalHUDWindow: NSPanel {
     }
     
     public func updateSelection(to index: Int) {
-        peekTask?.cancel()
-        if ChromeSwitcherState.shared.isMascotPeeking {
-            withAnimation(XomskyMotion.interactiveSnap) {
-                ChromeSwitcherState.shared.isMascotPeeking = false
-            }
-        }
         ChromeSwitcherState.shared.selectIndex(index)
         triggerSensoryFeedback()
     }
     
     public func selectChromeProfile(index: Int) {
-        peekTask?.cancel()
-        if ChromeSwitcherState.shared.isMascotPeeking {
-            withAnimation(XomskyMotion.interactiveSnap) {
-                ChromeSwitcherState.shared.isMascotPeeking = false
-            }
-        }
         ChromeSwitcherState.shared.selectChromeProfile(index: index)
         triggerSensoryFeedback()
     }
     
     public func selectNext() {
-        peekTask?.cancel()
-        if ChromeSwitcherState.shared.isMascotPeeking {
-            withAnimation(XomskyMotion.interactiveSnap) {
-                ChromeSwitcherState.shared.isMascotPeeking = false
-            }
-        }
         ChromeSwitcherState.shared.selectNext()
         triggerSensoryFeedback()
     }
     
     public func selectPrevious() {
-        peekTask?.cancel()
-        if ChromeSwitcherState.shared.isMascotPeeking {
-            withAnimation(XomskyMotion.interactiveSnap) {
-                ChromeSwitcherState.shared.isMascotPeeking = false
-            }
-        }
         ChromeSwitcherState.shared.selectPrevious()
         triggerSensoryFeedback()
     }
     
     public func selectNextCard() {
-        peekTask?.cancel()
-        if ChromeSwitcherState.shared.isMascotPeeking {
-            withAnimation(XomskyMotion.interactiveSnap) {
-                ChromeSwitcherState.shared.isMascotPeeking = false
-            }
-        }
         ChromeSwitcherState.shared.selectNextCard()
         triggerSensoryFeedback()
     }
     
     public func selectPreviousCard() {
-        peekTask?.cancel()
-        if ChromeSwitcherState.shared.isMascotPeeking {
-            withAnimation(XomskyMotion.interactiveSnap) {
-                ChromeSwitcherState.shared.isMascotPeeking = false
-            }
-        }
         ChromeSwitcherState.shared.selectPreviousCard()
         triggerSensoryFeedback()
     }
     
     public func hideImmediate() {
-        peekTask?.cancel()
-        peekTask = nil
-        ChromeSwitcherState.shared.isMascotPeeking = false
         ChromeSwitcherState.shared.isVisible = false
         self.orderOut(nil)
         self.alphaValue = 1.0
     }
+
 }
 

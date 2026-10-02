@@ -1,238 +1,417 @@
 <!DOCTYPE html>
-<html lang="en" data-design-variant="option-c" data-default-variant="option-c">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xomsky — Fast & Intuitive App Access via Caps Lock + Letter | Chrome/Brave Profiles & Copy-on-Select</title>
-  <meta name="description" content="Ultra-fast, intuitive macOS app switcher via Caps Lock + letter. Dedicated Chrome & Brave profile switching via Caps + C/B + 1-4, and automatic Linux-style Copy-on-Select.">
+  <title>NNTS — Fast & Intuitive App Access via Caps Lock + Letter | Chrome Profiles & Copy-on-Select</title>
+  <meta name="description" content="NNTS is the ultra-fast macOS channel tuner and application switcher. Dedicated Chrome & Brave profile switching via Caps + C/B + 1-4, instant first-letter app cycling, and zero-effort Copy-on-Select.">
 
   <!-- OpenGraph -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Xomsky — Fast & Intuitive App Access via Caps Lock + Letter">
-  <meta property="og:description" content="Fast macOS app switcher via Caps Lock + letter. Direct Chrome & Brave profile window switching via Caps + C/B + 1-4, and automatic Copy-on-Select.">
-  <meta property="og:image" content="assets/images/xomsky_opengraph_banner.png">
+  <meta property="og:title" content="NNTS — Fast & Intuitive App Access via Caps Lock + Letter">
+  <meta property="og:description" content="Instant macOS app & browser profile channel switching via Caps Lock + letter. 0ms latency, native Swift 6 engine, and Linux-style Copy-on-Select.">
+  <meta property="og:image" content="assets/nnts/canonical_realistic_rc_emblem.png">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Xomsky — Fast & Intuitive App Access via Caps Lock + Letter">
-  <meta name="twitter:description" content="Fast macOS app switcher via Caps Lock + letter. Direct Chrome & Brave profile window switching via Caps + C/B + 1-4, and automatic Copy-on-Select.">
-  <meta name="twitter:image" content="assets/images/xomsky_opengraph_banner.png">
+  <meta name="twitter:title" content="NNTS — Fast & Intuitive App Access via Caps Lock + Letter">
+  <meta name="twitter:description" content="Switch Mac apps and Chrome/Brave profiles at 0ms direct from Caps Lock.">
+  <meta name="twitter:image" content="assets/nnts/canonical_realistic_rc_emblem.png">
 
-  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg?v=v6">
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png?v=v6">
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png?v=v6">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png?v=v6">
-  <link rel="stylesheet" href="styles.min.css?v=3.1">
-  <link rel="stylesheet" href="variants.min.css?v=3.1">
+  <link rel="icon" type="image/png" href="assets/nnts/canonical_nnts_vector_wordmark.png">
+  <link rel="apple-touch-icon" href="assets/nnts/canonical_realistic_rc_emblem.png">
 
-  <!-- Immediate Zero-Flicker System Theme Detector -->
-  <script>
-    (function() {
-      try {
-        var params = new URLSearchParams(window.location.search);
-        var urlTheme = params.get("theme");
-        var override = localStorage.getItem("xomsky_theme_override");
-        var systemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-        var theme = (urlTheme === "dark" || urlTheme === "light") ? urlTheme : ((override === "dark" || override === "light") ? override : (systemDark ? "dark" : "light"));
-        document.documentElement.setAttribute("data-theme", theme);
-      } catch (e) {}
-    })();
-  </script>
-
-  <!-- Local Offline Three.js & Controls -->
-  <script defer src="assets/js/three.min.js"></script>
-  <script defer src="assets/js/OrbitControls.min.js"></script>
+  <link rel="stylesheet" href="styles.min.css?v=6.0">
 </head>
-<body class="liminal-body">
+<body class="nnts-body">
 
-  
-  <!-- Fullscreen 60fps Native Video Backdrop -->
-  <div class="hero-video-backdrop" id="hero-video-backdrop">
-    <video class="hero-bg-video" id="cinematic-bg-video" autoplay loop muted playsinline preload="auto">
-      <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
-    </video>
-    <div class="hero-video-scrim"></div>
-  </div>
+  <!-- Authentic CRT Ambient Scanline & Cathode Vignette Overlays -->
+  <div class="crt-scanlines-overlay" aria-hidden="true"></div>
+  <div class="crt-vignette-overlay" aria-hidden="true"></div>
 
-  <!-- Fullscreen 3D WebGL Canvas -->
-  <div id="canvas-container"></div>
+  <!-- Main Cyber-Brutalist Container -->
+  <div class="nnts-wrapper">
 
-  <!-- Ultra-Clean UI Overlay -->
-  <div class="ui-overlay">
-    
-    <!-- Top Bar: Navigation & Action Controls -->
-    <header class="top-nav">
-      <div class="nav-brand">
-        <img src="assets/images/brand-mark.svg?v=v6" alt="Xomsky Logo" class="brand-icon" width="28" height="28" fetchpriority="high">
-        <span class="brand-name">Xomsky</span>
+    <!-- ====================================================================
+         TOP HEADER: LOGO, TELEMETRY STATUS, AUDIO SYNTH, DOWNLOAD CTA
+         ==================================================================== -->
+    <header class="nnts-header">
+      <div class="nnts-brand">
+        <a href="#" class="brand-link" title="NNTS Home">
+          <img src="assets/nnts/canonical_nnts_vector_wordmark.png" alt="NNTS Master Wordmark" class="brand-wordmark-img" width="100" height="100">
+        </a>
+        <div class="brand-subtext">
+          <span class="subtext-name">NNTS</span>
+          <span class="subtext-desc">Channel Switcher for macOS</span>
+        </div>
       </div>
 
-      <nav class="nav-controls" aria-label="Main Navigation">
-        <div class="nav-actions">
-          <!-- Hamster Camera View Toggle -->
-          <button id="cam-view-btn" class="cam-view-btn" title="Toggle Hamster Camera View (V)">
-            <span id="cam-view-icon">🍑</span>
-            <span id="cam-view-text">Butt View</span>
-          </button>
 
-          <!-- Theme Toggle -->
-          <button id="theme-toggle" class="glass-icon-btn" title="Toggle Dark/Light Mode (M)">
-            <span id="theme-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span>
-          </button>
+      <!-- Header Action Controls -->
+      <div class="nnts-header-actions">
+        <!-- Audio Synth Toggle -->
+        <button id="audio-toggle-btn" class="nnts-btn nnts-btn-tactile" title="Toggle Tactile Relay Audio">
+          <span class="btn-icon">🔊</span>
+          <span id="audio-label">AUDIO: ON</span>
+        </button>
 
-          <!-- Sound Toggle -->
-          <button id="sound-toggle" class="glass-icon-btn" title="Toggle tactile sound">
-            <span id="sound-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span>
-          </button>
+        <!-- GitHub Link -->
+        <a href="https://github.com/unacau/xomsky" target="_blank" rel="noopener" class="nnts-btn nnts-btn-ghost" title="Source Code on GitHub">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        </a>
 
-          <!-- GitHub Repo -->
-          <a href="https://github.com/unacau/xomsky" target="_blank" rel="noopener" class="glass-icon-btn" title="GitHub Repository">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-          </a>
-
-          <!-- Download Action -->
-          <a href="https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg" class="download-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-            <span>Download DMG</span>
-            <span class="dmg-size">2.1 MB</span>
-          </a>
-        </div>
-      </nav>
+        <!-- Download DMG CTA -->
+        <a href="https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg" class="nnts-btn nnts-btn-primary" title="Download Universal DMG">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          <span>Download DMG</span>
+          <span class="badge-size">2.1 MB</span>
+        </a>
+      </div>
     </header>
 
-    <!-- ====================================================================
-         FLAGSHIP: 60FPS FULLSCREEN DESKTOP VIDEO + REACTIVE 3D MASCOT
-         ==================================================================== -->
-    <div class="variant-stage-section" data-variant-section="option-c">
-      <!-- Mobile 3D Mascot Interactive Spacer -->
-      <div class="option-c-mobile-spacer" id="option-c-mobile-spacer" title="Tap the hamster to squish!"></div>
 
-      <!-- Floating Demo Switcher Bar at the bottom of the first screen -->
-      <div class="hero-floating-controls">
-        <div class="cinematic-video-tabs">
-          <button class="cinematic-tab-btn active" data-video-src="assets/media/screenrec-switch-app.mp4">
-            <span>🔄</span> <span>Profiles & Apps (60fps)</span>
-          </button>
-          <button class="cinematic-tab-btn" data-video-src="assets/media/screenrec-select-copy.mp4">
-            <span>📋</span> <span>Copy on Select (60fps)</span>
-          </button>
+    <!-- ====================================================================
+         HERO SECTION: PRODUCT VALUE HEADLINE + INTERACTIVE TRINITRON COCKPIT
+         ==================================================================== -->
+    <section class="nnts-hero">
+      <div class="hero-header-box">
+        <h1 class="hero-title">
+          Switch Mac Apps & Browser Profiles at 0ms.<br>
+          <span class="hero-title-accent">Direct from Caps Lock.</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          Instant Chrome/Brave profile switching, first-letter app cycling, and zero-effort Copy-on-Select.
+        </p>
+
+        <!-- Action Strip: Direct Download + Homebrew Terminal One-Liner -->
+        <div class="hero-action-strip">
+          <a href="https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg" class="hero-primary-cta">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            <div class="cta-text-wrap">
+              <span class="cta-label">Download for macOS</span>
+              <span class="cta-sub">Free &bull; Universal Binary (Apple Silicon + Intel)</span>
+            </div>
+          </a>
+
+          <!-- Interactive Brew Copy Pill -->
+          <div class="hero-terminal-pill" id="brew-copy-pill" title="Click to copy Homebrew command">
+            <span class="term-prompt">$</span>
+            <code class="term-code">brew install --cask xomsky</code>
+            <button class="term-copy-btn" id="brew-copy-btn" aria-label="Copy Command">
+              <span class="copy-icon">📋</span>
+              <span class="copy-status">Copy</span>
+            </button>
+          </div>
         </div>
-        <div class="hero-capture-chip">
-          <span class="live-dot-green">●</span>
-          <span>Authentic 60 FPS Capture</span>
+
+        <div class="hero-guarantees">
+          <span>Free Forever</span>
+          <span class="guarantee-sep">&bull;</span>
+          <span>Zero Kernel Extensions</span>
+          <span class="guarantee-sep">&bull;</span>
+          <span>Apple Silicon & Intel</span>
         </div>
       </div>
-    </div>
 
-    <!-- ====================================================================
-         SECTION 2: WHY I BUILT XOMSKY (THE 3 CORE PAINS)
-         ==================================================================== -->
-    <section class="founder-section" id="founder-story">
-      <div class="founder-section-container">
-        <div class="founder-section-header">
-          <span class="founder-badge">💡 Why I Built Xomsky</span>
-          <h2 class="founder-title">What I miss the second Xomsky is turned off</h2>
-          <p class="founder-subtitle">Built out of daily macOS friction. Three essential superpowers in one ultra-fast native Swift 6 engine.</p>
+      <!-- ====================================================================
+           THE INTERACTIVE TRINITRON CONSOLE (ULTRA-LEAN PRECISION INSTRUMENT)
+           ==================================================================== -->
+      <div class="trinitron-lean-deck">
+        <!-- Left Phosphor Green Beam Arc Trace -->
+        <div class="crt-vector-arc" id="crt-vector-arc" aria-hidden="true"></div>
+
+        <!-- Upper Row: Controller Emblem + Live Display Stage -->
+        <div class="lean-stage-row">
+          
+          <!-- Left: Canonical Remote Control Artifact -->
+          <div class="lean-rc-unit">
+            <img src="assets/nnts/canonical_realistic_rc_emblem.png" alt="Sony Trinitron Remote Control" class="lean-rc-disc" width="92" height="92">
+            <div class="lean-rc-meta">
+              <span class="lean-rc-led" aria-hidden="true"></span>
+              <span class="lean-rc-label">RM-NNTS</span>
+            </div>
+          </div>
+
+          <!-- Middle: Active App & Profile Focus -->
+          <div class="lean-focus-unit" id="crt-app-card">
+            <div class="lean-icon-wrap">
+              <img src="assets/images/icon_chrome.png" alt="App Icon" class="lean-app-icon" id="crt-main-icon">
+              <div class="lean-avatar-badge" id="crt-profile-badge">
+                <img src="assets/images/profiles/igor.png" alt="Avatar" class="profile-avatar-img" id="crt-avatar-img">
+              </div>
+            </div>
+            <div class="lean-focus-text">
+              <div class="lean-app-title" id="crt-hero-label">Google Chrome</div>
+              <div class="lean-profile-desc" id="crt-hero-sublabel">Work Profile &bull; Engineering & PRs</div>
+            </div>
+          </div>
+
+          <!-- Right: Direct Hotkey Indicator -->
+          <div class="lean-hotkey-unit">
+            <div class="lean-hotkey-badge" id="crt-hero-hotkey">
+              <kbd>Caps</kbd>+<kbd>C</kbd>+<kbd>1</kbd>
+            </div>
+            <div class="lean-ch-readout">
+              <span class="osd-mode-tag" id="osd-mode-tag">TV [C]</span>
+              <span class="osd-ch-tag" id="osd-ch-indicator">CH 01 / 05</span>
+            </div>
+          </div>
+
         </div>
 
-        <div class="founder-pains-grid">
-          <div class="pain-card">
-            <div class="pain-card-top">
-              <span class="pain-num">#1</span>
-              <span class="pain-tag">Killer Feature</span>
-            </div>
-            <h3 class="pain-heading">Chrome & Brave Profile Windows</h3>
-            <p class="pain-desc">
-              macOS <kbd class="top-kbd">Cmd</kbd> + <kbd class="top-kbd">Tab</kbd> lumps all browser profiles into one messy pile. Switching between work, personal, and client profiles is broken. <kbd class="top-kbd">Caps</kbd> + <kbd class="top-kbd">C/B</kbd> + <kbd class="top-kbd">1..4</kbd> raises the exact profile window you need in 0ms.
-            </p>
+        <!-- Lower Row: 5-Channel Tactile Switcher Dock -->
+        <div class="lean-channels-dock" id="deck-channels-dock">
+          <button class="lean-channel-chip active" data-channel="1">
+            <span class="ch-num">1</span>
+            <span class="ch-name">Work</span>
+          </button>
+          <button class="lean-channel-chip" data-channel="2">
+            <span class="ch-num">2</span>
+            <span class="ch-name">Personal</span>
+          </button>
+          <button class="lean-channel-chip" data-channel="3">
+            <span class="ch-num">3</span>
+            <span class="ch-name">Client</span>
+          </button>
+          <button class="lean-channel-chip" data-channel="4">
+            <span class="ch-num">4</span>
+            <span class="ch-name">Dev / Comms</span>
+          </button>
+          <button class="lean-channel-chip" data-channel="5">
+            <span class="ch-num">5</span>
+            <span class="ch-name">Obsidian</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 2: THE 3 CORE PAINS NNTS ELIMINATES (CONCISE & IMPACTFUL)
+         ==================================================================== -->
+    <section class="nnts-section nnts-pains-section" id="superpowers">
+      <div class="section-header">
+        <h2 class="section-heading">Why macOS Multitasking Is Broken & How NNTS Fixes It</h2>
+        <p class="section-description">
+          Built to eliminate 3 daily frictions that ruin developer focus.
+        </p>
+      </div>
+
+      <div class="pains-triptych-grid">
+        
+        <!-- PAIN 1: CHROME & BRAVE PROFILES -->
+        <div class="pain-bento-card">
+          <div class="pain-card-badge killer-badge">
+            <span class="card-num">01</span>
           </div>
 
-          <div class="pain-card">
-            <div class="pain-card-top">
-              <span class="pain-num">#2</span>
-              <span class="pain-tag">Muscle Memory</span>
+          <h3 class="pain-card-title">Chrome & Brave Profiles</h3>
+          
+          <div class="pain-comparison-box">
+            <div class="comparison-row broken-row">
+              <span class="comp-icon">✕</span>
+              <div class="comp-text"><strong>Cmd+Tab:</strong> Lumps all profiles into one messy stack.</div>
             </div>
-            <h3 class="pain-heading">Instant App Access by First Letter</h3>
-            <p class="pain-desc">
-              Your pinky already rests on Caps Lock. Why type in Spotlight or Raycast? <kbd class="top-kbd">Caps</kbd> + <kbd class="top-kbd">T</kbd> (Terminal), <kbd class="top-kbd">I</kbd> (IntelliJ IDEA), <kbd class="top-kbd">A</kbd> (Antigravity), <kbd class="top-kbd">N</kbd> (Notes) — instant switching with zero context loss.
-            </p>
+            <div class="comparison-row fixed-row">
+              <span class="comp-icon">✓</span>
+              <div class="comp-text"><strong>NNTS:</strong> <kbd class="ui-kbd">Caps</kbd> + <kbd class="ui-kbd">C/B</kbd> + <kbd class="ui-kbd">1..4</kbd> raises the exact window at 0ms.</div>
+            </div>
           </div>
 
-          <div class="pain-card">
-            <div class="pain-card-top">
-              <span class="pain-num">#3</span>
-              <span class="pain-tag">Micro-Optimization</span>
+          <div class="pain-visual-demo">
+            <div class="profile-avatars-rack">
+              <div class="rack-item active">
+                <img src="assets/images/profiles/igor.png" alt="Profile 1" class="rack-avatar">
+                <span class="rack-badge">1 &bull; Work</span>
+              </div>
+              <div class="rack-item">
+                <img src="assets/images/profiles/nastya.png" alt="Profile 2" class="rack-avatar">
+                <span class="rack-badge">2 &bull; Home</span>
+              </div>
+              <div class="rack-item">
+                <img src="assets/images/profiles/ai11.png" alt="Profile 3" class="rack-avatar">
+                <span class="rack-badge">3 &bull; Dev</span>
+              </div>
+              <div class="rack-item">
+                <img src="assets/images/profiles/gcp.png" alt="Profile 4" class="rack-avatar">
+                <span class="rack-badge">4 &bull; Client</span>
+              </div>
             </div>
-            <h3 class="pain-heading">Zero Wasted Clicks: Copy-on-Select</h3>
-            <p class="pain-desc">
-              If you highlighted text, your intention was already to copy it. Linux/X11-style auto-copy on mouse drag selection or multi-click with a subtle cursor HUD toast. Eliminates 1,000 redundant <kbd class="top-kbd">⌘C</kbd> keystrokes a day.
-            </p>
+          </div>
+        </div>
+
+
+        <!-- PAIN 2: FIRST-LETTER QUICK APPS -->
+        <div class="pain-bento-card">
+          <div class="pain-card-badge speed-badge">
+            <span class="card-num">02</span>
+          </div>
+
+          <h3 class="pain-card-title">First-Letter App Cycling</h3>
+          
+          <div class="pain-comparison-box">
+            <div class="comparison-row broken-row">
+              <span class="comp-icon">✕</span>
+              <div class="comp-text"><strong>Spotlight:</strong> Typing and search lag interrupt focus.</div>
+            </div>
+            <div class="comparison-row fixed-row">
+              <span class="comp-icon">✓</span>
+              <div class="comp-text"><strong>NNTS:</strong> <kbd class="ui-kbd">Caps</kbd> + Key instant jump; tap again to cycle same-letter apps.</div>
+            </div>
+          </div>
+
+          <div class="pain-visual-demo">
+            <div class="letter-cycling-preview">
+              <div class="cycling-header">
+                <span class="cycling-letter">KEY [T]</span>
+                <span class="cycling-indicator">1 / 2 ↻ DETERMINISTIC CYCLE</span>
+              </div>
+              <div class="cycling-apps-row">
+                <div class="cycle-app-card active">
+                  <img src="assets/images/icon_telegram.png" alt="Telegram" class="cycle-icon">
+                  <span class="cycle-title">Telegram (1)</span>
+                </div>
+                <div class="cycle-app-card">
+                  <img src="assets/images/icon_terminal.png" alt="Terminal" class="cycle-icon">
+                  <span class="cycle-title">Terminal (2)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- PAIN 3: COPY ON SELECT -->
+        <div class="pain-bento-card">
+          <div class="pain-card-badge micro-badge">
+            <span class="card-num">03</span>
+          </div>
+
+          <h3 class="pain-card-title">Linux Copy-on-Select</h3>
+          
+          <div class="pain-comparison-box">
+            <div class="comparison-row broken-row">
+              <span class="comp-icon">✕</span>
+              <div class="comp-text"><strong>Cmd+C:</strong> 1,000 redundant hand movements per day.</div>
+            </div>
+            <div class="comparison-row fixed-row">
+              <span class="comp-icon">✓</span>
+              <div class="comp-text"><strong>NNTS:</strong> Highlight text to auto-copy with instant HUD toast.</div>
+            </div>
+          </div>
+
+          <!-- Interactive Live Drag-Select Tester Box -->
+          <div class="pain-visual-demo">
+            <div class="copy-select-tester-box">
+              <div class="tester-instructions">👇 TRY IT: Drag to select any text:</div>
+              <div class="tester-selectable-text" id="live-select-zone">
+                Highlight this sentence to test automatic copy-on-select. Zero Cmd+C needed.
+              </div>
+              <div class="tester-feedback-chip" id="tester-copy-chip">
+                <span>📋 Auto-Copied to Clipboard!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 3: AUTHENTIC 60FPS VIDEO PROOFS (REAL MACOS CAPTURES)
+         ==================================================================== -->
+    <section class="nnts-section nnts-video-section" id="proofs">
+      <div class="section-header">
+        <h2 class="section-heading">Raw, Unedited Screen Recordings</h2>
+        <p class="section-description">
+          Real-time profile jumps and copy-on-select on Apple Silicon with 0ms lag.
+        </p>
+      </div>
+
+      <div class="video-cathode-chassis">
+        <!-- Video Selector Tabs -->
+        <div class="video-channel-tuner-bar">
+          <button class="video-tuner-btn active" data-src="assets/media/screenrec-switch-app.mp4">
+            <span class="tuner-led">●</span>
+            <span class="tuner-title">CH 01 &bull; Instant Profile & App Switching (60fps)</span>
+          </button>
+          <button class="video-tuner-btn" data-src="assets/media/screenrec-select-copy.mp4">
+            <span class="tuner-led">●</span>
+            <span class="tuner-title">CH 02 &bull; Linux Copy-on-Select in Action (60fps)</span>
+          </button>
+        </div>
+
+        <!-- Video Player Inside CRT Frame -->
+        <div class="video-screen-container">
+          <video id="proof-video-player" class="proof-video" src="assets/media/screenrec-switch-app.mp4" autoplay loop muted playsinline preload="auto" poster="assets/images/video-poster-hud.png">
+            <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
+          </video>
+          <div class="video-scanlines" aria-hidden="true"></div>
+          <div class="video-corner-badge">SONY TRINITRON 60Hz</div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 4: FINAL DOWNLOAD CTA STRIP
+         ==================================================================== -->
+    <section class="nnts-section nnts-download-strip">
+      <div class="strip-card">
+        <div class="strip-content">
+          <h2 class="strip-title">Supercharge Your Daily macOS Workflow</h2>
+          <p class="strip-desc">Free forever for 4 pinned apps and all Chrome & Brave profiles. No registration required.</p>
+          
+          <div class="strip-buttons">
+            <a href="https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg" class="strip-primary-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+              <span>Download DMG (Universal &bull; 2.1 MB)</span>
+            </a>
+
+            <div class="strip-brew-box" id="strip-brew-pill">
+              <code>brew install --cask xomsky</code>
+              <button class="strip-brew-copy-btn" id="strip-brew-btn">Copy</button>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
+
     <!-- ====================================================================
-         NATIVE VIDEO PROOFS MODAL (PLAYS AUTHENTIC RECORDINGS)
+         FOOTER
          ==================================================================== -->
-    <div class="proofs-modal-backdrop" id="proofs-modal">
-      <div class="proofs-modal-box">
-        <div class="proofs-modal-header">
-          <div class="proofs-modal-title">
-            <span>📹 Authentic macOS Screen Recordings (60fps)</span>
+    <footer class="nnts-footer">
+      <div class="footer-inner">
+        <div class="footer-left">
+          <div class="footer-brand">
+            <img src="assets/nnts/canonical_nnts_vector_wordmark.png" alt="NNTS" width="64" height="64" class="footer-logo">
+            <span>NNTS / Xomsky</span>
           </div>
-          <button class="proofs-modal-close" id="proofs-close-btn">✕</button>
+          <p class="footer-copy">&copy; 2026 NNTS. Engineered for macOS Sonoma, Sequoia & Tahoe.</p>
         </div>
 
-        <div class="proofs-video-tabs">
-          <button class="proofs-tab-btn active" data-src="assets/media/screenrec-switch-app.mp4">
-            🔄 App Switcher & Profiles
-          </button>
-          <button class="proofs-tab-btn" data-src="assets/media/screenrec-select-copy.mp4">
-            📋 Copy on Select
-          </button>
+        <div class="footer-links">
+          <a href="https://github.com/unacau/xomsky" target="_blank" rel="noopener">GitHub</a>
+          <span class="f-dot">&bull;</span>
+          <a href="https://github.com/unacau/xomsky/releases" target="_blank" rel="noopener">Releases</a>
+          <span class="f-dot">&bull;</span>
+          <a href="https://github.com/unacau/xomsky/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
         </div>
-
-        <div class="proofs-video-player-wrap">
-          <video id="proofs-video" class="proofs-video-element" controls playsinline loop muted preload="none">
-            <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
-          </video>
-        </div>
-
-        <div style="font-size: 0.74rem; color: #94A3B8; text-align: center;">
-          Raw, unedited screen capture on Apple Silicon macOS Sonoma.
-        </div>
-      </div>
-    </div>
-
-    <!-- ====================================================================
-         STICKY MOBILE BOTTOM BAR (Pocket Mac Conversion on Mobile Scroll)
-         ==================================================================== -->
-    <div class="mobile-sticky-bar" id="mobile-sticky-bar" aria-label="Mobile Quick Actions">
-      <div class="sticky-brand">
-        <span class="sticky-icon">🐹</span>
-        <span class="sticky-title">Xomsky</span>
-      </div>
-      <div class="sticky-actions">
-        <a href="https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg" class="sticky-btn sticky-dmg-btn" title="Download Xomsky DMG">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-          <span>DMG (2.1 MB)</span>
-        </a>
-        <button class="sticky-btn sticky-copy-btn" id="mobile-sticky-copy-btn" title="Copy brew install command">
-          <span>📋</span> <span>brew</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="site-footer">
-      <div class="footer-content">
-        <p>&copy; 2026 Xomsky. Built for macOS Sonoma, Sequoia & Tahoe. &middot; <a href="https://github.com/unacau/xomsky" target="_blank" rel="noopener">GitHub</a> &middot; <a href="https://github.com/unacau/xomsky/releases" target="_blank" rel="noopener">Releases</a> &middot; <a href="https://github.com/unacau/xomsky/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></p>
       </div>
     </footer>
+
   </div>
 
-  <script defer src="app.min.js?v=3.1"></script>
-  <script defer src="variants.min.js?v=3.1"></script>
+  <!-- Cursor Toast for Interactive Drag-Select Demo -->
+  <div class="live-cursor-hud-toast" id="live-cursor-toast">
+    <span class="toast-icon">📋</span>
+    <span class="toast-msg">Copied to Clipboard!</span>
+  </div>
+
+  <script src="app.min.js?v=6.0"></script>
 </body>
 </html>

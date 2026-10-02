@@ -1,4 +1,4 @@
-.PHONY: all run dev build native package test health validate checksums monitor diagnostics clean bump-major bump-minor bump-patch install release help
+.PHONY: all run dev watch build native package test health validate checksums monitor diagnostics clean bump-major bump-minor bump-patch install release help
 
 # Default target
 all: validate test native checksums health
@@ -10,6 +10,9 @@ run:
 	@./build_native_app.sh --run
 
 dev: run
+
+watch:
+	@./scripts/watch_dev.sh
 
 test:
 	@./tests/run_tests.sh
@@ -89,6 +92,7 @@ clean:
 help:
 	@echo "Xomsky Developer Commands:"
 	@echo "  make dev / make run  - Fast build (host arch) + update /Applications + relaunch app (no password)"
+	@echo "  make watch           - Live auto-reload: watches src/ and rebuilds/relaunches on save"
 	@echo "  make test            - Run all automated unit tests"
 	@echo "  make validate        - Verify version alignment & shell scripts"
 	@echo "  make native          - Full universal build (arm64+x86_64) + DMG"

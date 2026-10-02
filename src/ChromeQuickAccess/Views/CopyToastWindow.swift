@@ -24,27 +24,42 @@ public struct CopyToastView: View {
         .padding(.vertical, 5)
         .background(
             ZStack {
-                Capsule()
-                    .fill(Color(red: 0.10, green: 0.10, blue: 0.12).opacity(0.88))
+                VisualEffectBlur(material: .popover, blendingMode: .behindWindow, state: .active, cornerRadius: 18)
+                    .clipShape(Capsule())
                 Capsule()
                     .fill(.ultraThinMaterial)
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color.white.opacity(0.18), location: 0.0),
+                                .init(color: Color.white.opacity(0.06), location: 0.40),
+                                .init(color: Color(red: 0.15, green: 0.18, blue: 0.26).opacity(0.15), location: 0.80),
+                                .init(color: Color.white.opacity(0.04), location: 1.0)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             }
         )
         .overlay(
             Capsule()
-                .stroke(
+                .strokeBorder(
                     LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.35),
-                            Color.white.opacity(0.12)
+                        stops: [
+                            .init(color: Color.white.opacity(0.50), location: 0.0),
+                            .init(color: Color.white.opacity(0.15), location: 0.50),
+                            .init(color: Color.white.opacity(0.25), location: 1.0)
                         ],
-                        startPoint: .top,
-                        endPoint: .bottom
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     ),
                     lineWidth: 0.75
                 )
         )
-        .shadow(color: Color.black.opacity(0.30), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.white.opacity(0.15), radius: 1, x: 0, y: -0.5)
         .scaleEffect(isVisible ? 1.0 : 0.80)
         .opacity(isVisible ? 1.0 : 0.0)
         .offset(y: isVisible ? 0 : 6)

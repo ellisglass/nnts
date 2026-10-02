@@ -396,29 +396,8 @@ public struct AppSearchPickerView: View {
         }
         .frame(width: 440)
         .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(red: 0.10, green: 0.10, blue: 0.12).opacity(0.92))
-                
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            }
+            MacNativeLiquidGlassBackground(cornerRadius: 18, material: .popover)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.35),
-                            Color.white.opacity(0.08)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 0.75
-                )
-        )
-        .shadow(color: Color.black.opacity(0.35), radius: 24, x: 0, y: 12)
         .preferredColorScheme(.dark)
     }
 }

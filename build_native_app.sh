@@ -87,7 +87,7 @@ if [ "${FAST_DEV}" = true ]; then
         "${SOURCES[@]}" \
         -o "${MACOS_DIR}/Xomsky" \
         "${FRAMEWORKS[@]}" \
-        -O
+        -Onone
 
     echo "[2/2] Packaging Info.plist, AppIcon & Code-Signing..."
     cp "src/ChromeQuickAccess/Info.plist" "${CONTENTS_DIR}/Info.plist"

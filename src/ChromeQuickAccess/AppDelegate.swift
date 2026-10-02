@@ -316,10 +316,21 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.triggerMascotGaze(offset: digit <= 2 ? -0.8 : 0.8)
                 
                 if self.isCyclingHUDActive && self.activeMode != .chrome && !ChromeSwitcherState.shared.antigravityItems.isEmpty {
-                    let appItems = ChromeSwitcherState.shared.antigravityItems
-                    let targetAppIdx = max(0, min(digit - 1, appItems.count - 1))
-                    MinimalHUDWindow.shared.updateSelection(to: targetAppIdx)
-                    return
+                    let isCurrentBrowser = ChromeSwitcherState.shared.selectedAppItem.map { item in
+                        item.bundleID == profileEngine.browserBundleID ||
+                        ChromeProfileEngine.supportedBrowsers.contains(where: { b in b.bundleID == item.bundleID })
+                    } ?? false
+                    
+                    if isCurrentBrowser && !profileEngine.selectedProfiles.isEmpty {
+                        let targetProfileIdx = max(0, min(digit - 1, profileEngine.selectedProfiles.count - 1))
+                        MinimalHUDWindow.shared.selectChromeProfile(index: targetProfileIdx)
+                        return
+                    } else {
+                        let appItems = ChromeSwitcherState.shared.antigravityItems
+                        let targetAppIdx = max(0, min(digit - 1, appItems.count - 1))
+                        MinimalHUDWindow.shared.updateSelection(to: targetAppIdx)
+                        return
+                    }
                 }
                 
                 let profiles = profileEngine.selectedProfiles

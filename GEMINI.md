@@ -24,6 +24,8 @@
   - `main.swift`: Standard native application entry point.
 
 ## Key Build, Verification & Operations Commands
+- **Developer Inner Loop (Fast Host Build & Relaunch)**: `make dev` or `make run` or `./build_native_app.sh --run` (Compiles host arch with `-Onone`, updates `/Applications/Xomsky.app` and relaunches instantly without password).
+- **Continuous Live Watcher**: `make watch` or `./scripts/watch_dev.sh` (Monitors `src/` and automatically rebuilds/relaunches upon file save).
 - **Run All Tests**: `make test` or `./tests/run_tests.sh` or `swift test`.
 - **System Health & Diagnostics**: `make health` or `./scripts/health_check.sh` (3-point validation).
 - **Semantic Version Bumping**: `make bump-patch`, `make bump-minor`, `make bump-major` (Synchronizes `VERSION.txt`, `BUILD.txt`, and `Info.plist`).
@@ -96,6 +98,10 @@
   - Prefer shipping an immediate, working code prototype / MVP (Option A) accompanied by a 1-sentence switch note for alternative options over drafting abstract architectural treatises or asking the user to choose in a vacuum.
 - **Fail-Fast Build Gate (Pre-Report Validation)**:
   - Never report a task as complete without executing an automated headless sanity check (`make validate`, `swift test`, or `node -c`) to catch compiler, syntax, or runtime breakages before the user inspects the deliverable.
+- **Live App Rebuild & Relaunch Invariant (Zero-Manual-Make)**:
+  - Whenever modifying native Swift application code (`src/ChromeQuickAccess/`), **NEVER** instruct or expect the user to run `make dev`, `make run`, `make native`, or `make install`.
+  - ALWAYS automatically execute `make dev` (or `./build_native_app.sh --run`) via `run_command` immediately after tests pass.
+  - The updated binary must already be deployed to `/Applications/Xomsky.app` and running live before handing the turn back to the user, completely eliminating manual build invocations for the user.
 - **Instant Rollback Checkpoint (Safe Sandbox)**:
   - Prior to initiating non-trivial refactorings, mass deletions, or risky structural changes, create an ephemeral git checkpoint (`git stash create` or transient checkpoint branch) enabling 1-second recovery via single-command rollback.
 - **Headless Visual Proof (Visual-First UI Verification)**:
