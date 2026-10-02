@@ -1,22 +1,22 @@
-# Xomsky
+# NNTS
 
-[![Version](https://img.shields.io/badge/version-1.1.7-007AFF.svg?style=flat-square)](https://github.com/unacau/xomsky/releases/latest)
-[![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-black.svg?style=flat-square)](https://github.com/unacau/xomsky)
+[![Version](https://img.shields.io/badge/version-2.0.0-007AFF.svg?style=flat-square)](https://github.com/unacau/nnts/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-black.svg?style=flat-square)](https://github.com/unacau/nnts)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
 Instantly jump to specific Chrome or Brave profiles with <kbd>Caps Lock</kbd> + <kbd>C</kbd>/<kbd>B</kbd> + <kbd>1..4</kbd>, switch to favorite apps by their first letter while holding <kbd>Caps Lock</kbd>, and eliminate repetitive <kbd>Cmd</kbd>+<kbd>C</kbd> keystrokes with automatic copy-on-select.
 
 ```bash
-brew install unacau/tap/xomsky
+brew install unacau/tap/nnts
 ```
-*Or download **[Xomsky.dmg (1.8 MB)](https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg)**.*
+*Or download **[NNTS.dmg](https://github.com/unacau/nnts/releases/latest/download/NNTS.dmg)**.*
 
 ---
 
 ## Shortcuts
 
 <p align="center">
-  <img src="assets/xomsky_bento_grid.png" alt="Xomsky Shortcuts & Bento Grid" width="100%">
+  <img src="assets/nnts_bento_grid.png" alt="NNTS Shortcuts & Bento Grid" width="100%">
 </p>
 
 | Shortcut | Action | Target / Details |
@@ -46,7 +46,7 @@ brew install unacau/tap/xomsky
 # Build & install from source
 make native install
 
-# Run test suite (118 tests)
+# Run test suite
 make test
 
 # Stream local diagnostics (os_log)
@@ -56,7 +56,7 @@ make monitor
 ## Uninstall
 
 ```bash
-brew uninstall xomsky   # or remove /Applications/Xomsky.app
+brew uninstall nnts   # or remove /Applications/NNTS.app
 ```
 
 ---

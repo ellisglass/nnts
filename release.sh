@@ -2,16 +2,16 @@
 set -euo pipefail
 
 # ==============================================================================
-# Chrome Quick Access - Release Management Utility
+# NNTS - Release Management Utility
 # Supports both Cloud-Native Tag Releases (GHA) and Local Distribution
 # ==============================================================================
 
 VERSION=$(cat VERSION.txt | tr -d '[:space:]')
 BUILD=$(cat BUILD.txt | tr -d '[:space:]')
-APP_NAME="Xomsky"
-DMG_FILE="dist/Xomsky.dmg"
+APP_NAME="NNTS"
+DMG_FILE="dist/NNTS.dmg"
 CHECKSUM_FILE="dist/checksums.txt"
-REPO="unacau/xomsky"
+REPO="unacau/nnts"
 TAG="v$VERSION"
 
 MODE="cloud"
@@ -37,7 +37,7 @@ EOF
 
 sync_homebrew_tap() {
     local version="$1"
-    local dmg_path="dist/Xomsky.dmg"
+    local dmg_path="dist/NNTS.dmg"
     local sha=""
 
     if [ -f "$dmg_path" ]; then
@@ -48,29 +48,35 @@ sync_homebrew_tap() {
     fi
 
     if [ -z "$sha" ]; then
-        echo "❌ Could not determine SHA-256 checksum for Xomsky.dmg"
+        echo "❌ Could not determine SHA-256 checksum for NNTS.dmg"
         return 1
     fi
 
-    echo "🚀 Updating local formula Casks/xomsky.rb..."
-    sed -i '' -e "s/version \".*\"/version \"${version}\"/" Casks/xomsky.rb || sed -i -e "s/version \".*\"/version \"${version}\"/" Casks/xomsky.rb
-    sed -i '' -e "s/sha256 \".*\"/sha256 \"${sha}\"/" Casks/xomsky.rb || sed -i -e "s/sha256 \".*\"/sha256 \"${sha}\"/" Casks/xomsky.rb
+    if [ -f "Casks/nnts.rb" ]; then
+        echo "🚀 Updating local formula Casks/nnts.rb..."
+        sed -i '' -e "s/version \".*\"/version \"${version}\"/" Casks/nnts.rb || sed -i -e "s/version \".*\"/version \"${version}\"/" Casks/nnts.rb
+        sed -i '' -e "s/sha256 \".*\"/sha256 \"${sha}\"/" Casks/nnts.rb || sed -i -e "s/sha256 \".*\"/sha256 \"${sha}\"/" Casks/nnts.rb
+    fi
 
     if command -v gh >/dev/null 2>&1; then
         echo "🚀 Updating remote tap unacau/homebrew-tap via gh API..."
         local file_sha
-        file_sha=$(gh api repos/unacau/homebrew-tap/contents/Casks/xomsky.rb --jq .sha 2>/dev/null || echo "")
+        file_sha=$(gh api repos/unacau/homebrew-tap/contents/Casks/nnts.rb --jq .sha 2>/dev/null || echo "")
         local content
-        content=$(cat Casks/xomsky.rb | base64)
+        if [ -f "Casks/nnts.rb" ]; then
+            content=$(cat Casks/nnts.rb | base64)
+        else
+            content=""
+        fi
 
-        if [ -n "$file_sha" ]; then
-            gh api -X PUT repos/unacau/homebrew-tap/contents/Casks/xomsky.rb \
-                -F message="chore(cask): update xomsky to v${version}" \
+        if [ -n "$file_sha" ] && [ -n "$content" ]; then
+            gh api -X PUT repos/unacau/homebrew-tap/contents/Casks/nnts.rb \
+                -F message="chore(cask): update nnts to v${version}" \
                 -F content="$content" \
                 -F sha="$file_sha" >/dev/null
             echo "✅ unacau/homebrew-tap updated successfully to v${version}!"
         else
-            echo "⚠️ Could not read Casks/xomsky.rb from unacau/homebrew-tap via gh API."
+            echo "⚠️ Could not read Casks/nnts.rb from unacau/homebrew-tap via gh API."
         fi
     else
         echo "⚠️ gh CLI not found; unable to update unacau/homebrew-tap."
@@ -160,7 +166,7 @@ case "$MODE" in
         ./build_native_app.sh
         mkdir -p dist
         cd dist
-        shasum -a 256 Xomsky.dmg > checksums.txt
+        shasum -a 256 NNTS.dmg > checksums.txt
         echo "✅ Checksum computed: $(cat checksums.txt)"
         cd ..
 

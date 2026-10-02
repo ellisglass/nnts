@@ -1,4 +1,4 @@
-# Project: Xomsky (Хомяк) — macOS Productivity Suite (v1.0.0)
+# Project: NNTS — macOS Productivity Suite (v2.0.0)
 
 > **Positioning:** Утилита для быстрого доступа и интуитивного доступа к выбранным приложениям через **Капслок + Первая Буква Приложения**, со специальной фичей — **быстрый доступ к окнам конкретного хром/брейв профайла через Капс Лок + C/B + 1-4**, и для **копирования текста при выделении** (Copy-on-Select).
 >
@@ -17,20 +17,20 @@
   - `Engine/AntigravityEngine.swift`: Discovery and fast cycling for Antigravity & Antigravity IDE.
   - `Engine/CopyOnSelectEngine.swift`: Linux/X11-style automatic clipboard copying on text drag selection (>10pt) and multi-click selection.
   - `Engine/LicenseEngine.swift`: Polar.sh online license verification via non-blocking async `Task` on `@MainActor`, offline caching, and checkout redirection.
-  - `Engine/XomskyMotion.swift`: Procedural mascot micro-interactions (blinking, breathing, peek easter egg) using SwiftUI springs.
+  - `Engine/XomskyMotion.swift`: Procedural mascot micro-interactions (`NNTSMotion`) using SwiftUI springs.
   - `Views/MinimalHUDWindow.swift`: Non-activating floating bezel HUD overlay with profile avatars and active card indicators.
   - `Views/CopyToastWindow.swift`: Non-intrusive cursor-following HUD toast for copy confirmation with rapid auto-dismiss (<1.2s).
   - `AppDelegate.swift`: Menu bar status item, hotkey routing, and lifecycle management.
   - `main.swift`: Standard native application entry point.
 
 ## Key Build, Verification & Operations Commands
-- **Developer Inner Loop (Fast Host Build & Relaunch)**: `make dev` or `make run` or `./build_native_app.sh --run` (Compiles host arch with `-Onone`, updates `/Applications/Xomsky.app` and relaunches instantly without password).
+- **Developer Inner Loop (Fast Host Build & Relaunch)**: `make dev` or `make run` or `./build_native_app.sh --run` (Compiles host arch with `-Onone`, updates `/Applications/NNTS.app` and relaunches instantly without password).
 - **Continuous Live Watcher**: `make watch` or `./scripts/watch_dev.sh` (Monitors `src/` and automatically rebuilds/relaunches upon file save).
 - **Run All Tests**: `make test` or `./tests/run_tests.sh` or `swift test`.
 - **System Health & Diagnostics**: `make health` or `./scripts/health_check.sh` (3-point validation).
 - **Semantic Version Bumping**: `make bump-patch`, `make bump-minor`, `make bump-major` (Synchronizes `VERSION.txt`, `BUILD.txt`, and `Info.plist`).
 - **Telemetry & Direct Log Ingestion**:
-  - `make monitor`: Real-time streaming from macOS Unified Logging (`os_log` subsystem `com.almosteleven.xomsky`).
+  - `make monitor`: Real-time streaming from macOS Unified Logging (`os_log` subsystem `com.almosteleven.nnts`).
   - `make diagnostics`: Aggregated log level and category distribution summary over the last hour.
   - `./scripts/monitor_telemetry.sh errors 30m`: Filter errors and faults directly from system log stream.
 - **Validation & Quality Gates**: `make validate` (verifies version synchronization and shell script syntax).
@@ -50,7 +50,7 @@
   - Keep low-level `CGEvent` monitoring/filtering logic strictly separated in `Engine/` services away from SwiftUI Views.
   - **Always** ensure explicit accessibility permission checks (`AXIsProcessTrusted()`) before registering global event taps.
   - Gracefully handle event tap disablement events (`kCGEventTapDisabledByTimeout`, `kCGEventTapDisabledByUserInput`) by re-enabling the tap via `CGEvent.tapEnable(tap: true)`.
-  - Instrument structured logs using `os.Logger(subsystem: "com.almosteleven.xomsky", category: ...)` rather than raw `print()` statements.
+  - Instrument structured logs using `os.Logger(subsystem: "com.almosteleven.nnts", category: ...)` rather than raw `print()` statements.
 - **HUD Overlay Lifecycle & Dismissal Order**:
   - **Always hide the HUD overlay window (`MinimalHUDWindow.shared.hideImmediate()`) BEFORE triggering application activation or window focus**. External window launches cause macOS window server transitions that can swallow keyboard events and block the run loop, trapping the HUD on screen if hidden after the launch.
 - **Pinned Apps & Universal Catalog Conventions**:
@@ -58,9 +58,9 @@
   - Letter cycling must group apps deterministically by sanitized first letter.
   - **HUD Shortcut Transparency & Categorization**: Never hide conflicting same-letter application shortcuts in collapsed submenus or nested clicks. Render all apps assigned to the same key transparently with distinct badges (e.g. 1/2 ↻, 2/2 ↻) in a unified Quick Apps list.
   - **System Application Bundle Resolution Guardrail**: Never assume macOS system applications exist in `/Applications`. Always resolve applications dynamically via `NSWorkspace.shared.urlForApplication(withBundleIdentifier:)` or query `/System/Applications` and `/System/Library/CoreServices` for core apps like Finder (`com.apple.finder`) and System Settings (`com.apple.systempreferences`).
-- **App Name**: The application is **Xomsky**, never Khomyak. Always use `Xomsky` for the app name, docs, binaries, and releases.
+- **App Name**: The application is **NNTS** (formerly Xomsky). Always use `NNTS` for the app name, docs, binaries, and releases.
 - **Release Verification & Homebrew Cask Gate**:
-  - In release pipelines, never update or publish a Homebrew Cask formula (`Casks/xomsky.rb`) until the GitHub release tag is pushed AND the GitHub Actions cloud build has successfully attached the DMG asset. Deterministically verify the remote URL with `curl -sI` and compute the SHA256 checksum directly from the published binary.
+  - In release pipelines, never update or publish a Homebrew Cask formula (`Casks/nnts.rb`) until the GitHub release tag is pushed AND the GitHub Actions cloud build has successfully attached the DMG asset. Deterministically verify the remote URL with `curl -sI` and compute the SHA256 checksum directly from the published binary.
 - **Concise Release Changelog Mandate**:
   - Whenever cutting, tagging, or announcing a new release, always compile and output a concise, structured bulleted list of changes (Changelog) directly in the release notes and user communication. Group updates into clear categories (`Features`, `Improvements`, `Fixes`, `Branding`), highlighting the tangible user-facing value in 1 sentence per item. Never publish a silent release without a summary.
 - **Chromium Profile Automation Guardrail**:
@@ -101,7 +101,7 @@
 - **Live App Rebuild & Relaunch Invariant (Zero-Manual-Make)**:
   - Whenever modifying native Swift application code (`src/ChromeQuickAccess/`), **NEVER** instruct or expect the user to run `make dev`, `make run`, `make native`, or `make install`.
   - ALWAYS automatically execute `make dev` (or `./build_native_app.sh --run`) via `run_command` immediately after tests pass.
-  - The updated binary must already be deployed to `/Applications/Xomsky.app` and running live before handing the turn back to the user, completely eliminating manual build invocations for the user.
+  - The updated binary must already be deployed to `/Applications/NNTS.app` and running live before handing the turn back to the user, completely eliminating manual build invocations for the user.
 - **Instant Rollback Checkpoint (Safe Sandbox)**:
   - Prior to initiating non-trivial refactorings, mass deletions, or risky structural changes, create an ephemeral git checkpoint (`git stash create` or transient checkpoint branch) enabling 1-second recovery via single-command rollback.
 - **Headless Visual Proof (Visual-First UI Verification)**:

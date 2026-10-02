@@ -102,16 +102,16 @@ jobs:
       - name: Generate SHA-256 Checksum
         run: |
           cd dist
-          shasum -a 256 Xomsky.dmg > Xomsky.dmg.sha256
+          shasum -a 256 NNTS.dmg > NNTS.dmg.sha256
           cd ..
 
       - name: Upload DMG Build Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Xomsky-dmg
+          name: NNTS-dmg
           path: |
-            dist/Xomsky.dmg
-            dist/Xomsky.dmg.sha256
+            dist/NNTS.dmg
+            dist/NNTS.dmg.sha256
           retention-days: 7
 
       - name: Generate CI Telemetry & Step Summary
@@ -119,9 +119,9 @@ jobs:
         run: |
           VERSION=$(cat VERSION.txt 2>/dev/null || echo 'N/A')
           BUILD=$(cat BUILD.txt 2>/dev/null || echo 'N/A')
-          SHA=$(shasum -a 256 dist/Xomsky.dmg 2>/dev/null | awk '{print $1}' || echo 'N/A')
-          SIZE=$(ls -lh dist/Xomsky.dmg 2>/dev/null | awk '{print $5}' || echo 'N/A')
-          ARCHS=$(lipo -archs "dist/Xomsky.app/Contents/MacOS/Xomsky" 2>/dev/null || echo 'N/A')
+          SHA=$(shasum -a 256 dist/NNTS.dmg 2>/dev/null | awk '{print $1}' || echo 'N/A')
+          SIZE=$(ls -lh dist/NNTS.dmg 2>/dev/null | awk '{print $5}' || echo 'N/A')
+          ARCHS=$(lipo -archs "dist/NNTS.app/Contents/MacOS/NNTS" 2>/dev/null || echo 'N/A')
 
           cat << EOF >> $GITHUB_STEP_SUMMARY
           ## 🧪 CI Quality Gate & Observability Report
@@ -134,5 +134,5 @@ jobs:
           | **Universal Slices** | \`${ARCHS}\` |
           | **DMG Package Size** | \`${SIZE}\` |
           | **DMG SHA-256** | \`${SHA}\` |
-          | **Artifact Delivery** | ✅ Uploaded (\`Xomsky-dmg\`, 7-day retention) |
+          | **Artifact Delivery** | ✅ Uploaded (\`NNTS-dmg\`, 7-day retention) |
           EOF

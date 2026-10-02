@@ -9,7 +9,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     public static var shared: AppDelegate?
     
     private var statusItem: NSStatusItem?
-    private let logger = Logger(subsystem: "com.almosteleven.xomsky", category: "app")
+    private let logger = Logger(subsystem: "com.almosteleven.nnts", category: "app")
     private var accessibilityPollTimer: Timer?
     private var appSwitchObserver: Any?
     private var mascotBlinkTimer: Timer?
@@ -21,15 +21,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     public static var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0"
     }
     
     public static var appBuild: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "3"
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "11"
     }
     
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        logger.info("Starting Xomsky...")
+        logger.info("Starting NNTS...")
         
         // 0. Migrate any legacy phantom pinned apps from older versions
         AppGroupEngine.migrateLegacyPinnedAppsIfNeeded()
@@ -51,7 +51,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     public func applicationWillTerminate(_ notification: Notification) {
-        logger.info("Terminating Xomsky: cleaning up event taps and restoring HID mapping.")
+        logger.info("Terminating NNTS: cleaning up event taps and restoring HID mapping.")
         stopMascotBlinkTimer()
         stopAccessibilityPolling()
         CapsLockEngine.shared.stop()
@@ -432,7 +432,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let icon = AppDelegate.makeMascotStatusIcon()
         button.image = icon
         button.imagePosition = .imageOnly
-        button.toolTip = "Xomsky — Tap the Mascot"
+        button.toolTip = "NNTS — App & Profile Switcher"
         
         startMascotBlinkTimer()
         updateMenu()
@@ -485,9 +485,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    /// Generates a resolution-independent, full-color vector status bar icon of the Xomsky mascot
-    /// featuring its signature concentric target eyes, red triangle nose, cheek lobes, paws,
-    /// dynamic directional gaze tracking, and procedural blinking.
+    /// Generates a resolution-independent, full-color vector status bar icon of the NNTS cyber mascot emblem
+    /// featuring its circular titanium CRT bezel, cathode scanline raster, cyber gaze tracking,
+    /// and procedural blinking.
     public static func makeMascotStatusIcon(
         eyeGazeX: CGFloat = 0.0,
         eyeGazeY: CGFloat = 0.0,
@@ -500,162 +500,102 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             let s = rect.width / 32.0
             cg.scaleBy(x: s, y: s)
 
-            // Palette (Cadmium Yellow, Cream, Obsidian Dark, Vermilion Red, Pure White)
-            let cYellow = NSColor(red: 0.965, green: 0.737, blue: 0.078, alpha: 1.0).cgColor // #F6BC14
-            let cCream = NSColor(red: 1.0, green: 0.98, blue: 0.92, alpha: 1.0).cgColor
-            let cDark = NSColor(red: 0.086, green: 0.106, blue: 0.149, alpha: 1.0).cgColor   // #161B26
-            let cRed = NSColor(red: 0.902, green: 0.224, blue: 0.275, alpha: 1.0).cgColor   // #E63946
+            // Palette (Titanium Rim, Bezel, Dark Cathode, Phosphor Accent, Hair, Face Tone)
+            let cTitaniumRim = NSColor(red: 0.24, green: 0.24, blue: 0.30, alpha: 1.0).cgColor
+            let cTitaniumBezel = NSColor(red: 0.14, green: 0.13, blue: 0.18, alpha: 1.0).cgColor
+            let cCathodeBg = NSColor(red: 0.09, green: 0.08, blue: 0.13, alpha: 1.0).cgColor
+            let cPhosphor = NSColor(red: 0.22, green: 1.0, blue: 0.08, alpha: 1.0).cgColor
             let cWhite = NSColor.white.cgColor
+            let cDark = NSColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1.0).cgColor
+            let cSkin = NSColor(red: 0.90, green: 0.76, blue: 0.73, alpha: 1.0).cgColor
+            let cHair = NSColor(red: 0.11, green: 0.10, blue: 0.14, alpha: 1.0).cgColor
 
             cg.setLineCap(.round)
             cg.setLineJoin(.round)
 
             func Y(_ y: CGFloat) -> CGFloat { 32.0 - y }
 
-            // 1. Ears
-            func drawEar(cx: CGFloat, svgY: CGFloat) {
-                let cy = Y(svgY)
-                cg.setFillColor(cYellow)
-                cg.setStrokeColor(cDark)
-                cg.setLineWidth(1.4)
-                cg.addEllipse(in: CGRect(x: cx - 4.2, y: cy - 4.2, width: 8.4, height: 8.4))
-                cg.drawPath(using: .fillStroke)
-
-                cg.setFillColor(cCream)
-                cg.setStrokeColor(cDark)
-                cg.setLineWidth(0.8)
-                cg.addEllipse(in: CGRect(x: cx - 2.2, y: cy - 2.2, width: 4.4, height: 4.4))
-                cg.drawPath(using: .fillStroke)
-            }
-            drawEar(cx: 7.5, svgY: 7.5)
-            drawEar(cx: 24.5, svgY: 7.5)
-
-            // 2. Cheek Lobes (Backing)
-            cg.setFillColor(cYellow)
-            cg.setStrokeColor(cDark)
-            cg.setLineWidth(1.4)
-            cg.addEllipse(in: CGRect(x: 9.0 - 6.2, y: Y(16.5) - 6.2, width: 12.4, height: 12.4))
-            cg.drawPath(using: .fillStroke)
-            cg.addEllipse(in: CGRect(x: 23.0 - 6.2, y: Y(16.5) - 6.2, width: 12.4, height: 12.4))
+            // 1. Outer CRT Coin / Bezel
+            let coinRect = CGRect(x: 1.5, y: 1.5, width: 29.0, height: 29.0)
+            cg.setFillColor(cCathodeBg)
+            cg.setStrokeColor(cTitaniumRim)
+            cg.setLineWidth(1.8)
+            cg.addEllipse(in: coinRect)
             cg.drawPath(using: .fillStroke)
 
-            // 3. Head Center Fill
-            let head = CGMutablePath()
-            head.move(to: CGPoint(x: 9, y: Y(10)))
-            head.addCurve(to: CGPoint(x: 23, y: Y(10)), control1: CGPoint(x: 13, y: Y(8.5)), control2: CGPoint(x: 19, y: Y(8.5)))
-            head.addCurve(to: CGPoint(x: 26.5, y: Y(18)), control1: CGPoint(x: 25.5, y: Y(12)), control2: CGPoint(x: 26.5, y: Y(15)))
-            head.addCurve(to: CGPoint(x: 16, y: Y(22.5)), control1: CGPoint(x: 26.5, y: Y(21)), control2: CGPoint(x: 21.5, y: Y(22.5)))
-            head.addCurve(to: CGPoint(x: 5.5, y: Y(18)), control1: CGPoint(x: 10.5, y: Y(22.5)), control2: CGPoint(x: 5.5, y: Y(21)))
-            head.addCurve(to: CGPoint(x: 9, y: Y(10)), control1: CGPoint(x: 5.5, y: Y(15)), control2: CGPoint(x: 6.5, y: Y(12)))
-            head.closeSubpath()
-            cg.addPath(head)
-            cg.setFillColor(cYellow)
+            // 2. Inner Cathode Bezel Ring
+            let innerRect = CGRect(x: 3.5, y: 3.5, width: 25.0, height: 25.0)
+            cg.setStrokeColor(cTitaniumBezel)
+            cg.setLineWidth(1.0)
+            cg.strokeEllipse(in: innerRect)
+
+            // 3. Cyber Persona Hair Silhouette (top & sides)
+            let hair = CGMutablePath()
+            hair.move(to: CGPoint(x: 7.0, y: Y(24.0)))
+            hair.addCurve(to: CGPoint(x: 16.0, y: Y(6.5)), control1: CGPoint(x: 7.0, y: Y(11.0)), control2: CGPoint(x: 10.0, y: Y(6.5)))
+            hair.addCurve(to: CGPoint(x: 25.0, y: Y(24.0)), control1: CGPoint(x: 22.0, y: Y(6.5)), control2: CGPoint(x: 25.0, y: Y(11.0)))
+            hair.addLine(to: CGPoint(x: 22.5, y: Y(24.0)))
+            hair.addCurve(to: CGPoint(x: 16.0, y: Y(11.0)), control1: CGPoint(x: 22.5, y: Y(14.0)), control2: CGPoint(x: 20.0, y: Y(10.5)))
+            hair.addCurve(to: CGPoint(x: 9.5, y: Y(24.0)), control1: CGPoint(x: 12.0, y: Y(10.5)), control2: CGPoint(x: 9.5, y: Y(14.0)))
+            hair.closeSubpath()
+            cg.addPath(hair)
+            cg.setFillColor(cHair)
             cg.fillPath()
 
-            // 4. White Muzzle
-            let muzzle = CGMutablePath()
-            muzzle.move(to: CGPoint(x: 12.5, y: Y(9.5)))
-            muzzle.addCurve(to: CGPoint(x: 10.5, y: Y(18)), control1: CGPoint(x: 12.5, y: Y(9.5)), control2: CGPoint(x: 10.5, y: Y(14)))
-            muzzle.addCurve(to: CGPoint(x: 16, y: Y(22.5)), control1: CGPoint(x: 10.5, y: Y(21.5)), control2: CGPoint(x: 13, y: Y(22.5)))
-            muzzle.addCurve(to: CGPoint(x: 21.5, y: Y(18)), control1: CGPoint(x: 19, y: Y(22.5)), control2: CGPoint(x: 21.5, y: Y(21.5)))
-            muzzle.addCurve(to: CGPoint(x: 19.5, y: Y(9.5)), control1: CGPoint(x: 21.5, y: Y(14)), control2: CGPoint(x: 19.5, y: Y(9.5)))
-            muzzle.closeSubpath()
-            cg.addPath(muzzle)
-            cg.setFillColor(cWhite)
+            // 4. Face Contour
+            let face = CGMutablePath()
+            face.move(to: CGPoint(x: 10.5, y: Y(12.5)))
+            face.addLine(to: CGPoint(x: 21.5, y: Y(12.5)))
+            face.addCurve(to: CGPoint(x: 16.0, y: Y(24.5)), control1: CGPoint(x: 21.5, y: Y(21.0)), control2: CGPoint(x: 18.5, y: Y(24.5)))
+            face.addCurve(to: CGPoint(x: 10.5, y: Y(12.5)), control1: CGPoint(x: 13.5, y: Y(24.5)), control2: CGPoint(x: 10.5, y: Y(21.0)))
+            face.closeSubpath()
+            cg.addPath(face)
+            cg.setFillColor(cSkin)
             cg.fillPath()
 
-            // 5. Signature Concentric Eyes
-            func drawEye(cx: CGFloat, svgY: CGFloat, gx: CGFloat, svgGY: CGFloat) {
+            // 5. Dynamic Cyber Eyes & Gaze Tracking
+            func drawEye(cx: CGFloat, svgY: CGFloat) {
                 let cy = Y(svgY)
-                let gy = Y(svgGY)
-
                 if blinkProgress >= 0.75 {
-                    // Joyful curved eyelid slit during procedural blink
                     let slit = CGMutablePath()
-                    slit.move(to: CGPoint(x: cx - 3.8, y: cy - 0.5))
-                    slit.addCurve(
-                        to: CGPoint(x: cx + 3.8, y: cy - 0.5),
-                        control1: CGPoint(x: cx - 1.8, y: cy + 1.8),
-                        control2: CGPoint(x: cx + 1.8, y: cy + 1.8)
-                    )
+                    slit.move(to: CGPoint(x: cx - 2.4, y: cy))
+                    slit.addLine(to: CGPoint(x: cx + 2.4, y: cy))
                     cg.addPath(slit)
                     cg.setStrokeColor(cDark)
-                    cg.setLineWidth(1.4)
+                    cg.setLineWidth(1.2)
                     cg.strokePath()
                     return
                 }
 
                 let px = cx + eyeGazeX
                 let py = cy + eyeGazeY
-                let glx = gx + eyeGazeX
-                let gly = gy + eyeGazeY
 
-                // Outer ring
+                // Sclera / eye background
                 cg.setFillColor(cWhite)
-                cg.setStrokeColor(cDark)
-                cg.setLineWidth(1.3)
-                cg.addEllipse(in: CGRect(x: cx - 4.2, y: cy - 4.2, width: 8.4, height: 8.4))
-                cg.drawPath(using: .fillStroke)
+                cg.addEllipse(in: CGRect(x: cx - 2.5, y: cy - 1.8, width: 5.0, height: 3.6))
+                cg.fillPath()
 
-                // Middle ring
-                cg.setFillColor(cWhite)
-                cg.setStrokeColor(cDark)
-                cg.setLineWidth(0.9)
-                cg.addEllipse(in: CGRect(x: cx - 3.0, y: cy - 3.0, width: 6.0, height: 6.0))
-                cg.drawPath(using: .fillStroke)
-
-                // Pupil with gaze shift
+                // Iris / Pupil with gaze tracking
                 cg.setFillColor(cDark)
-                cg.addEllipse(in: CGRect(x: px - 1.9, y: py - 1.9, width: 3.8, height: 3.8))
+                cg.addEllipse(in: CGRect(x: px - 1.4, y: py - 1.4, width: 2.8, height: 2.8))
                 cg.fillPath()
 
-                // Glare highlight with gaze shift
-                cg.setFillColor(cWhite)
-                cg.addEllipse(in: CGRect(x: glx - 0.7, y: gly - 0.7, width: 1.4, height: 1.4))
+                // Cyber highlight
+                cg.setFillColor(cPhosphor)
+                cg.addEllipse(in: CGRect(x: px + 0.4, y: py - 0.7, width: 1.0, height: 1.0))
                 cg.fillPath()
             }
-            drawEye(cx: 11.2, svgY: 13.8, gx: 12.0, svgGY: 13.0)
-            drawEye(cx: 20.8, svgY: 13.8, gx: 21.6, svgGY: 13.0)
+            drawEye(cx: 13.2, svgY: 15.5)
+            drawEye(cx: 18.8, svgY: 15.5)
 
-            // 6. Red Inverted Triangle Nose
-            let nose = CGMutablePath()
-            nose.move(to: CGPoint(x: 14.1, y: Y(16.8)))
-            nose.addLine(to: CGPoint(x: 17.9, y: Y(16.8)))
-            nose.addLine(to: CGPoint(x: 16.0, y: Y(19.2)))
-            nose.closeSubpath()
-            cg.addPath(nose)
-            cg.setFillColor(cRed)
-            cg.setStrokeColor(cDark)
-            cg.setLineWidth(0.6)
-            cg.drawPath(using: .fillStroke)
-
-            // 7. Mouth W
-            let mouth = CGMutablePath()
-            mouth.move(to: CGPoint(x: 13.8, y: Y(20.0)))
-            mouth.addCurve(to: CGPoint(x: 16.0, y: Y(20.0)), control1: CGPoint(x: 14.6, y: Y(20.8)), control2: CGPoint(x: 15.4, y: Y(20.8)))
-            mouth.addCurve(to: CGPoint(x: 18.2, y: Y(20.0)), control1: CGPoint(x: 16.6, y: Y(20.8)), control2: CGPoint(x: 17.4, y: Y(20.8)))
-            cg.addPath(mouth)
-            cg.setStrokeColor(cDark)
-            cg.setLineWidth(1.0)
+            // 6. Subtle Cyber Lips
+            let lips = CGMutablePath()
+            lips.move(to: CGPoint(x: 14.5, y: Y(21.2)))
+            lips.addLine(to: CGPoint(x: 17.5, y: Y(21.2)))
+            cg.addPath(lips)
+            cg.setStrokeColor(NSColor(red: 0.75, green: 0.35, blue: 0.40, alpha: 1.0).cgColor)
+            cg.setLineWidth(0.8)
             cg.strokePath()
-
-            // 8. Paws
-            func drawPaw(cx: CGFloat, svgY: CGFloat) {
-                let cy = Y(svgY)
-                cg.setFillColor(cWhite)
-                cg.setStrokeColor(cDark)
-                cg.setLineWidth(1.1)
-                cg.addEllipse(in: CGRect(x: cx - 2.5, y: cy - 2.5, width: 5.0, height: 5.0))
-                cg.drawPath(using: .fillStroke)
-
-                cg.setFillColor(cRed)
-                cg.addEllipse(in: CGRect(x: cx - 0.8 - 0.35, y: cy - 1.0 - 0.35, width: 0.7, height: 0.7))
-                cg.addEllipse(in: CGRect(x: cx - 0.35, y: cy - 1.3 - 0.35, width: 0.7, height: 0.7))
-                cg.addEllipse(in: CGRect(x: cx + 0.8 - 0.35, y: cy - 1.0 - 0.35, width: 0.7, height: 0.7))
-                cg.fillPath()
-            }
-            drawPaw(cx: 12.8, svgY: 22.8)
-            drawPaw(cx: 19.2, svgY: 22.8)
 
             return true
         }
@@ -751,7 +691,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSBezierPath.fill(rightLineRect)
             }
             
-            // Center: Draw Xomsky Mascot
+            // Center: Draw NNTS Mascot
             icon.draw(in: iconRect)
         }
     }
@@ -1186,13 +1126,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         // 5. License & Lifecycle
         if LicenseEngine.shared.isPro {
             let proItem = makeAlignedMenuItem(
-                title: "Xomsky Pro · Active",
-                icon: NSImage(systemSymbolName: "checkmark.seal", accessibilityDescription: "Xomsky Pro Active"),
-                accessibilityHelp: "Manage your Xomsky Pro license",
+                title: "NNTS Pro · Active",
+                icon: NSImage(systemSymbolName: "checkmark.seal", accessibilityDescription: "NNTS Pro Active"),
+                accessibilityHelp: "Manage your NNTS Pro license",
                 action: #selector(handleManageLicense),
                 target: self
             )
-            let attr = NSMutableAttributedString(string: "Xomsky Pro")
+            let attr = NSMutableAttributedString(string: "NNTS Pro")
             let badge = NSAttributedString(
                 string: " · Active",
                 attributes: [
@@ -1205,9 +1145,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(proItem)
         } else {
             let proItem = makeAlignedMenuItem(
-                title: "Upgrade to Xomsky Pro (\(LicenseEngine.proPrice))...",
-                icon: NSImage(systemSymbolName: "star.fill", accessibilityDescription: "Upgrade to Xomsky Pro"),
-                accessibilityHelp: "Upgrade to Xomsky Pro for unlimited app and profile slots",
+                title: "Upgrade to NNTS Pro (\(LicenseEngine.proPrice))...",
+                icon: NSImage(systemSymbolName: "star.fill", accessibilityDescription: "Upgrade to NNTS Pro"),
+                accessibilityHelp: "Upgrade to NNTS Pro for unlimited app and profile slots",
                 action: #selector(handleUpgradeToPro),
                 target: self
             )
@@ -1226,13 +1166,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         
         let aboutItem = makeAlignedMenuItem(
-            title: "About Xomsky...",
-            icon: NSImage(systemSymbolName: "info.circle", accessibilityDescription: "About Xomsky"),
+            title: "About NNTS...",
+            icon: NSImage(systemSymbolName: "info.circle", accessibilityDescription: "About NNTS"),
             accessibilityHelp: "View version and application information",
             action: #selector(handleAbout),
             target: self
         )
-        let aboutAttr = NSMutableAttributedString(string: "About Xomsky")
+        let aboutAttr = NSMutableAttributedString(string: "About NNTS")
         let versionBadge = NSAttributedString(
             string: "  v\(AppDelegate.appVersion)",
             attributes: [
@@ -1256,7 +1196,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let updateItem = makeAlignedMenuItem(
             title: "Check for Updates...",
             icon: NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Check for Updates"),
-            accessibilityHelp: "Check for new versions of Xomsky",
+            accessibilityHelp: "Check for new versions of NNTS",
             action: #selector(handleCheckForUpdates),
             target: self
         )
@@ -1265,10 +1205,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         
         let quitItem = makeAlignedMenuItem(
-            title: "Quit Xomsky",
+            title: "Quit NNTS",
             keyEquivalent: "q",
             modifierMask: [.command],
-            icon: NSImage(systemSymbolName: "power", accessibilityDescription: "Quit Xomsky"),
+            icon: NSImage(systemSymbolName: "power", accessibilityDescription: "Quit NNTS"),
             accessibilityHelp: "Quit the application",
             action: #selector(handleQuit),
             target: self
@@ -1300,7 +1240,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         
         let alert = NSAlert()
         alert.messageText = "Chrome Profiles Limit Reached (4 of 4)"
-        alert.informativeText = "Xomsky supports up to 4 quick profiles (Caps + 1..4).\n\nAll 4 profile slots are currently in use. Choose which profile slot to replace with '\(newProfileName)':"
+        alert.informativeText = "NNTS supports up to 4 quick profiles (Caps + 1..4).\n\nAll 4 profile slots are currently in use. Choose which profile slot to replace with '\(newProfileName)':"
         alert.alertStyle = .informational
         
         let popUp = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 300, height: 26))
@@ -1445,7 +1385,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func handleManageLicense() {
         let alert = NSAlert()
-        alert.messageText = "Xomsky Pro Active"
+        alert.messageText = "NNTS Pro Active"
         let keyText = LicenseEngine.shared.activeLicenseKey ?? "Activated via License"
         alert.informativeText = "Status: Pro (\(LicenseEngine.proPrice))\nLicense Key: \(keyText)\n\nYou have unlocked unlimited Quick App slots!"
         alert.alertStyle = .informational
@@ -1463,12 +1403,12 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func promptEnterLicenseKey(thenPinBundleID: String? = nil) {
         let alert = NSAlert()
-        alert.messageText = "Enter Xomsky Pro License Key"
+        alert.messageText = "Enter NNTS Pro License Key"
         alert.informativeText = "Please enter your license key to unlock unlimited slots:"
         alert.alertStyle = .informational
         
         let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
-        input.placeholderString = "XOMSKY-PRO-XXXX-XXXX"
+        input.placeholderString = "NNTS-PRO-XXXX-XXXX"
         alert.accessoryView = input
         
         alert.addButton(withTitle: "Activate")
@@ -1483,7 +1423,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             
             // 1. Key format validation check before making network calls
             guard LicenseEngine.shared.validateLicenseKey(key) else {
-                showActivationError(message: "Invalid license key format. Xomsky license keys start with 'XOMSKY-'.")
+                showActivationError(message: "Invalid license key format. NNTS license keys start with 'NNTS-'.")
                 return
             }
             
@@ -1507,7 +1447,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func showActivationSuccess(thenPinBundleID: String?) {
         let successAlert = NSAlert()
-        successAlert.messageText = "Xomsky Pro Activated!"
+        successAlert.messageText = "NNTS Pro Activated!"
         successAlert.informativeText = "Thank you for supporting independent software development. You now have unlimited Quick App slots!"
         successAlert.alertStyle = .informational
         successAlert.addButton(withTitle: "OK")
@@ -1537,7 +1477,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         
         let alert = NSAlert()
         alert.messageText = "Free Tier Slot Limit Reached (5 of 5 Slots)"
-        alert.informativeText = "Xomsky Free includes 5 quick slots (1 Browser Hub + 4 Pinned Apps).\n\nSlots 6 and beyond require Xomsky Pro (\(LicenseEngine.proPrice)).\n\nYou can replace an existing pinned slot or upgrade to Xomsky Pro for unlimited quick app slots:"
+        alert.informativeText = "NNTS Free includes 5 quick slots (1 Browser Hub + 4 Pinned Apps).\n\nSlots 6 and beyond require NNTS Pro (\(LicenseEngine.proPrice)).\n\nYou can replace an existing pinned slot or upgrade to NNTS Pro for unlimited quick app slots:"
         alert.alertStyle = .informational
         
         let popUp = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 300, height: 26))
@@ -1593,7 +1533,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.allowedContentTypes = [.application]
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.prompt = "Pin App"
-        panel.message = "Choose an application to pin to Xomsky Quick Apps:"
+        panel.message = "Choose an application to pin to NNTS Quick Apps:"
         
         NSApp.activate(ignoringOtherApps: true)
         panel.level = .floating
@@ -1654,7 +1594,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - About & Updates Handlers
     @objc public func handleAbout() {
         let alert = NSAlert()
-        alert.messageText = "Xomsky"
+        alert.messageText = "NNTS"
         alert.informativeText = """
         Version \(AppDelegate.appVersion) (Build \(AppDelegate.appBuild))
 
@@ -1672,11 +1612,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         
         let response = alert.runModal()
         if response == .alertSecondButtonReturn {
-            if let url = URL(string: "https://github.com/unacau/xomsky") {
+            if let url = URL(string: "https://github.com/unacau/nnts") {
                 NSWorkspace.shared.open(url)
             }
         } else if response == .alertThirdButtonReturn {
-            if let url = URL(string: "https://unacau.github.io/xomsky") {
+            if let url = URL(string: "https://unacau.github.io/nnts") {
                 NSWorkspace.shared.open(url)
             }
         }
@@ -1690,10 +1630,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     public func checkForUpdates() async {
-        guard let url = URL(string: "https://api.github.com/repos/unacau/xomsky/releases/latest") else { return }
+        guard let url = URL(string: "https://api.github.com/repos/unacau/nnts/releases/latest") else { return }
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("Xomsky-App", forHTTPHeaderField: "User-Agent")
+        request.setValue("NNTS-App", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 10
         
         do {
@@ -1738,7 +1678,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         switch source {
         case .homebrew:
             alert.informativeText = """
-            You are currently running Xomsky v\(AppDelegate.appVersion).\(highlightsBlock)
+            You are currently running NNTS v\(AppDelegate.appVersion).\(highlightsBlock)
             A new version is available on Homebrew.
             Click 'Update in Terminal' to upgrade automatically, or view the release notes.
             """
@@ -1757,7 +1697,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             
         case .directDownload:
             alert.informativeText = """
-            You are currently running Xomsky v\(AppDelegate.appVersion).\(highlightsBlock)
+            You are currently running NNTS v\(AppDelegate.appVersion).\(highlightsBlock)
             A new version is available for download.
             Click 'Download DMG' to get the latest version.
             """
@@ -1778,7 +1718,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func showUpToDateAlert(currentVersion: String) {
         let alert = NSAlert()
-        alert.messageText = "Xomsky is Up to Date"
+        alert.messageText = "NNTS is Up to Date"
         alert.informativeText = "Version \(currentVersion) is currently the newest version available."
         alert.alertStyle = .informational
         alert.icon = AppDelegate.makeMascotStatusIcon()
@@ -1809,7 +1749,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
         window.center()
-        window.title = "Report an Issue — Xomsky"
+        window.title = "Report an Issue — NNTS"
         window.contentView = hostingView
         window.isReleasedWhenClosed = false
         window.level = .floating

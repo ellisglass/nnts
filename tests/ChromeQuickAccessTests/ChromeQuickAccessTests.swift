@@ -1163,13 +1163,13 @@ struct ChromeQuickAccessUnitTests {
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
         
-        // Refresh Profiles & Apps and Quit Xomsky use native keyEquivalent with ⌘ modifier
+        // Refresh Profiles & Apps and Quit NNTS use native keyEquivalent with ⌘ modifier
         let refreshItem = menu.items.first(where: { $0.title.contains("Refresh Profiles & Apps") })
         #expect(refreshItem != nil)
         #expect(refreshItem?.keyEquivalent == "r")
         #expect(refreshItem?.keyEquivalentModifierMask == [.command])
         
-        let quitItem = menu.items.first(where: { $0.title == "Quit Xomsky" })
+        let quitItem = menu.items.first(where: { $0.title == "Quit NNTS" })
         #expect(quitItem != nil)
         #expect(quitItem?.keyEquivalent == "q")
         #expect(quitItem?.keyEquivalentModifierMask == [.command])
@@ -1443,8 +1443,8 @@ struct ChromeQuickAccessUnitTests {
         #expect(LicenseEngine.freeSlotsLimit == 5)
         #expect(LicenseEngine.freePinnedAppsLimit == 4)
         #expect(LicenseEngine.proPrice == "$19 Lifetime")
-        #expect(LicenseEngine.productionServiceName == "com.almosteleven.xomsky.license")
-        #expect(LicenseEngine.serviceName == "com.almosteleven.xomsky.license.test")
+        #expect(LicenseEngine.productionServiceName == "com.almosteleven.nnts.license")
+        #expect(LicenseEngine.serviceName == "com.almosteleven.nnts.license.test")
         #expect(LicenseEngine.licenseAccount == "pro_license_key")
         
         // Invalid key checks: empty or whitespace
@@ -1452,15 +1452,16 @@ struct ChromeQuickAccessUnitTests {
         #expect(engine.validateLicenseKey("   ") == false)
         #expect(engine.validateLicenseKey("\n\t") == false)
         
-        // Invalid key checks: shorter than 8 characters or missing XOMSKY/KHOMYAK prefix
+        // Invalid key checks: shorter than 8 characters or missing NNTS/XOMSKY/KHOMYAK prefix
         #expect(engine.validateLicenseKey("ABC") == false)
         #expect(engine.validateLicenseKey("1234567") == false)
         #expect(engine.validateLicenseKey("   short   ") == false)
         #expect(engine.validateLicenseKey("12345678") == false)
         #expect(engine.validateLicenseKey("RANDOM-KEY-123") == false)
+        #expect(engine.validateLicenseKey("NNTS-PRO-LICENSE-001") == true)
+        #expect(engine.validateLicenseKey("  NNTS-VALID-KEY  ") == true)
+        #expect(engine.validateLicenseKey("NNTS-OWNER-KEY-001") == true)
         #expect(engine.validateLicenseKey("XOMSKY-PRO-LICENSE-001") == true)
-        #expect(engine.validateLicenseKey("  XOMSKY-VALID-KEY  ") == true)
-        #expect(engine.validateLicenseKey("XOMSKY-OWNER-KEY-001") == true)
         #expect(engine.validateLicenseKey("KHOMYAK-VIP-KEY") == true)
     }
     
@@ -1487,20 +1488,20 @@ struct ChromeQuickAccessUnitTests {
         
         // Attempt activation with valid key via mocked Polar validation
         engine.testMockOnlineValidationResult = true
-        let validKey = "XOMSKY-TEST-MOCKED-LICENSE"
+        let validKey = "NNTS-TEST-MOCKED-LICENSE"
         let validResult = engine.activate(key: "  \(validKey)  ")
         #expect(validResult == true)
         #expect(engine.isPro == true)
         #expect(engine.activeLicenseKey == validKey)
         
         // Verify persistent fallback in isolated test storage
-        #expect(LicenseEngine.storage.string(forKey: "XomskyProLicenseKey") == validKey)
+        #expect(LicenseEngine.storage.string(forKey: "NNTSProLicenseKey") == validKey)
         
         // Deactivation clears state
         engine.deactivate()
         #expect(engine.isPro == false)
         #expect(engine.activeLicenseKey == nil)
-        #expect(LicenseEngine.storage.string(forKey: "XomskyProLicenseKey") == nil)
+        #expect(LicenseEngine.storage.string(forKey: "NNTSProLicenseKey") == nil)
         engine.testMockOnlineValidationResult = nil
     }
     
@@ -1962,7 +1963,7 @@ struct ChromeQuickAccessUnitTests {
         // 4. Utility section ordering and checkmark hygiene
         let copyItem = menu.items.first(where: { $0.title.hasPrefix("Copy on Select") })
         let refreshItem = menu.items.first(where: { $0.title.contains("Refresh Profiles & Apps") })
-        let quitItem = menu.items.first(where: { $0.title.contains("Quit Xomsky") })
+        let quitItem = menu.items.first(where: { $0.title.contains("Quit NNTS") })
         #expect(copyItem != nil)
         #expect(copyItem?.state == .off, "Copy on Select must not use gutter checkmark to prevent left margin collision")
         #expect(copyItem?.title.contains("· On") == true || copyItem?.title.contains("· Off") == true, "Copy on Select must display inline state badge")
@@ -1973,7 +1974,7 @@ struct ChromeQuickAccessUnitTests {
            let manageAppIdx = menu.items.firstIndex(where: { $0.title.contains("Manage Quick Apps") || $0.title == "Change App" }),
            let settingsIdx = menu.items.firstIndex(where: { $0.title == "Settings..." }),
            let refreshIdx = menu.items.firstIndex(where: { $0.title.contains("Refresh Profiles & Apps") }),
-           let quitIdx = menu.items.firstIndex(where: { $0.title.contains("Quit Xomsky") }) {
+           let quitIdx = menu.items.firstIndex(where: { $0.title.contains("Quit NNTS") }) {
             #expect(copyIdx < manageAppIdx)
             #expect(manageAppIdx < settingsIdx)
             #expect(settingsIdx < refreshIdx)
@@ -1981,9 +1982,9 @@ struct ChromeQuickAccessUnitTests {
         }
         
         // Ensure Pro item (when active) does not carry a conflicting trailing checkmark
-        let proItem = menu.items.first(where: { $0.title.contains("Xomsky Pro") })
+        let proItem = menu.items.first(where: { $0.title.contains("NNTS Pro") })
         #expect(proItem != nil)
-        #expect(proItem?.title.hasSuffix("✓") == false, "Xomsky Pro must not carry trailing checkmark to prevent clash with Copy on Select")
+        #expect(proItem?.title.hasSuffix("✓") == false, "NNTS Pro must not carry trailing checkmark to prevent clash with Copy on Select")
         
         // Ensure Manage Quick Apps is not isolated by a redundant preceding separator
         if let changeAppIdx = menu.items.firstIndex(where: { $0.title.contains("Manage Quick Apps") || $0.title == "Change App" }), changeAppIdx > 0 {
@@ -2006,11 +2007,13 @@ struct ChromeQuickAccessUnitTests {
     
     @Test
     func testXomskyMotionConstants() {
+        _ = NNTSMotion.interactiveSnap
+        _ = NNTSMotion.magneticGlide
+        _ = NNTSMotion.tactileBop
+        _ = NNTSMotion.cardMorph
+        _ = NNTSMotion.microPress
         _ = XomskyMotion.interactiveSnap
         _ = XomskyMotion.magneticGlide
-        _ = XomskyMotion.tactileBop
-        _ = XomskyMotion.cardMorph
-        _ = XomskyMotion.microPress
     }
     
     @Test @MainActor
@@ -2049,8 +2052,8 @@ struct ChromeQuickAccessUnitTests {
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
         
-        let aboutItem = menu.items.first(where: { $0.title.contains("About Xomsky") })
-        #expect(aboutItem != nil, "About Xomsky menu item must exist")
+        let aboutItem = menu.items.first(where: { $0.title.contains("About NNTS") })
+        #expect(aboutItem != nil, "About NNTS menu item must exist")
         #expect(aboutItem?.attributedTitle?.string.contains("v\(AppDelegate.appVersion)") == true)
         #expect(aboutItem?.action == #selector(AppDelegate.handleAbout))
         
@@ -2090,8 +2093,8 @@ struct ChromeQuickAccessUnitTests {
 
     @Test
     func testUpdateEngineDownloadUrlAndCommand() {
-        #expect(UpdateEngine.directDmgDownloadUrl.absoluteString == "https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg")
-        #expect(UpdateEngine.homebrewUpgradeCommand == "brew update && brew upgrade --cask xomsky")
+        #expect(UpdateEngine.directDmgDownloadUrl.absoluteString == "https://github.com/unacau/nnts/releases/latest/download/NNTS.dmg")
+        #expect(UpdateEngine.homebrewUpgradeCommand == "brew update && brew upgrade --cask nnts")
     }
 
     @Test
@@ -2172,7 +2175,7 @@ struct ChromeQuickAccessUnitTests {
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
         #expect(FileManager.default.fileExists(atPath: zipURL.path))
-        #expect(zipURL.lastPathComponent == "xomsky-diagnostic.zip")
+        #expect(zipURL.lastPathComponent == "nnts-diagnostic.zip")
         #expect(zipURL.path.contains("Downloads"))
 
         let attr = try FileManager.default.attributesOfItem(atPath: zipURL.path)
@@ -2182,7 +2185,7 @@ struct ChromeQuickAccessUnitTests {
         let ghURL = DiagnosticBundleService.makeGitHubIssueURL(description: "Test issue")
         #expect(ghURL != nil)
         #expect(ghURL?.host == "github.com")
-        #expect(ghURL?.path.contains("unacau/xomsky/issues/new") == true)
+        #expect(ghURL?.path.contains("unacau/nnts/issues/new") == true)
         #expect(ghURL?.absoluteString.contains("%5BBug%20Report%5D") == true || ghURL?.absoluteString.contains("[Bug") == true)
     }
 
@@ -2193,7 +2196,7 @@ struct ChromeQuickAccessUnitTests {
         TelemetryBuffer.shared.append(category: "copy-on-select", level: "INFO", message: "Selection evaluated")
 
         let report = DiagnosticBundleService.makeFullDiagnosticReport()
-        #expect(report.contains("=== Xomsky System Diagnostic Summary ==="))
+        #expect(report.contains("=== NNTS System Diagnostic Summary ==="))
         #expect(report.contains("App Version:"))
         #expect(report.contains("macOS Version:"))
         #expect(report.contains("Accessibility Permissions:"))
@@ -2218,15 +2221,16 @@ struct ChromeQuickAccessUnitTests {
         #expect(gitHubIcon.isValid)
         #expect(gitHubIcon.size.width > 0)
 
-        let testURL = URL(fileURLWithPath: "/tmp/xomsky-diagnostic.zip")
+        let testURL = URL(fileURLWithPath: "/tmp/nnts-diagnostic.zip")
         let provider = NSItemProvider(object: testURL as NSURL)
-        provider.suggestedName = "xomsky-diagnostic.zip"
+        provider.suggestedName = "nnts-diagnostic.zip"
         #expect(provider.registeredTypeIdentifiers.contains("public.file-url"))
     }
 
     @Test @MainActor
     func testCopyOnSelectXomskyWindowDetection() {
         let engine = CopyOnSelectEngine()
+        _ = engine.isInteractingWithNNTSWindow
         _ = engine.isInteractingWithXomskyWindow
         #expect(engine.dragThreshold == 10.0)
     }
@@ -2734,6 +2738,9 @@ struct ChromeQuickAccessUnitTests {
         _ = engine.saveKeychainLicense(key: "XOMSKY-PIRATED-KEY-12345")
         engine.deleteKeychainReceipt()
         engine.deleteKeychainActivationId()
+        LicenseEngine.storage.removeObject(forKey: "NNTSProReceiptToken")
+        LicenseEngine.storage.removeObject(forKey: "NNTSProActivationId")
+        LicenseEngine.storage.removeObject(forKey: "NNTSProLicenseKey")
         LicenseEngine.storage.removeObject(forKey: "XomskyProReceiptToken")
         LicenseEngine.storage.removeObject(forKey: "XomskyProActivationId")
         LicenseEngine.storage.removeObject(forKey: "XomskyProLicenseKey")

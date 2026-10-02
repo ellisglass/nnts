@@ -1,14 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_NAME="Xomsky"
+APP_NAME="NNTS"
 DIST_DIR="dist"
 APP_BUNDLE="${DIST_DIR}/${APP_NAME}.app"
 CONTENTS_DIR="${APP_BUNDLE}/Contents"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
 BUILD_DIR="${DIST_DIR}/build_native"
-DMG_PATH="${DIST_DIR}/Xomsky.dmg"
+DMG_PATH="${DIST_DIR}/${APP_NAME}.dmg"
 
 FAST_DEV=false
 RELAUNCH=false
@@ -85,7 +85,7 @@ if [ "${FAST_DEV}" = true ]; then
         -parse-as-library \
         -target "${TARGET_TRIPLE}" \
         "${SOURCES[@]}" \
-        -o "${MACOS_DIR}/Xomsky" \
+        -o "${MACOS_DIR}/${APP_NAME}" \
         "${FRAMEWORKS[@]}" \
         -Onone
 
@@ -99,13 +99,14 @@ if [ "${FAST_DEV}" = true ]; then
         cp "src/ChromeQuickAccess/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
         
     fi
-    codesign --force --sign - --identifier "com.almosteleven.xomsky" -r="designated => identifier \"com.almosteleven.xomsky\"" "${APP_BUNDLE}"
+    codesign --force --sign - --identifier "com.almosteleven.nnts" -r="designated => identifier \"com.almosteleven.nnts\"" "${APP_BUNDLE}"
 
     rm -rf "${BUILD_DIR}"
 
     if [ "${RELAUNCH}" = true ]; then
         echo "[*] Updating /Applications/${APP_NAME}.app and relaunching..."
         pkill -x "${APP_NAME}" 2>/dev/null || true
+        pkill -x "Xomsky" 2>/dev/null || true
         sleep 0.3
         rm -rf "/Applications/${APP_NAME}.app"
         cp -R "${APP_BUNDLE}" "/Applications/${APP_NAME}.app"
@@ -145,7 +146,7 @@ swiftc \
     -O
 
 echo "[3/5] Creating Universal Mach-O Binary with lipo..."
-lipo -create -output "${MACOS_DIR}/Xomsky" \
+lipo -create -output "${MACOS_DIR}/${APP_NAME}" \
     "${BUILD_DIR}/temp/binary_arm64" \
     "${BUILD_DIR}/temp/binary_x86_64"
 
@@ -163,7 +164,7 @@ if [ -f "src/ChromeQuickAccess/Resources/dmg_background.png" ]; then
     cp "src/ChromeQuickAccess/Resources/dmg_background.png" "${RESOURCES_DIR}/dmg_background.png"
 fi
 
-codesign --force --sign - --identifier "com.almosteleven.xomsky" -r="designated => identifier \"com.almosteleven.xomsky\"" "${APP_BUNDLE}"
+codesign --force --sign - --identifier "com.almosteleven.nnts" -r="designated => identifier \"com.almosteleven.nnts\"" "${APP_BUNDLE}"
 codesign -vvv "${APP_BUNDLE}"
 
 echo "[5/5] Generating DMG Installer..."
@@ -184,5 +185,5 @@ echo "=================================================="
 echo " ✅ Standalone Build Succeeded!"
 echo " App: ${APP_BUNDLE}"
 echo " DMG: ${DMG_PATH}"
-echo " Archs: $(lipo -archs "${MACOS_DIR}/Xomsky")"
+echo " Archs: $(lipo -archs "${MACOS_DIR}/${APP_NAME}")"
 echo "=================================================="

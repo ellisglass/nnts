@@ -1,15 +1,20 @@
-## What's Changed in v1.1.7
+## What's Changed in v2.0.0
 
-### 🛡️ Security & Hardening (Critical Vulnerability Remediation)
-* **Cryptographic Keychain Verification:** Enforced SHA-256 receipt token verification (`pro_receipt_token`) for Keychain licenses, preventing unauthorized offline license spoofing.
-* **Accessibility Memory Safety:** Replaced forced cast `as!` with CoreFoundation type validation (`AXUIElementGetTypeID`), eliminating fatal SIGABRT crashes.
-* **Terminal & Password Vault Protection:** Added 9 modern terminal emulators (Ghostty, Kitty, Alacritty, WezTerm, Warp, iTerm2) and password vaults (Dashlane, Enpass, NordPass, Signal) to Copy-on-Select sensitive blacklist.
-* **Path Traversal Shield:** Prevented directory traversal via profile avatar filename (`gaia_picture_file_name`) with strict canonical path boundary checks.
-* **CLI Flag Injection Prevention:** Sanitized Chromium profile directory names in cold start launcher to disallow arbitrary argument injection.
-* **Gatekeeper Integrity Enforcement:** Added deep binary structure and code signature verification (`codesign --verify --deep --strict`) before quarantine removal in `install.sh`.
-* **Diagnostic Report Isolation:** Restricted temporary log directory permissions to `0700` and export zip archive to `0600` to prevent cross-process data leakage.
-* **URL Scheme Guard:** Enforced `https` protocol enforcement on release notification links to block arbitrary URL handler execution.
+### 🎨 Branding
+* **Brand Evolution to NNTS:** Transitioned product identity and naming entirely from Xomsky to NNTS across macOS binaries, menu bars, HUDs, and documentation.
+* **Cyber Mascot & App Icon:** Introduced a cyber-brutalist Titanium CRT emblem with active gaze tracking, scanline rastering, and procedural blinking.
+* **Refreshed Visual Assets:** Shipped redesigned macOS Sonoma/Sequoia squircle icons, custom DMG installer backdrop, and full-resolution Bento Grid graphic.
 
-### ⚡ Improvements & Quality Gates
-* **Bundle Validation:** Added `.app` extension validation to custom application pinning (`registerCustomApp`).
-* **Test Suite Expansion:** Added comprehensive security regression test suite (99 passing tests in <0.9s).
+### ⚡ Features
+* **Universal Browser Profile Jump:** Instant elevation of Chrome and Brave profile windows via `Caps Lock + C/B + 1..4`.
+* **Dynamic First-Letter App Switching:** One-key context switching for all pinned and installed macOS applications via `Caps Lock + [A–Z]`.
+* **Linux-Style Copy-on-Select:** Automatic clipboard capture upon drag-selection (>10pt) or multi-click with non-intrusive cursor-following HUD toast.
+
+### 🚀 Improvements
+* **Backward Compatibility Shield:** Retained seamless migration paths for existing preferences, Keychain tokens, and previous license keys (`XOMSKY-` & `KHOMYAK-`).
+* **Subsystem Log Modernization:** Upgraded Unified Logging (`os_log`) subsystem to `com.almosteleven.nnts` with category-level telemetry streams.
+* **Streamlined Universal Distribution:** Native Universal 2 Mach-O binary (Apple Silicon arm64 & Intel x86_64) packaged with an optimized zero-dependency DMG installer.
+
+### 🛠️ Fixes
+* **HUD Overlay Dismissal Hygiene:** Ensured floating overlay window hides strictly before app activation to prevent WindowServer transition lockups.
+* **Menu Bar Checkmark Collision:** Resolved gutter checkmark collision between Copy-on-Select status badge and Pro license indicators.

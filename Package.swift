@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "Xomsky",
+    name: "NNTS",
     platforms: [.macOS(.v14)],
     dependencies: [
         .package(url: "https://github.com/apple/swift-testing.git", from: "0.1.0")

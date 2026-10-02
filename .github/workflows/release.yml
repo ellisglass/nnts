@@ -65,7 +65,7 @@ jobs:
       - name: Generate SHA-256 Checksums
         run: |
           cd dist
-          shasum -a 256 Xomsky.dmg > checksums.txt
+          shasum -a 256 NNTS.dmg > checksums.txt
           echo "=== Computed Checksums ==="
           cat checksums.txt
           cd ..
@@ -73,13 +73,13 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          name: "${{ github.ref_name }} - Xomsky Productivity Suite"
+          name: "${{ github.ref_name }} - NNTS Productivity Suite"
           body_path: RELEASE_NOTES.md
           generate_release_notes: true
           draft: false
           prerelease: false
           files: |
-            dist/Xomsky.dmg
+            dist/NNTS.dmg
             dist/checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -92,22 +92,30 @@ jobs:
           if [ -n "$TAP_TOKEN" ]; then
             echo "🚀 Updating Homebrew tap formula in unacau/homebrew-tap..."
             VERSION="${GITHUB_REF_NAME#v}"
-            SHA=$(shasum -a 256 dist/Xomsky.dmg | awk '{print $1}')
+            SHA=$(shasum -a 256 dist/NNTS.dmg | awk '{print $1}')
 
-            sed -i '' -e "s/version \".*\"/version \"${VERSION}\"/" Casks/xomsky.rb || sed -i -e "s/version \".*\"/version \"${VERSION}\"/" Casks/xomsky.rb
-            sed -i '' -e "s/sha256 \".*\"/sha256 \"${SHA}\"/" Casks/xomsky.rb || sed -i -e "s/sha256 \".*\"/sha256 \"${SHA}\"/" Casks/xomsky.rb
+            if [ -f "Casks/nnts.rb" ]; then
+              sed -i '' -e "s/version \".*\"/version \"${VERSION}\"/" Casks/nnts.rb || sed -i -e "s/version \".*\"/version \"${VERSION}\"/" Casks/nnts.rb
+              sed -i '' -e "s/sha256 \".*\"/sha256 \"${SHA}\"/" Casks/nnts.rb || sed -i -e "s/sha256 \".*\"/sha256 \"${SHA}\"/" Casks/nnts.rb
+            fi
 
             FILE_SHA=$(curl -s -H "Authorization: Bearer $TAP_TOKEN" \
-              "https://api.github.com/repos/unacau/homebrew-tap/contents/Casks/xomsky.rb" | jq -r .sha)
+              "https://api.github.com/repos/unacau/homebrew-tap/contents/Casks/nnts.rb" | jq -r .sha)
 
-            CONTENT=$(cat Casks/xomsky.rb | base64 | tr -d '\n')
+            if [ -f "Casks/nnts.rb" ]; then
+              CONTENT=$(cat Casks/nnts.rb | base64 | tr -d '\n')
+            else
+              CONTENT=""
+            fi
 
-            curl -s -X PUT \
-              -H "Authorization: Bearer $TAP_TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/unacau/homebrew-tap/contents/Casks/xomsky.rb" \
-              -d "{\"message\":\"chore(cask): update xomsky to v${VERSION}\",\"content\":\"${CONTENT}\",\"sha\":\"${FILE_SHA}\"}"
-            echo "✅ Homebrew tap formula updated to v${VERSION} (${SHA})"
+            if [ -n "$FILE_SHA" ] && [ -n "$CONTENT" ]; then
+              curl -s -X PUT \
+                -H "Authorization: Bearer $TAP_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/unacau/homebrew-tap/contents/Casks/nnts.rb" \
+                -d "{\"message\":\"chore(cask): update nnts to v${VERSION}\",\"content\":\"${CONTENT}\",\"sha\":\"${FILE_SHA}\"}"
+              echo "✅ Homebrew tap formula updated to v${VERSION} (${SHA})"
+            fi
           else
             echo "ℹ️ HOMEBREW_TAP_TOKEN secret not configured. Skipping automated tap update."
           fi
@@ -117,9 +125,9 @@ jobs:
         run: |
           VERSION=$(cat VERSION.txt 2>/dev/null || echo 'N/A')
           BUILD=$(cat BUILD.txt 2>/dev/null || echo 'N/A')
-          SHA=$(shasum -a 256 dist/Xomsky.dmg 2>/dev/null | awk '{print $1}' || echo 'N/A')
-          SIZE=$(ls -lh dist/Xomsky.dmg 2>/dev/null | awk '{print $5}' || echo 'N/A')
-          ARCHS=$(lipo -archs "dist/Xomsky.app/Contents/MacOS/Xomsky" 2>/dev/null || echo 'N/A')
+          SHA=$(shasum -a 256 dist/NNTS.dmg 2>/dev/null | awk '{print $1}' || echo 'N/A')
+          SIZE=$(ls -lh dist/NNTS.dmg 2>/dev/null | awk '{print $5}' || echo 'N/A')
+          ARCHS=$(lipo -archs "dist/NNTS.app/Contents/MacOS/NNTS" 2>/dev/null || echo 'N/A')
 
           cat << EOF >> $GITHUB_STEP_SUMMARY
           ## 🚀 GitHub Release Successfully Published
@@ -131,5 +139,5 @@ jobs:
           | **Target Architectures** | \`${ARCHS}\` |
           | **DMG Size** | \`${SIZE}\` |
           | **SHA-256 Hash** | \`${SHA}\` |
-          | **Release Assets** | \`Xomsky.dmg\`, \`checksums.txt\` |
+          | **Release Assets** | \`NNTS.dmg\`, \`checksums.txt\` |
           EOF

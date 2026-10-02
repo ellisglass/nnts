@@ -8,23 +8,25 @@ public enum InstallationSource: String, Sendable, Equatable {
 }
 
 public final class UpdateEngine: Sendable {
-    private static let logger = Logger(subsystem: "com.almosteleven.xomsky", category: "update-engine")
+    private static let logger = Logger(subsystem: "com.almosteleven.nnts", category: "update-engine")
     
-    public static let directDmgDownloadUrl = URL(string: "https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg")!
+    public static let directDmgDownloadUrl = URL(string: "https://github.com/unacau/nnts/releases/latest/download/NNTS.dmg")!
     
-    public static let homebrewUpgradeCommand = "brew update && brew upgrade --cask xomsky"
+    public static let homebrewUpgradeCommand = "brew update && brew upgrade --cask nnts"
     
     public static func detectInstallationSource(
         bundlePath: String = Bundle.main.bundlePath,
         fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
     ) -> InstallationSource {
         // 1. Running directly out of Caskroom
-        if bundlePath.contains("Caskroom/xomsky") {
+        if bundlePath.contains("Caskroom/nnts") || bundlePath.contains("Caskroom/xomsky") {
             return .homebrew
         }
         
         // 2. Common Homebrew Cask metadata locations on Apple Silicon and Intel Macs
         let commonCaskPaths = [
+            "/opt/homebrew/Caskroom/nnts",
+            "/usr/local/Caskroom/nnts",
             "/opt/homebrew/Caskroom/xomsky",
             "/usr/local/Caskroom/xomsky"
         ]
@@ -42,29 +44,29 @@ public final class UpdateEngine: Sendable {
         // 1. Primary approach: Launch an executable .command script.
         // Opening a .command file executes directly in Terminal without requiring TCC AppleEvents permissions.
         // Isolate the script inside a uniquely generated, restricted (0700) subdirectory to prevent symlink / race attacks.
-        let isolatedDir = FileManager.default.temporaryDirectory.appendingPathComponent("xomsky-upg-\(UUID().uuidString)", isDirectory: true)
-        let tempScriptUrl = isolatedDir.appendingPathComponent("xomsky-upgrade.command")
+        let isolatedDir = FileManager.default.temporaryDirectory.appendingPathComponent("nnts-upg-\(UUID().uuidString)", isDirectory: true)
+        let tempScriptUrl = isolatedDir.appendingPathComponent("nnts-upgrade.command")
         let scriptContent = """
         #!/bin/bash
         echo "=========================================="
-        echo "       Upgrading Xomsky via Homebrew      "
+        echo "        Upgrading NNTS via Homebrew       "
         echo "=========================================="
         echo ""
         echo "==> Fetching latest tap recipes (brew update)..."
         brew update
         echo ""
-        echo "==> Upgrading Xomsky cask..."
-        if brew upgrade --cask xomsky; then
+        echo "==> Upgrading NNTS cask..."
+        if brew upgrade --cask nnts; then
             echo ""
             echo "=========================================="
-            echo "    Xomsky successfully upgraded!         "
-            echo "    Restart Xomsky to apply changes.      "
+            echo "     NNTS successfully upgraded!          "
+            echo "     Restart NNTS to apply changes.       "
             echo "=========================================="
         else
             echo ""
             echo "=========================================="
             echo "    Upgrade encountered an issue.         "
-            echo "    Try running: brew reinstall --cask xomsky"
+            echo "    Try running: brew reinstall --cask nnts"
             echo "=========================================="
         fi
         echo ""

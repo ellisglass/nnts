@@ -65,7 +65,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         pendingCopyTask = nil
     }
     
-    public var isInteractingWithXomskyWindow: Bool {
+    public var isInteractingWithNNTSWindow: Bool {
         guard let app = (NSApp as NSApplication?) else { return false }
         if app.isActive { return true }
         if let frontID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
@@ -79,7 +79,11 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         }
     }
     
-    private let logger = Logger(subsystem: "com.almosteleven.xomsky", category: "copy-on-select")
+    public var isInteractingWithXomskyWindow: Bool {
+        return isInteractingWithNNTSWindow
+    }
+    
+    private let logger = Logger(subsystem: "com.almosteleven.nnts", category: "copy-on-select")
     
     public init() {}
     
@@ -157,7 +161,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         globalMouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let engine = self, engine.isEnabled else { return }
-                guard !engine.isInteractingWithXomskyWindow else {
+                guard !engine.isInteractingWithNNTSWindow else {
                     engine.mouseDownLocation = nil
                     return
                 }
@@ -173,7 +177,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         globalMouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] event in
             Task { @MainActor [weak self] in
                 guard let engine = self, engine.isEnabled else { return }
-                guard !engine.isInteractingWithXomskyWindow else {
+                guard !engine.isInteractingWithNNTSWindow else {
                     engine.mouseDownLocation = nil
                     return
                 }
@@ -208,7 +212,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         
         guard isEnabled else { return }
         
-        if isInteractingWithXomskyWindow {
+        if isInteractingWithNNTSWindow {
             cancelPendingCopy()
             mouseDownLocation = nil
             return
@@ -271,7 +275,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
     
     public func shouldTriggerCopy(start: CGPoint, end: CGPoint, clickCount: Int) -> Bool {
         guard isEnabled else { return false }
-        if isInteractingWithXomskyWindow { return false }
+        if isInteractingWithNNTSWindow { return false }
         
         // Level 1: System-wide Secure Event Input check (e.g. password field / sudo active)
         if IsSecureEventInputEnabled() {
@@ -306,7 +310,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
             try? await Task.sleep(nanoseconds: delay * 1_000_000)
             guard !Task.isCancelled else { return }
             guard let engine = self, engine.isEnabled && engine.isStarted else { return }
-            guard !engine.isInteractingWithXomskyWindow else { return }
+            guard !engine.isInteractingWithNNTSWindow else { return }
             
             // Level 3: Accessibility field check right before posting synthetic keystroke
             guard !engine.isFocusedElementSecure() else {

@@ -42,3 +42,4 @@ binaries/
 *.xcworkspace/
 xcuserdata/
 DerivedData/
+scratch/

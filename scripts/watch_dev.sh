@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ==============================================================================
-# Xomsky Live Watcher
+# NNTS Live Watcher
 # Continuously monitors src/ChromeQuickAccess for changes and triggers
 # instant compilation, installation to /Applications, and app relaunch.
 # ==============================================================================
@@ -11,7 +11,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WATCH_DIR="${PROJECT_DIR}/src/ChromeQuickAccess"
 
 echo "=================================================="
-echo " 🔭 Xomsky Live Dev Watcher Active"
+echo " 🔭 NNTS Live Dev Watcher Active"
 echo " Watching: ${WATCH_DIR}"
 echo " Action: Auto-build & relaunch on file save"
 echo " Press Ctrl+C to stop"
@@ -62,14 +62,14 @@ try:
             time.sleep(0.2)
             last_snapshot = get_snapshot()
             
-            print("\n🔄 [Xomsky Watcher] Change detected in: " + ", ".join(changed_files[:3]))
+            print("\n🔄 [NNTS Watcher] Change detected in: " + ", ".join(changed_files[:3]))
             print("⚡ Rebuilding & relaunching app...")
             res = subprocess.run(build_cmd)
             if res.returncode == 0:
-                print("✨ [Xomsky Watcher] Live reload complete! Ready.\n")
+                print("✨ [NNTS Watcher] Live reload complete! Ready.\n")
             else:
-                print("❌ [Xomsky Watcher] Build failed (exit code {}). Fix error and save again.\n".format(res.returncode))
+                print("❌ [NNTS Watcher] Build failed (exit code {}). Fix error and save again.\n".format(res.returncode))
 except KeyboardInterrupt:
-    print("\n👋 Xomsky Live Dev Watcher stopped.")
+    print("\n👋 NNTS Live Dev Watcher stopped.")
     sys.exit(0)
 ' "${PROJECT_DIR}" "${WATCH_DIR}"

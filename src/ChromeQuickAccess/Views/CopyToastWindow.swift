@@ -63,7 +63,7 @@ public struct CopyToastView: View {
         .scaleEffect(isVisible ? 1.0 : 0.80)
         .opacity(isVisible ? 1.0 : 0.0)
         .offset(y: isVisible ? 0 : 6)
-        .animation(XomskyMotion.tactileBop, value: isVisible)
+        .animation(NNTSMotion.tactileBop, value: isVisible)
         .preferredColorScheme(.dark)
     }
 }
@@ -129,7 +129,7 @@ public final class CopyToastWindow: NSPanel {
         
         self.setFrame(NSRect(x: originX, y: originY, width: toastWidth, height: toastHeight), display: true)
         
-        withAnimation(XomskyMotion.tactileBop) {
+        withAnimation(NNTSMotion.tactileBop) {
             CopyToastState.shared.isVisible = true
         }
         self.alphaValue = 1.0

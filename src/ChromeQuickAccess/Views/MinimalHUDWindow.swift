@@ -78,7 +78,7 @@ public final class ChromeSwitcherState: ObservableObject {
     public func selectNext() {
         if mode == .chrome {
             guard !profiles.isEmpty else { return }
-            withAnimation(XomskyMotion.magneticGlide) {
+            withAnimation(NNTSMotion.magneticGlide) {
                 selectedIndex = (selectedIndex + 1) % profiles.count
                 selectedProfileIndex = selectedIndex
             }
@@ -86,7 +86,7 @@ public final class ChromeSwitcherState: ObservableObject {
         }
         
         guard !antigravityItems.isEmpty else { return }
-        withAnimation(XomskyMotion.magneticGlide) {
+        withAnimation(NNTSMotion.magneticGlide) {
             selectedIndex = (selectedIndex + 1) % antigravityItems.count
         }
     }
@@ -94,7 +94,7 @@ public final class ChromeSwitcherState: ObservableObject {
     public func selectPrevious() {
         if mode == .chrome {
             guard !profiles.isEmpty else { return }
-            withAnimation(XomskyMotion.magneticGlide) {
+            withAnimation(NNTSMotion.magneticGlide) {
                 selectedIndex = (selectedIndex - 1 + profiles.count) % profiles.count
                 selectedProfileIndex = selectedIndex
             }
@@ -102,7 +102,7 @@ public final class ChromeSwitcherState: ObservableObject {
         }
         
         guard !antigravityItems.isEmpty else { return }
-        withAnimation(XomskyMotion.magneticGlide) {
+        withAnimation(NNTSMotion.magneticGlide) {
             selectedIndex = (selectedIndex - 1 + antigravityItems.count) % antigravityItems.count
         }
     }
@@ -119,14 +119,14 @@ public final class ChromeSwitcherState: ObservableObject {
         if mode == .chrome {
             guard !profiles.isEmpty else { return }
             let clamped = max(0, min(index, profiles.count - 1))
-            withAnimation(XomskyMotion.magneticGlide) {
+            withAnimation(NNTSMotion.magneticGlide) {
                 selectedIndex = clamped
                 selectedProfileIndex = clamped
             }
         } else {
             guard !antigravityItems.isEmpty else { return }
             let clamped = max(0, min(index, antigravityItems.count - 1))
-            withAnimation(XomskyMotion.magneticGlide) {
+            withAnimation(NNTSMotion.magneticGlide) {
                 selectedIndex = clamped
             }
         }
@@ -139,12 +139,12 @@ public final class ChromeSwitcherState: ObservableObject {
             item.bundleID == ChromeProfileEngine.shared.browserBundleID ||
             ChromeProfileEngine.supportedBrowsers.contains(where: { b in b.bundleID == item.bundleID })
         }) {
-            withAnimation(XomskyMotion.magneticGlide) {
+            withAnimation(NNTSMotion.magneticGlide) {
                 selectedIndex = browserIdx
                 selectedProfileIndex = clamped
             }
         } else {
-            withAnimation(XomskyMotion.magneticGlide) {
+            withAnimation(NNTSMotion.magneticGlide) {
                 mode = .chrome
                 selectedIndex = clamped
                 selectedProfileIndex = clamped
@@ -256,7 +256,7 @@ public struct ProfileAvatarView: View {
         .frame(width: colWidth)
         .padding(.vertical, isCompact ? 1.5 : 2.5)
         .scaleEffect(isSelected ? 1.05 : 0.96)
-        .animation(XomskyMotion.magneticGlide, value: isSelected)
+        .animation(NNTSMotion.magneticGlide, value: isSelected)
     }
 }
 
@@ -339,7 +339,7 @@ public struct AppChannelItemView: View {
             }
         }
         .scaleEffect(isSelected ? 1.05 : 0.96)
-        .animation(XomskyMotion.magneticGlide, value: isSelected)
+        .animation(NNTSMotion.magneticGlide, value: isSelected)
     }
 }
 
@@ -498,7 +498,7 @@ public struct HUDCardView: View {
             }
         }
         .scaleEffect(isSelected ? 1.02 : 0.98)
-        .animation(XomskyMotion.magneticGlide, value: isSelected)
+        .animation(NNTSMotion.magneticGlide, value: isSelected)
     }
 }
 
@@ -1005,7 +1005,7 @@ public struct MinimalHUDView: View {
             )
             .scaleEffect(state.isVisible ? 1.0 : 0.94)
             .opacity(state.isVisible ? 1.0 : 0.0)
-            .animation(XomskyMotion.interactiveSnap, value: state.isVisible)
+            .animation(NNTSMotion.interactiveSnap, value: state.isVisible)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .preferredColorScheme(.dark)
@@ -1044,7 +1044,7 @@ public final class MinimalHUDWindow: NSPanel {
     }
     
     public func show(profiles: [ChromeProfile], selectedIndex: Int) {
-        withAnimation(XomskyMotion.interactiveSnap) {
+        withAnimation(NNTSMotion.interactiveSnap) {
             ChromeSwitcherState.shared.mode = .chrome
             ChromeSwitcherState.shared.profiles = profiles
             ChromeSwitcherState.shared.antigravityItems = []
@@ -1065,7 +1065,7 @@ public final class MinimalHUDWindow: NSPanel {
     }
     
     public func showAppGroup(mode: SwitcherMode, items: [AntigravityItem], selectedIndex: Int, profileIndex: Int = 0) {
-        withAnimation(XomskyMotion.interactiveSnap) {
+        withAnimation(NNTSMotion.interactiveSnap) {
             ChromeSwitcherState.shared.mode = mode
             ChromeSwitcherState.shared.antigravityItems = items
             

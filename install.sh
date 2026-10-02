@@ -2,17 +2,17 @@
 set -euo pipefail
 
 # ==============================================================================
-# Xomsky - Automated One-Line Installer
+# NNTS - Automated One-Line Installer
 # Usage:
 #   curl -fsSL https://almosteleven.com/install.sh | bash
 #   or from local clone: ./install.sh [--no-build] [--no-open]
 # ==============================================================================
 
-APP_NAME="Xomsky"
+APP_NAME="NNTS"
 APP_BUNDLE="${APP_NAME}.app"
 TARGET_DIR="/Applications"
 TARGET_APP="${TARGET_DIR}/${APP_BUNDLE}"
-GITHUB_REPO="unacau/xomsky"
+GITHUB_REPO="unacau/nnts"
 DMG_NAME="${APP_NAME}.dmg"
 
 NO_BUILD=false
@@ -92,7 +92,7 @@ fi
 
 # Strategy 2: Remote download from GitHub Releases or AlmostEleven
 if [ -z "${INSTALLED_FROM}" ]; then
-    TMP_DIR=$(mktemp -d /tmp/xomsky_install_XXXXXX)
+    TMP_DIR=$(mktemp -d /tmp/nnts_install_XXXXXX)
     DMG_PATH="${TMP_DIR}/${DMG_NAME}"
     MOUNT_POINT="${TMP_DIR}/mount"
     mkdir -p "${MOUNT_POINT}"

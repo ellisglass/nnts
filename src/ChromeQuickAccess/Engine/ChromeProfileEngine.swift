@@ -211,7 +211,7 @@ public final class ChromeProfileEngine: ObservableObject {
     }()
     
     private var cachedAvatars: [String: NSImage] = [:]
-    private let logger = Logger(subsystem: "com.almosteleven.xomsky", category: "profiles")
+    private let logger = Logger(subsystem: "com.almosteleven.nnts", category: "profiles")
     
     public init() {
         refreshProfiles()

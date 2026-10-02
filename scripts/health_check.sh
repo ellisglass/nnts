@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # ==============================================================================
-# Xomsky - System Health & Diagnostics Utility
+# NNTS - System Health & Diagnostics Utility
 # Evaluates version consistency, binary architectures, and automated tests
 # ==============================================================================
 
 echo "=================================================="
-echo " Xomsky — System Health Check                     "
+echo " NNTS — System Health Check                       "
 echo "=================================================="
 
 FAILED=0
@@ -37,9 +37,9 @@ fi
 
 # 2. Check Build Outputs & Universal Binary
 echo -n "[2/3] Checking Build Artifacts & Universal Binary... "
-APP_BUNDLE="dist/Xomsky.app"
+APP_BUNDLE="dist/NNTS.app"
 if [ -d "$APP_BUNDLE" ]; then
-    BINARY="$APP_BUNDLE/Contents/MacOS/Xomsky"
+    BINARY="$APP_BUNDLE/Contents/MacOS/NNTS"
     if [ -f "$BINARY" ]; then
         ARCHS=$(lipo -archs "$BINARY" 2>/dev/null || echo "Unknown")
         echo "✅ Present (Architectures: $ARCHS)"

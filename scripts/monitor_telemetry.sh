@@ -2,17 +2,17 @@
 set -euo pipefail
 
 # ==============================================================================
-# Xomsky - Native Telemetry & Log Ingestion Utility
+# NNTS - Native Telemetry & Log Ingestion Utility
 # Directly queries and streams macOS Unified Logging System (os_log)
 # ==============================================================================
 
-SUBSYSTEM="com.almosteleven.xomsky"
-BUNDLE_ID="com.almosteleven.xomsky"
-PREDICATE="subsystem == \"${SUBSYSTEM}\" or process == \"Xomsky\""
+SUBSYSTEM="com.almosteleven.nnts"
+BUNDLE_ID="com.almosteleven.nnts"
+PREDICATE="subsystem == \"${SUBSYSTEM}\" or process == \"NNTS\""
 
 usage() {
     cat << EOF
-Xomsky — Telemetry & Log Monitor
+NNTS — Telemetry & Log Monitor
 
 Usage:
   ./scripts/monitor_telemetry.sh [command] [options]

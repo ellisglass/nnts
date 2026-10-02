@@ -26,14 +26,14 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         return digest.compactMap { String(format: "%02x", $0) }.joined()
     }
     
-    public static let productionServiceName = "com.almosteleven.xomsky.license"
+    public static let productionServiceName = "com.almosteleven.nnts.license"
     public static var serviceName: String {
-        return isRunningTests ? "com.almosteleven.xomsky.license.test" : productionServiceName
+        return isRunningTests ? "com.almosteleven.nnts.license.test" : productionServiceName
     }
     
     public static var storage: UserDefaults {
         if isRunningTests {
-            return UserDefaults(suiteName: "com.almosteleven.xomsky.tests") ?? .standard
+            return UserDefaults(suiteName: "com.almosteleven.nnts.tests") ?? .standard
         }
         return .standard
     }
@@ -64,7 +64,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
                NSClassFromString("XCTestCase") != nil
     }
     
-    private let logger = Logger(subsystem: "com.almosteleven.xomsky", category: "license")
+    private let logger = Logger(subsystem: "com.almosteleven.nnts", category: "license")
     
     /// Test hook to override Pro status during automated unit tests
     public var testOverrideProStatus: Bool? = nil
@@ -112,9 +112,9 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         // 2. Migration fallback: Check legacy separate Keychain items if unified bundle is absent
         if let key = readKeychainLicense(),
            validateLicenseKey(key),
-           let aid = readKeychainActivationId() ?? Self.storage.string(forKey: "XomskyProActivationId"),
+           let aid = readKeychainActivationId() ?? Self.storage.string(forKey: "NNTSProActivationId") ?? Self.storage.string(forKey: "XomskyProActivationId"),
            !aid.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let savedReceipt = readKeychainReceipt() ?? Self.storage.string(forKey: "XomskyProReceiptToken")
+            let savedReceipt = readKeychainReceipt() ?? Self.storage.string(forKey: "NNTSProReceiptToken") ?? Self.storage.string(forKey: "XomskyProReceiptToken")
             let expectedReceipt = Self.computeReceiptToken(key: key, activationId: aid)
             if savedReceipt == expectedReceipt || (Self.isRunningTests && Self.testIgnoreReceiptCheckInTests) {
                 self.internalIsPro = true
@@ -136,11 +136,11 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         }
         
         // 3. Fallback to UserDefaults (Requires valid activationId and cryptographic receipt verification)
-        if let fallbackKey = Self.storage.string(forKey: "XomskyProLicenseKey"),
+        if let fallbackKey = Self.storage.string(forKey: "NNTSProLicenseKey") ?? Self.storage.string(forKey: "XomskyProLicenseKey"),
            validateLicenseKey(fallbackKey),
-           let fallbackAid = Self.storage.string(forKey: "XomskyProActivationId"),
+           let fallbackAid = Self.storage.string(forKey: "NNTSProActivationId") ?? Self.storage.string(forKey: "XomskyProActivationId"),
            !fallbackAid.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let savedReceipt = Self.storage.string(forKey: "XomskyProReceiptToken")
+            let savedReceipt = Self.storage.string(forKey: "NNTSProReceiptToken") ?? Self.storage.string(forKey: "XomskyProReceiptToken")
             let expectedReceipt = Self.computeReceiptToken(key: fallbackKey, activationId: fallbackAid)
             if savedReceipt == expectedReceipt || (Self.isRunningTests && Self.testIgnoreReceiptCheckInTests) {
                 self.internalIsPro = true
@@ -165,8 +165,8 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         guard !trimmed.isEmpty else { return false }
         let upper = trimmed.uppercased()
         
-        // Polar customer keys (prefix XOMSKY- or legacy KHOMYAK-)
-        if (upper.hasPrefix("XOMSKY-") || upper.hasPrefix("KHOMYAK-")) && trimmed.count >= 8 {
+        // Polar customer keys (prefix NNTS-, XOMSKY- or legacy KHOMYAK-)
+        if (upper.hasPrefix("NNTS-") || upper.hasPrefix("XOMSKY-") || upper.hasPrefix("KHOMYAK-")) && trimmed.count >= 8 {
             return true
         }
         
@@ -189,7 +189,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("Xomsky/1.0.0 (macOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("NNTS/2.0.0 (macOS)", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = timeout
         
         let label = Host.current().localizedName ?? "Mac"
@@ -235,6 +235,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         _ = semaphore.wait(timeout: .now() + timeout)
         if isSuccess, let aid = parsedActivationId {
             _ = saveKeychainActivationId(id: aid)
+            Self.storage.set(aid, forKey: "NNTSProActivationId")
             Self.storage.set(aid, forKey: "XomskyProActivationId")
             self.activeActivationId = aid
         }
@@ -245,7 +246,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard validateLicenseKey(trimmed) else {
             logger.warning("License activation rejected: invalid key format for '\(key)'.")
-            return .invalidKey("Invalid key format. Xomsky license keys start with 'XOMSKY-'.")
+            return .invalidKey("Invalid key format. NNTS license keys start with 'NNTS-' or 'XOMSKY-'.")
         }
         
         if let mock = testMockOnlineValidationResult {
@@ -268,7 +269,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("Xomsky/1.0.0 (macOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("NNTS/2.0.0 (macOS)", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 8.0
         
         let label = Host.current().localizedName ?? "Mac"
@@ -340,10 +341,13 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
     
     private func activateOffline(key: String, activationId: String? = nil) -> Bool {
         let effectiveAid = activationId ?? self.activeActivationId ?? (Self.isRunningTests ? "act_test_\(UUID().uuidString)" : "")
+        Self.storage.set(key, forKey: "NNTSProLicenseKey")
         Self.storage.set(key, forKey: "XomskyProLicenseKey")
         if !effectiveAid.isEmpty {
+            Self.storage.set(effectiveAid, forKey: "NNTSProActivationId")
             Self.storage.set(effectiveAid, forKey: "XomskyProActivationId")
             let receipt = Self.computeReceiptToken(key: key, activationId: effectiveAid)
+            Self.storage.set(receipt, forKey: "NNTSProReceiptToken")
             Self.storage.set(receipt, forKey: "XomskyProReceiptToken")
             let bundle = LicenseBundle(key: key, activationId: effectiveAid, receipt: receipt)
             _ = saveKeychainBundle(bundle)
@@ -359,7 +363,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         self.testOverrideProStatus = nil
         self.internalIsPro = true
         self.activeLicenseKey = key
-        logger.info("Xomsky Pro activated successfully with key: '\(key)'!")
+        logger.info("NNTS Pro activated successfully with key: '\(key)'!")
         return true
     }
     
@@ -371,14 +375,17 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         deleteKeychainLicense()
         deleteKeychainActivationId()
         deleteKeychainReceipt()
+        Self.storage.removeObject(forKey: "NNTSProLicenseKey")
         Self.storage.removeObject(forKey: "XomskyProLicenseKey")
+        Self.storage.removeObject(forKey: "NNTSProActivationId")
         Self.storage.removeObject(forKey: "XomskyProActivationId")
+        Self.storage.removeObject(forKey: "NNTSProReceiptToken")
         Self.storage.removeObject(forKey: "XomskyProReceiptToken")
         self.testOverrideProStatus = nil
         self.internalIsPro = false
         self.activeLicenseKey = nil
         self.activeActivationId = nil
-        logger.info("Xomsky Pro deactivated.")
+        logger.info("NNTS Pro deactivated.")
     }
     
     private func deactivateOnPolar(key: String, activationId: String) {
@@ -387,7 +394,7 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("Xomsky/1.0.0 (macOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("NNTS/2.0.0 (macOS)", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 5.0
         
         let payload: [String: Any] = [

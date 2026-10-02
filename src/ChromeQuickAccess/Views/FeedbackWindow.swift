@@ -13,7 +13,7 @@ public final class FeedbackViewModel: ObservableObject {
 public struct FeedbackWindowView: View {
     @ObservedObject private var viewModel = FeedbackViewModel()
 
-    private let telegramSupportURL = URL(string: "https://t.me/xomsky_app")!
+    private let telegramSupportURL = URL(string: "https://t.me/nnts_app")!
 
     public init() {}
 
@@ -53,7 +53,7 @@ public struct FeedbackWindowView: View {
                             .frame(width: 44, height: 44)
                             .foregroundColor(.orange)
 
-                        Text("xomsky-diagnostic.zip")
+                        Text("nnts-diagnostic.zip")
                             .font(.system(size: 13, weight: .medium, design: .monospaced))
 
                         Text("Drag & drop this file directly into Telegram, WhatsApp, or Finder")
@@ -70,7 +70,7 @@ public struct FeedbackWindowView: View {
                     )
                     .onDrag {
                         let provider = NSItemProvider(object: zipURL as NSURL)
-                        provider.suggestedName = "xomsky-diagnostic.zip"
+                        provider.suggestedName = "nnts-diagnostic.zip"
                         return provider
                     }
                 } else if let error = viewModel.errorMessage {

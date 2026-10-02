@@ -1,9 +1,9 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Xomsky Motion Design System
+// MARK: - NNTS Motion Design System
 /// Calibrated spring curves and physical motion tokens for sub-16ms zero-latency interaction.
-public enum XomskyMotion: Sendable {
+public enum NNTSMotion: Sendable {
     /// Snappy, sub-16ms responsive spring for HUD display and keypress feedback
     public static let interactiveSnap = Animation.spring(
         response: 0.18,
@@ -39,3 +39,6 @@ public enum XomskyMotion: Sendable {
         blendDuration: 0.02
     )
 }
+
+public typealias XomskyMotion = NNTSMotion
+

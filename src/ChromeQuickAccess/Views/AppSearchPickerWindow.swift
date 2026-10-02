@@ -35,20 +35,20 @@ public final class AppSearchPickerViewModel: ObservableObject {
     
     public func selectNext() {
         guard !results.isEmpty else { return }
-        withAnimation(XomskyMotion.magneticGlide) {
+        withAnimation(NNTSMotion.magneticGlide) {
             selectedIndex = min(results.count - 1, selectedIndex + 1)
         }
     }
     
     public func selectPrevious() {
         guard !results.isEmpty else { return }
-        withAnimation(XomskyMotion.magneticGlide) {
+        withAnimation(NNTSMotion.magneticGlide) {
             selectedIndex = max(0, selectedIndex - 1)
         }
     }
     
     public func toggleApp(app: InstalledAppInfo, onSlotLimitReached: ((String) -> Void)? = nil) {
-        withAnimation(XomskyMotion.tactileBop) {
+        withAnimation(NNTSMotion.tactileBop) {
             let isAlreadyPinned = AppGroupEngine.isAppSelected(bundleID: app.bundleID)
             if isAlreadyPinned {
                 AppGroupEngine.deselectApp(bundleID: app.bundleID)
@@ -194,7 +194,7 @@ public struct AppSearchPickerRowView: View {
                             .transition(.scale(scale: 0.85).combined(with: .opacity))
                     }
                 }
-                .animation(XomskyMotion.tactileBop, value: isPinned)
+                .animation(NNTSMotion.tactileBop, value: isPinned)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
@@ -219,7 +219,7 @@ public struct AppSearchPickerRowView: View {
                 }
             }
             .scaleEffect(isSelected ? 1.01 : 1.0)
-            .animation(XomskyMotion.interactiveSnap, value: isSelected)
+            .animation(NNTSMotion.interactiveSnap, value: isSelected)
         }
         .buttonStyle(.plain)
     }
@@ -347,7 +347,7 @@ public struct AppSearchPickerView: View {
                 .frame(maxHeight: 280)
                 .onChange(of: viewModel.selectedIndex) { _, newIdx in
                     guard newIdx >= 0, newIdx < viewModel.results.count else { return }
-                    withAnimation(XomskyMotion.magneticGlide) {
+                    withAnimation(NNTSMotion.magneticGlide) {
                         proxy.scrollTo(viewModel.results[newIdx].bundleID, anchor: .center)
                     }
                 }
@@ -365,7 +365,7 @@ public struct AppSearchPickerView: View {
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.white.opacity(0.55))
                     .contentTransition(.numericText())
-                    .animation(XomskyMotion.tactileBop, value: pinnedCount)
+                    .animation(NNTSMotion.tactileBop, value: pinnedCount)
                 
                 Spacer()
                 

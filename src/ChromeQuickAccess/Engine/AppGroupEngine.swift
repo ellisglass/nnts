@@ -110,12 +110,12 @@ public final class AppGroupEngine: ObservableObject, @unchecked Sendable {
     }
     
     private let logger: Logger
-    private static let staticLogger = Logger(subsystem: "com.almosteleven.xomsky", category: "appgroup")
+    private static let staticLogger = Logger(subsystem: "com.almosteleven.nnts", category: "appgroup")
     
     public init(category: String, candidates: [AppCandidate]) {
         self.category = category
         self.candidates = candidates
-        self.logger = Logger(subsystem: "com.almosteleven.xomsky", category: category.lowercased())
+        self.logger = Logger(subsystem: "com.almosteleven.nnts", category: category.lowercased())
         refreshItems()
         setupAppSwitchObserver()
         Self.startGlobalAppSwitchObserver()

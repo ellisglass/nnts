@@ -56,10 +56,10 @@ release:
 	@./release.sh
 
 checksums:
-	@if [ -f "dist/Xomsky.dmg" ]; then \
-		cd dist && shasum -a 256 Xomsky.dmg > checksums.txt && echo "✅ dist/checksums.txt generated: $$(cat checksums.txt)" && cd ..; \
+	@if [ -f "dist/NNTS.dmg" ]; then \
+		cd dist && shasum -a 256 NNTS.dmg > checksums.txt && echo "✅ dist/checksums.txt generated: $$(cat checksums.txt)" && cd ..; \
 	else \
-		echo "ℹ️ dist/Xomsky.dmg not built yet. Run 'make native' first."; \
+		echo "ℹ️ dist/NNTS.dmg not built yet. Run 'make native' first."; \
 	fi
 
 # ==============================================================================
@@ -90,7 +90,7 @@ clean:
 	@rm -rf dist .build
 
 help:
-	@echo "Xomsky Developer Commands:"
+	@echo "NNTS Developer Commands:"
 	@echo "  make dev / make run  - Fast build (host arch) + update /Applications + relaunch app (no password)"
 	@echo "  make watch           - Live auto-reload: watches src/ and rebuilds/relaunches on save"
 	@echo "  make test            - Run all automated unit tests"
