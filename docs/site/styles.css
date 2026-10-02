@@ -467,45 +467,41 @@ body.nnts-body {
 }
 
 /* --------------------------------------------------------------------------
-   THE REMOTE CONTROL HANDSET (ПУЛЬТ ДУ)
+   THE REALISTIC ALIENWARE SONY TRINITRON REMOTE CONTROL (ПУЛЬТ ДУ)
    -------------------------------------------------------------------------- */
-.tv-remote-handset {
-  width: 132px;
+.tv-remote-handset.realistic-alienware-remote {
+  width: 82px;
   flex-shrink: 0;
-  background: linear-gradient(175deg, #181826 0%, #101018 55%, #08080f 100%);
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
-  padding: 0.45rem 0.45rem 0.6rem 0.45rem;
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.85),
-    0 0 20px rgba(200, 55, 171, 0.1),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.7);
-  position: relative;
-  user-select: none;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  align-items: center;
+  position: relative;
+  user-select: none;
+  z-index: 10;
 }
 
 /* Infrared Transmitter Lens on Remote Top */
-.remote-top-lens {
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 28px;
-  height: 7px;
+.realistic-alienware-remote .remote-top-lens {
+  position: relative;
+  top: 1px;
+  width: 22px;
+  height: 6px;
   background: #09090e;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-bottom: none;
-  border-radius: 5px 5px 0 0;
+  border-radius: 4px 4px 0 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 12;
 }
 
-.remote-ir-diode {
+.realistic-alienware-remote .remote-ir-diode {
   width: 8px;
   height: 3px;
   border-radius: 2px;
@@ -513,234 +509,171 @@ body.nnts-body {
   transition: all 0.08s ease;
 }
 
-.remote-ir-diode.firing {
+.realistic-alienware-remote .remote-ir-diode.firing {
   background: #00F0FF;
   box-shadow: 0 0 12px #00F0FF, 0 0 20px #39FF14, 0 0 30px #ffffff;
 }
 
-/* Remote Body Header */
-.remote-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+/* Master Alienware Remote Prop Body */
+.remote-prop-body {
+  position: relative;
+  width: 100%;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.95))
+          drop-shadow(0 0 16px rgba(57, 255, 20, 0.08));
+  transition: transform 0.2s var(--ease-sharp);
 }
 
-.remote-header-bar {
+.remote-prop-body:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.98))
+          drop-shadow(0 0 22px rgba(57, 255, 20, 0.16));
+}
+
+.remote-prop-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Interactive Tactile Hotspots */
+.rc-hotspot {
+  position: absolute;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  border-radius: 50%;
+  transition: transform 0.1s var(--ease-sharp), background 0.15s ease, box-shadow 0.15s ease;
+  z-index: 10;
+}
+
+.rc-hotspot:active {
+  transform: scale(0.92);
+}
+
+/* Green Neon Power Key Hotspot */
+.rc-hotspot-power {
+  top: 5.8%;
+  left: 70.4%;
+  width: 16.8%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+.rc-hotspot-power:hover {
+  background: rgba(46, 255, 85, 0.25);
+  box-shadow: 0 0 12px var(--phosphor-green);
+  transform: scale(1.08);
+}
+
+.rc-hotspot-power.pulsing {
+  animation: rc-power-pulse 2s infinite ease-in-out;
+}
+
+@keyframes rc-power-pulse {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(46, 255, 85, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(46, 255, 85, 0.95), 0 0 28px rgba(57, 255, 20, 0.6);
+  }
+}
+
+.rc-hotspot-power.active {
+  background: rgba(46, 255, 85, 0.35);
+  box-shadow: 0 0 14px var(--phosphor-green), inset 0 0 4px #ffffff;
+}
+
+/* Audio / Mute Key Hotspot */
+.rc-hotspot-mute {
+  top: 5.8%;
+  left: 11.2%;
+  width: 16.8%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+.rc-hotspot-mute:hover {
+  background: rgba(200, 55, 171, 0.3);
+  box-shadow: 0 0 10px rgba(200, 55, 171, 0.8);
+  transform: scale(1.08);
+}
+
+/* Number 1 & 2 Key Hotspots */
+.rc-hotspot-num1 {
+  top: 15.8%;
+  left: 12.3%;
+  width: 16.8%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+.rc-hotspot-num2 {
+  top: 15.8%;
+  left: 41.3%;
+  width: 16.8%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+.rc-hotspot-num:hover {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+.rc-hotspot-num.active {
+  background: rgba(57, 255, 20, 0.25);
+  box-shadow: 0 0 10px var(--phosphor-green);
+  border: 1px solid rgba(57, 255, 20, 0.6);
+}
+
+/* D-Pad Up & Down Hotspots */
+.rc-hotspot-dpad {
+  left: 36.3%;
+  width: 26.8%;
+  height: 3.8%;
+  border-radius: 4px;
+}
+
+.rc-hotspot-up {
+  top: 42.0%;
+}
+
+.rc-hotspot-down {
+  top: 48.7%;
+}
+
+.rc-hotspot-dpad:hover {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 8px rgba(57, 255, 20, 0.5);
+}
+
+/* Remote Foot Meta */
+.remote-foot-meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.1rem 0.25rem 0.2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  color: var(--titanium-text-muted);
 }
 
-.remote-status-led {
+.remote-tx-status {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background-color: #444;
+  background-color: #333;
   transition: all 0.1s ease;
 }
 
-.remote-status-led.active {
+.remote-tx-status.active {
   background-color: var(--phosphor-green);
   box-shadow: 0 0 8px var(--phosphor-green);
-}
-
-.remote-model-label {
-  font-family: var(--font-mono);
-  font-size: 0.52rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--titanium-text-dim);
-}
-
-/* Remote Buttons Common Styling */
-.remote-btn {
-  background: #181824;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--titanium-white);
-  border-radius: 7px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.12s var(--ease-sharp);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.remote-btn:hover {
-  background: #222232;
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
-}
-
-.remote-btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-/* Power & Audio Row */
-.remote-power-row {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 0.35rem;
-}
-
-.remote-power-btn {
-  background: radial-gradient(circle at 35% 35%, #ff4b4b 0%, #c91424 70%, #850010 100%);
-  border: 1px solid #ff7777;
-  padding: 0.42rem 0.2rem;
-  color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 3px 8px rgba(255, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-}
-
-.remote-power-btn:hover {
-  background: radial-gradient(circle at 35% 35%, #ff6666 0%, #e0182c 70%, #990014 100%);
-  box-shadow: 0 0 16px rgba(255, 75, 75, 0.7);
-}
-
-.remote-power-btn.pulsing {
-  animation: remote-power-pulse 2s infinite ease-in-out;
-}
-
-@keyframes remote-power-pulse {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(255, 75, 75, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(255, 75, 75, 0.9), 0 0 35px rgba(255, 50, 50, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.6);
-  }
-}
-
-.remote-power-btn.active {
-  background: radial-gradient(circle at 35% 35%, #2eff55 0%, #16a337 70%, #0d6321 100%);
-  border-color: #55ff77;
-  box-shadow: 0 0 14px var(--phosphor-green-glow);
-}
-
-.power-sym {
-  font-size: 1rem;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.btn-subtext {
-  font-family: var(--font-mono);
-  font-size: 0.48rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  margin-top: 1px;
-  opacity: 0.9;
-}
-
-.remote-mute-btn {
-  padding: 0.42rem 0.2rem;
-}
-
-.mute-sym {
-  font-size: 0.85rem;
-  line-height: 1;
-}
-
-/* Number Grid (Channels 1 & 2) */
-.remote-num-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.35rem;
-}
-
-.remote-ch-num {
-  padding: 0.35rem 0.15rem;
-  border-radius: 7px;
-}
-
-.num-digit {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.num-desc {
-  font-family: var(--font-mono);
-  font-size: 0.48rem;
-  letter-spacing: 0.05em;
-  color: var(--titanium-text-dim);
-  margin-top: 1px;
-}
-
-.remote-ch-num.active {
-  background: rgba(57, 255, 20, 0.12);
-  border-color: var(--phosphor-green);
-  box-shadow: 0 0 12px rgba(57, 255, 20, 0.3);
-}
-
-.remote-ch-num.active .num-digit {
-  color: var(--phosphor-green);
-  text-shadow: 0 0 6px var(--phosphor-green-glow);
-}
-
-/* Rocker Pad */
-.remote-rocker-pad {
-  background: #0c0b12;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 0.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.remote-rocker-btn {
-  padding: 0.28rem 0.15rem;
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  font-weight: 700;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-}
-
-.rocker-arrow {
-  font-size: 0.6rem;
-}
-
-.rocker-center-badge {
-  text-align: center;
-  padding: 0.1rem 0;
-  font-family: var(--font-mono);
-  font-size: 0.5rem;
-  font-weight: 700;
-  color: var(--phosphor-green);
-  letter-spacing: 0.08em;
-}
-
-/* Remote Footer Branding */
-.remote-footer-brand {
-  text-align: center;
-  padding-top: 0.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.remote-brand-text {
-  font-size: 0.52rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: #bbb;
-}
-
-.remote-sub-text {
-  font-family: var(--font-mono);
-  font-size: 0.45rem;
-  letter-spacing: 0.12em;
-  color: var(--titanium-text-muted);
 }
 
 /* --------------------------------------------------------------------------
@@ -1317,9 +1250,8 @@ body.nnts-body {
     max-width: 530px;
     padding: 0.55rem;
   }
-  .tv-remote-handset {
-    width: 122px;
-    padding: 0.4rem 0.4rem 0.5rem;
+  .tv-remote-handset.realistic-alienware-remote {
+    width: 78px;
   }
 }
 
@@ -1352,8 +1284,8 @@ body.nnts-body {
   .retro-tv-chassis {
     max-width: 490px;
   }
-  .tv-remote-handset {
-    width: 116px;
+  .tv-remote-handset.realistic-alienware-remote {
+    width: 72px;
   }
 }
 
@@ -1365,11 +1297,9 @@ body.nnts-body {
     gap: 1.25rem;
   }
 
-  .tv-remote-handset {
-    width: 100%;
-    max-width: 380px;
-    border-radius: 16px;
-    padding: 0.75rem;
+  .tv-remote-handset.realistic-alienware-remote {
+    width: 88px;
+    margin-bottom: 0.5rem;
   }
 
   .remote-body {

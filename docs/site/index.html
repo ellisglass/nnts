@@ -114,65 +114,50 @@
       <div class="hero-tv-station" id="hero-tv-station">
 
         <!-- =======================
-             THE REMOTE CONTROL (ПУЛЬТ)
+             THE REALISTIC ALIENWARE SONY TRINITRON REMOTE (ПУЛЬТ)
              ======================= -->
-        <div class="tv-remote-handset" id="tv-remote-handset" aria-label="Remote Control / Пульт ДУ">
+        <div class="tv-remote-handset realistic-alienware-remote" id="tv-remote-handset" aria-label="Sony Trinitron Remote Control / Пульт ДУ">
           <!-- Infrared Emitter Lens -->
           <div class="remote-top-lens">
             <div class="remote-ir-diode" id="remote-ir-led" aria-hidden="true"></div>
           </div>
 
-          <div class="remote-body">
-            <!-- Remote Header: Status LED & Model -->
-            <div class="remote-header-bar">
-              <span class="remote-status-led" id="remote-tx-led" title="IR TX Signal"></span>
-              <span class="remote-model-label">RM-NNTS</span>
-            </div>
+          <!-- Master Alienware Prop Body -->
+          <div class="remote-prop-body">
+            <img src="assets/nnts/canonical_realistic_rc_remote.png" alt="Sony Trinitron Remote Control RM-NNTS" class="remote-prop-image" id="remote-prop-image" draggable="false">
 
-            <!-- Primary Power & Audio Row -->
-            <div class="remote-power-row">
-              <button class="remote-btn remote-power-btn pulsing" id="remote-power-btn" title="Turn TV ON / OFF (Power)" aria-label="Power TV">
-                <span class="power-sym">⏻</span>
-                <span class="btn-subtext">POWER</span>
-              </button>
-              <button class="remote-btn remote-mute-btn" id="remote-mute-btn" title="Mute / Audio" aria-label="Mute Audio">
-                <span class="mute-sym" id="remote-mute-icon">🔊</span>
-                <span class="btn-subtext">AUDIO</span>
-              </button>
-            </div>
+            <!-- Real-time Tactile Interactive Hotspot Controls -->
+            <!-- 1. Glowing Green Power Key -->
+            <button class="rc-hotspot rc-hotspot-power pulsing" id="remote-power-btn" title="Turn TV ON / OFF (Power)" aria-label="Power TV">
+              <span class="hotspot-glow-ring"></span>
+            </button>
 
-            <!-- Number Keypad (Channels 1 & 2) -->
-            <div class="remote-num-grid">
-              <button class="remote-btn remote-ch-num active" data-channel="1" id="remote-num-1" title="CH 1: Profiles & Apps">
-                <span class="num-digit">1</span>
-                <span class="num-desc">APPS</span>
-              </button>
-              <button class="remote-btn remote-ch-num" data-channel="2" id="remote-num-2" title="CH 2: Copy-on-Select">
-                <span class="num-digit">2</span>
-                <span class="num-desc">COPY</span>
-              </button>
-            </div>
+            <!-- 2. Audio Mute Key -->
+            <button class="rc-hotspot rc-hotspot-mute" id="remote-mute-btn" title="Audio / Mute" aria-label="Mute Audio">
+              <span class="mute-sym-hidden" id="remote-mute-icon" style="display:none;">🔊</span>
+            </button>
 
-            <!-- Rocker / Navigation Cluster -->
-            <div class="remote-rocker-pad">
-              <button class="remote-btn remote-rocker-btn rocker-up" id="remote-ch-up" title="Next Channel">
-                <span class="rocker-arrow">▲</span>
-                <span class="rocker-text">CH +</span>
-              </button>
-              <div class="rocker-center-badge">
-                <span class="rocker-badge-txt">60 FPS</span>
-              </div>
-              <button class="remote-btn remote-rocker-btn rocker-down" id="remote-ch-down" title="Previous Channel">
-                <span class="rocker-arrow">▼</span>
-                <span class="rocker-text">CH &minus;</span>
-              </button>
-            </div>
+            <!-- 3. Number 1 Key (CH 1: Profiles & Apps) -->
+            <button class="rc-hotspot rc-hotspot-num rc-hotspot-num1 active" data-channel="1" id="remote-num-1" title="CH 1: Chrome Profiles & Apps" aria-label="Channel 1">
+              <span class="num-active-glow"></span>
+            </button>
 
-            <!-- Remote Footer Branding -->
-            <div class="remote-footer-brand">
-              <span class="remote-brand-text">SONY TRINITRON</span>
-              <span class="remote-sub-text">COMMANDER</span>
-            </div>
+            <!-- 4. Number 2 Key (CH 2: Copy-on-Select) -->
+            <button class="rc-hotspot rc-hotspot-num rc-hotspot-num2" data-channel="2" id="remote-num-2" title="CH 2: Copy-on-Select" aria-label="Channel 2">
+              <span class="num-active-glow"></span>
+            </button>
+
+            <!-- 5. D-Pad Rocker (CH + / Up) -->
+            <button class="rc-hotspot rc-hotspot-dpad rc-hotspot-up" id="remote-ch-up" title="Next Channel (CH +)" aria-label="Channel Up"></button>
+
+            <!-- 6. D-Pad Rocker (CH - / Down) -->
+            <button class="rc-hotspot rc-hotspot-dpad rc-hotspot-down" id="remote-ch-down" title="Previous Channel (CH -)" aria-label="Channel Down"></button>
+          </div>
+
+          <!-- Bottom Subtitle / Status -->
+          <div class="remote-foot-meta">
+            <span class="remote-tx-status" id="remote-tx-led" title="IR TX Signal"></span>
+            <span class="remote-meta-model">RM-NNTS</span>
           </div>
         </div>
 
