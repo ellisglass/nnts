@@ -255,21 +255,21 @@ public struct ProfileAvatarView: View {
             if isSelected {
                 if let ns = namespace {
                     Capsule()
-                        .fill(Color.white.opacity(0.16))
+                        .fill(Color.white.opacity(0.22))
                         .overlay(
                             Capsule()
-                                .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
+                                .stroke(Color.white.opacity(0.38), lineWidth: 0.75)
                         )
-                        .shadow(color: Color.black.opacity(0.15), radius: 3, y: 1)
+                        .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
                         .matchedGeometryEffect(id: "activeSlotCapsule", in: ns)
                 } else {
                     Capsule()
-                        .fill(Color.white.opacity(0.16))
+                        .fill(Color.white.opacity(0.22))
                         .overlay(
                             Capsule()
-                                .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
+                                .stroke(Color.white.opacity(0.38), lineWidth: 0.75)
                         )
-                        .shadow(color: Color.black.opacity(0.15), radius: 3, y: 1)
+                        .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
                 }
             }
         }
@@ -294,10 +294,10 @@ public struct AppChannelItemView: View {
     
     public var body: some View {
         let avatarSize: CGFloat = 34
-        let ringSize: CGFloat = 36.5
-        let colWidth: CGFloat = 38
-        let iconCornerRadius: CGFloat = 7.6
-        let ringCornerRadius: CGFloat = 8.85
+        let ringSize: CGFloat = 40
+        let colWidth: CGFloat = 40
+        let iconCornerRadius: CGFloat = 8.0
+        let ringCornerRadius: CGFloat = 9.5
         
         VStack(spacing: 3) {
             ZStack {
@@ -321,7 +321,7 @@ public struct AppChannelItemView: View {
                 } else {
                     RoundedRectangle(cornerRadius: ringCornerRadius - 0.5, style: .continuous)
                         .stroke(Color.white.opacity(0.24), lineWidth: 0.75)
-                        .frame(width: ringSize - 1.5, height: ringSize - 1.5)
+                        .frame(width: ringSize - 2, height: ringSize - 2)
                 }
             }
             .frame(width: ringSize, height: ringSize)
@@ -337,21 +337,21 @@ public struct AppChannelItemView: View {
             if isSelected {
                 if let ns = namespace {
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(Color.white.opacity(0.16))
+                        .fill(Color.white.opacity(0.22))
                         .overlay(
                             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
+                                .stroke(Color.white.opacity(0.38), lineWidth: 0.75)
                         )
-                        .shadow(color: Color.black.opacity(0.15), radius: 3, y: 1)
+                        .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
                         .matchedGeometryEffect(id: "activeAppChannelCapsule", in: ns)
                 } else {
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(Color.white.opacity(0.16))
+                        .fill(Color.white.opacity(0.22))
                         .overlay(
                             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
+                                .stroke(Color.white.opacity(0.38), lineWidth: 0.75)
                         )
-                        .shadow(color: Color.black.opacity(0.15), radius: 3, y: 1)
+                        .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
                 }
             }
         }
@@ -455,7 +455,20 @@ public struct HUDCardView: View {
             
             // 3. Profiles Avatar Row or Balanced Spacer (when row has profiles)
             if isBrowser && !profiles.isEmpty {
-                // In single card mode, show active profile pill badge
+                HStack(spacing: isSingleCard ? 8 : 4) {
+                    ForEach(Array(profiles.enumerated()), id: \.element.id) { idx, profile in
+                        ProfileAvatarView(
+                            profile: profile,
+                            isSelected: isSelected && (idx == selectedProfileIndex),
+                            slotIndex: idx + 1,
+                            isLarge: isSingleCard,
+                            namespace: namespace
+                        )
+                    }
+                }
+                .padding(.top, 2)
+                
+                // In single card mode, show active profile pill badge under the profiles icons
                 if isSingleCard, selectedProfileIndex >= 0, selectedProfileIndex < profiles.count {
                     let activeProf = profiles[selectedProfileIndex]
                     HStack(spacing: 5) {
@@ -476,20 +489,8 @@ public struct HUDCardView: View {
                                     .stroke(Color.white.opacity(0.24), lineWidth: 0.75)
                             )
                     )
+                    .padding(.top, 4)
                 }
-                
-                HStack(spacing: isSingleCard ? 8 : 4) {
-                    ForEach(Array(profiles.enumerated()), id: \.element.id) { idx, profile in
-                        ProfileAvatarView(
-                            profile: profile,
-                            isSelected: isSelected && (idx == selectedProfileIndex),
-                            slotIndex: idx + 1,
-                            isLarge: isSingleCard,
-                            namespace: namespace
-                        )
-                    }
-                }
-                .padding(.top, 2)
             } else if !isSingleCard && hasRowProfiles {
                 Spacer().frame(height: 38)
             }
@@ -728,7 +729,7 @@ public struct VisualEffectBlur: NSViewRepresentable {
     public var state: NSVisualEffectView.State
 
     public init(
-        material: NSVisualEffectView.Material = .hudWindow,
+        material: NSVisualEffectView.Material = .popover,
         blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
         state: NSVisualEffectView.State = .active
     ) {
@@ -814,7 +815,45 @@ public struct MinimalHUDView: View {
                         .foregroundColor(.white)
                         .shadow(color: Color.black.opacity(0.50), radius: 3, y: 1.5)
                         .lineLimit(1)
+                }
+                
+                Spacer().frame(height: 16)
+                
+                // 2. Bottom Channel Presets Row (Apps on same letter or Chrome profiles)
+                VStack(spacing: 6) {
+                    HStack(spacing: 9) {
+                        let isCurrentBrowser = isBrowser(state.selectedAppItem ?? AntigravityItem(name: "", bundleID: "", path: "", icon: NSImage(), index: 0))
+                        if state.mode == .chrome || (!state.profiles.isEmpty && isCurrentBrowser) {
+                            ForEach(Array(state.profiles.enumerated()), id: \.element.id) { idx, profile in
+                                ProfileAvatarView(
+                                    profile: profile,
+                                    isSelected: idx == state.selectedProfileIndex,
+                                    slotIndex: idx + 1,
+                                    isLarge: false,
+                                    namespace: selectionNamespace
+                                )
+                            }
+                        } else if state.antigravityItems.count > 1 {
+                            ForEach(Array(state.antigravityItems.enumerated()), id: \.element.id) { idx, item in
+                                AppChannelItemView(
+                                    item: item,
+                                    isSelected: idx == state.selectedIndex,
+                                    channelIndex: idx + 1,
+                                    namespace: selectionNamespace
+                                )
+                            }
+                        } else if let single = state.antigravityItems.first {
+                            AppChannelItemView(
+                                item: single,
+                                isSelected: true,
+                                channelIndex: 1,
+                                namespace: selectionNamespace
+                            )
+                        }
+                    }
+                    .frame(height: 60)
                     
+                    // Profile name placed directly under the profiles icons, or clear spacer to lock baseline
                     if let prof = activeProfile {
                         HStack(spacing: 4.5) {
                             Circle()
@@ -829,69 +868,38 @@ public struct MinimalHUDView: View {
                         .padding(.vertical, 3)
                         .background(
                             Capsule()
-                                .fill(Color.white.opacity(0.14))
+                                .fill(Color.white.opacity(0.20))
                                 .overlay(
                                     Capsule()
-                                        .stroke(Color.white.opacity(0.28), lineWidth: 0.75)
+                                        .stroke(Color.white.opacity(0.36), lineWidth: 0.75)
                                 )
-                                .shadow(color: Color.black.opacity(0.18), radius: 3, y: 1)
+                                .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
                         )
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    } else {
+                        Color.clear
+                            .frame(height: 20.5)
                     }
                 }
-                
-                Spacer().frame(height: 20)
-                
-                // 2. Bottom Channel Presets Row (Apps on same letter or Chrome profiles)
-                HStack(spacing: 9) {
-                    let isCurrentBrowser = isBrowser(state.selectedAppItem ?? AntigravityItem(name: "", bundleID: "", path: "", icon: NSImage(), index: 0))
-                    if state.mode == .chrome || (!state.profiles.isEmpty && isCurrentBrowser) {
-                        ForEach(Array(state.profiles.enumerated()), id: \.element.id) { idx, profile in
-                            ProfileAvatarView(
-                                profile: profile,
-                                isSelected: idx == state.selectedProfileIndex,
-                                slotIndex: idx + 1,
-                                isLarge: false,
-                                namespace: selectionNamespace
-                            )
-                        }
-                    } else if state.antigravityItems.count > 1 {
-                        ForEach(Array(state.antigravityItems.enumerated()), id: \.element.id) { idx, item in
-                            AppChannelItemView(
-                                item: item,
-                                isSelected: idx == state.selectedIndex,
-                                channelIndex: idx + 1,
-                                namespace: selectionNamespace
-                            )
-                        }
-                    } else if let single = state.antigravityItems.first {
-                        AppChannelItemView(
-                            item: single,
-                            isSelected: true,
-                            channelIndex: 1,
-                            namespace: selectionNamespace
-                        )
-                    }
-                }
-                .frame(height: 58)
                 .padding(.bottom, 16)
             }
             .frame(width: Self.hudWidth, height: Self.hudHeight)
             .background(
                 ZStack {
                     // 1. Native macOS Behind-Window Frosted Glass Blur
-                    VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow, state: .active)
+                    VisualEffectBlur(material: .popover, blendingMode: .behindWindow, state: .active)
                     
                     // 2. Frosted ultra-thin material for native macOS glass blur & vibrancy
                     KinescopeShape(cornerRadius: 34, bulge: 8)
                         .fill(.ultraThinMaterial)
                     
-                    // 3. Translucent liquid dark glass tint
+                    // 3. Translucent luminous liquid glass tint (lighter & brighter with true optical depth)
                     KinescopeShape(cornerRadius: 34, bulge: 8)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color(red: 0.12, green: 0.13, blue: 0.18).opacity(0.68),
-                                    Color(red: 0.08, green: 0.09, blue: 0.13).opacity(0.76)
+                                    Color.white.opacity(0.18),
+                                    Color(red: 0.22, green: 0.25, blue: 0.35).opacity(0.30)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -900,7 +908,7 @@ public struct MinimalHUDView: View {
                     
                     // 4. Subtle phosphor aperture grille scanlines for optical texture
                     CRTScanlinesView()
-                        .opacity(0.25)
+                        .opacity(0.10)
                         .clipShape(KinescopeShape(cornerRadius: 34, bulge: 8))
                     
                     // 5. Diagonal Ambient Glass Gloss across face
@@ -908,9 +916,9 @@ public struct MinimalHUDView: View {
                         .fill(
                             LinearGradient(
                                 stops: [
-                                    .init(color: Color.white.opacity(0.22), location: 0.0),
-                                    .init(color: Color.white.opacity(0.08), location: 0.28),
-                                    .init(color: Color.white.opacity(0.02), location: 0.52),
+                                    .init(color: Color.white.opacity(0.32), location: 0.0),
+                                    .init(color: Color.white.opacity(0.12), location: 0.28),
+                                    .init(color: Color.white.opacity(0.04), location: 0.52),
                                     .init(color: Color.clear, location: 0.72)
                                 ],
                                 startPoint: .topLeading,
@@ -924,8 +932,8 @@ public struct MinimalHUDView: View {
                             .fill(
                                 RadialGradient(
                                     gradient: Gradient(colors: [
-                                        Color.white.opacity(0.20),
-                                        Color.white.opacity(0.05),
+                                        Color.white.opacity(0.28),
+                                        Color.white.opacity(0.08),
                                         Color.clear
                                     ]),
                                     center: UnitPoint(x: 0.5, y: 0.0),
@@ -943,8 +951,8 @@ public struct MinimalHUDView: View {
                         .stroke(
                             LinearGradient(
                                 stops: [
-                                    .init(color: Color.white.opacity(0.60), location: 0.0),
-                                    .init(color: Color.white.opacity(0.22), location: 0.28),
+                                    .init(color: Color.white.opacity(0.75), location: 0.0),
+                                    .init(color: Color.white.opacity(0.30), location: 0.28),
                                     .init(color: Color.clear, location: 0.60)
                                 ],
                                 startPoint: .top,
@@ -961,10 +969,10 @@ public struct MinimalHUDView: View {
                     .strokeBorder(
                         LinearGradient(
                             stops: [
-                                .init(color: Color.white.opacity(0.65), location: 0.0),
-                                .init(color: Color.white.opacity(0.30), location: 0.35),
-                                .init(color: Color.white.opacity(0.10), location: 0.70),
-                                .init(color: Color.white.opacity(0.25), location: 1.0)
+                                .init(color: Color.white.opacity(0.80), location: 0.0),
+                                .init(color: Color.white.opacity(0.40), location: 0.35),
+                                .init(color: Color.white.opacity(0.18), location: 0.70),
+                                .init(color: Color.white.opacity(0.35), location: 1.0)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -988,9 +996,9 @@ public struct MinimalHUDView: View {
                 }
             }
             // Multi-layered floating glass drop shadow
-            .shadow(color: Color.black.opacity(0.40), radius: 32, x: 0, y: 16)
-            .shadow(color: Color.black.opacity(0.20), radius: 10, x: 0, y: 4)
-            .shadow(color: Color.white.opacity(0.08), radius: 1, x: 0, y: -0.5)
+            .shadow(color: Color.black.opacity(0.25), radius: 28, x: 0, y: 14)
+            .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 3)
+            .shadow(color: Color.white.opacity(0.15), radius: 1, x: 0, y: -0.5)
             .scaleEffect(state.isVisible ? 1.0 : 0.93)
             .opacity(state.isVisible ? 1.0 : 0.0)
             .animation(XomskyMotion.interactiveSnap, value: state.isVisible)
