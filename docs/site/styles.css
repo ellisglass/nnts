@@ -60,31 +60,9 @@ body.nnts-body {
 /* ==========================================================================
    CRT OVERLAYS: SCANLINES & CATHODE VIGNETTE
    ========================================================================== */
-.crt-scanlines-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 999;
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%, 
-    rgba(0, 0, 0, 0.25) 50%
-  ), linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 0.015),
-    rgba(0, 255, 0, 0.008),
-    rgba(0, 0, 255, 0.015)
-  );
-  background-size: 100% 3px, 6px 100%;
-  opacity: 0.75;
-}
 
-.crt-vignette-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 998;
-  background: radial-gradient(circle at 50% 50%, transparent 65%, rgba(0, 0, 0, 0.8) 100%);
-}
+
+
 
 .nnts-wrapper {
   max-width: 1240px;

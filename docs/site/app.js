@@ -125,7 +125,7 @@
       modeTag: "TV [C]",
       channelStr: "CH 01 / 05",
       appTitle: "Google Chrome",
-      subTitle: "Work Profile • Engineering & PRs",
+      subTitle: "Work Profile",
       osdTitle: "CHROME • WORK PROFILE",
       hotkeyHtml: "<kbd>Caps</kbd> + <kbd>C</kbd> + <kbd>1</kbd>",
       iconSrc: "assets/images/icon_chrome.png",
@@ -138,7 +138,7 @@
       modeTag: "TV [C]",
       channelStr: "CH 02 / 05",
       appTitle: "Google Chrome",
-      subTitle: "Personal Profile • Media & Accounts",
+      subTitle: "Personal Profile",
       osdTitle: "CHROME • PERSONAL PROFILE",
       hotkeyHtml: "<kbd>Caps</kbd> + <kbd>C</kbd> + <kbd>2</kbd>",
       iconSrc: "assets/images/icon_chrome.png",
@@ -151,7 +151,7 @@
       modeTag: "TV [B]",
       channelStr: "CH 03 / 05",
       appTitle: "Brave Browser",
-      subTitle: "Client Profile • Multi-Tenant",
+      subTitle: "Client Profile",
       osdTitle: "BRAVE • CLIENT PROFILE",
       hotkeyHtml: "<kbd>Caps</kbd> + <kbd>B</kbd> + <kbd>3</kbd>",
       iconSrc: "assets/images/icon_chrome.png",
@@ -164,7 +164,7 @@
       modeTag: "TV [T]",
       channelStr: "CH 04 / 05",
       appTitle: "Telegram / Terminal",
-      subTitle: "Dev & Comms • Key [T] Cycling (1/2 ↻)",
+      subTitle: "Dev & Comms",
       osdTitle: "APPS • KEY [T] CYCLING",
       hotkeyHtml: "<kbd>Caps</kbd> + <kbd>T</kbd>",
       iconSrc: "assets/images/icon_telegram.png",
@@ -177,7 +177,7 @@
       modeTag: "TV [O]",
       channelStr: "CH 05 / 05",
       appTitle: "Obsidian Notes",
-      subTitle: "Personal Knowledge Vault",
+      subTitle: "Vault",
       osdTitle: "APP • OBSIDIAN VAULT",
       hotkeyHtml: "<kbd>Caps</kbd> + <kbd>O</kbd>",
       iconSrc: "assets/images/icon_obsidian.png",
@@ -386,14 +386,10 @@
     const audioBtn = document.getElementById("audio-toggle-btn");
     const audioLabel = document.getElementById("audio-label");
     if (audioBtn) {
-      if (audioLabel) {
-        audioLabel.textContent = audio.soundEnabled ? "AUDIO: ON" : "AUDIO: OFF";
-      }
+      
       audioBtn.addEventListener("click", () => {
         const state = audio.toggle();
-        if (audioLabel) {
-          audioLabel.textContent = state ? "AUDIO: ON" : "AUDIO: OFF";
-        }
+        
         if (state) audio.playRelayClick();
       });
     }

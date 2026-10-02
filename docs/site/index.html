@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NNTS — Fast & Intuitive App Access via Caps Lock + Letter | Chrome Profiles & Copy-on-Select</title>
-  <meta name="description" content="NNTS is the ultra-fast macOS channel tuner and application switcher. Dedicated Chrome & Brave profile switching via Caps + C/B + 1-4, instant first-letter app cycling, and zero-effort Copy-on-Select.">
+  <title>NNTS — 0ms App & Profile Switcher</title>
+  <meta name="description" content="Instant Chrome/Brave profiles, first-letter app cycling, and Copy-on-Select.">
 
   <!-- OpenGraph -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="NNTS — Fast & Intuitive App Access via Caps Lock + Letter">
-  <meta property="og:description" content="Instant macOS app & browser profile channel switching via Caps Lock + letter. 0ms latency, native Swift 6 engine, and Linux-style Copy-on-Select.">
+  <meta property="og:title" content="NNTS — 0ms App & Profile Switcher">
+  <meta property="og:description" content="Instant macOS app & browser profile channel switching. 0ms latency.">
   <meta property="og:image" content="assets/nnts/canonical_realistic_rc_emblem.png">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="NNTS — Fast & Intuitive App Access via Caps Lock + Letter">
+  <meta name="twitter:title" content="NNTS — 0ms App & Profile Switcher">
   <meta name="twitter:description" content="Switch Mac apps and Chrome/Brave profiles at 0ms direct from Caps Lock.">
   <meta name="twitter:image" content="assets/nnts/canonical_realistic_rc_emblem.png">
 
@@ -25,9 +25,7 @@
 </head>
 <body class="nnts-body">
 
-  <!-- Authentic CRT Ambient Scanline & Cathode Vignette Overlays -->
-  <div class="crt-scanlines-overlay" aria-hidden="true"></div>
-  <div class="crt-vignette-overlay" aria-hidden="true"></div>
+  
 
   <!-- Main Cyber-Brutalist Container -->
   <div class="nnts-wrapper">
@@ -42,7 +40,7 @@
         </a>
         <div class="brand-subtext">
           <span class="subtext-name">NNTS</span>
-          <span class="subtext-desc">Channel Switcher for macOS</span>
+          <span class="subtext-desc">macOS</span>
         </div>
       </div>
 
@@ -52,7 +50,7 @@
         <!-- Audio Synth Toggle -->
         <button id="audio-toggle-btn" class="nnts-btn nnts-btn-tactile" title="Toggle Tactile Relay Audio">
           <span class="btn-icon">🔊</span>
-          <span id="audio-label">AUDIO: ON</span>
+          
         </button>
 
         <!-- GitHub Link -->
@@ -76,12 +74,12 @@
     <section class="nnts-hero">
       <div class="hero-header-box">
         <h1 class="hero-title">
-          Switch Mac Apps & Browser Profiles at 0ms.<br>
+          0ms App & Profile Switcher.<br>
           <span class="hero-title-accent">Direct from Caps Lock.</span>
         </h1>
 
         <p class="hero-subtitle">
-          Instant Chrome/Brave profile switching, first-letter app cycling, and zero-effort Copy-on-Select.
+          Chrome profiles, first-letter app cycling, and Copy-on-Select.
         </p>
 
         <!-- Action Strip: Direct Download + Homebrew Terminal One-Liner -->
@@ -90,7 +88,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
             <div class="cta-text-wrap">
               <span class="cta-label">Download for macOS</span>
-              <span class="cta-sub">Free &bull; Universal Binary (Apple Silicon + Intel)</span>
+              <span class="cta-sub">Free &bull; Universal Binary</span>
             </div>
           </a>
 
@@ -105,13 +103,7 @@
           </div>
         </div>
 
-        <div class="hero-guarantees">
-          <span>Free Forever</span>
-          <span class="guarantee-sep">&bull;</span>
-          <span>Zero Kernel Extensions</span>
-          <span class="guarantee-sep">&bull;</span>
-          <span>Apple Silicon & Intel</span>
-        </div>
+        
       </div>
 
       <!-- ====================================================================
@@ -193,10 +185,8 @@
          ==================================================================== -->
     <section class="nnts-section nnts-pains-section" id="superpowers">
       <div class="section-header">
-        <h2 class="section-heading">Why macOS Multitasking Is Broken & How NNTS Fixes It</h2>
-        <p class="section-description">
-          Built to eliminate 3 daily frictions that ruin developer focus.
-        </p>
+        <h2 class="section-heading">Three Flaws Fixed</h2>
+        
       </div>
 
       <div class="pains-triptych-grid">
@@ -212,11 +202,11 @@
           <div class="pain-comparison-box">
             <div class="comparison-row broken-row">
               <span class="comp-icon">✕</span>
-              <div class="comp-text"><strong>Cmd+Tab:</strong> Lumps all profiles into one messy stack.</div>
+              <div class="comp-text"><strong>Cmd+Tab:</strong> Profiles stacked together.</div>
             </div>
             <div class="comparison-row fixed-row">
               <span class="comp-icon">✓</span>
-              <div class="comp-text"><strong>NNTS:</strong> <kbd class="ui-kbd">Caps</kbd> + <kbd class="ui-kbd">C/B</kbd> + <kbd class="ui-kbd">1..4</kbd> raises the exact window at 0ms.</div>
+              <div class="comp-text"><strong>NNTS:</strong> <kbd class="ui-kbd">Caps</kbd> + <kbd class="ui-kbd">C/B</kbd> + <kbd class="ui-kbd">1..4</kbd> jumps directly to window.</div>
             </div>
           </div>
 
@@ -254,11 +244,11 @@
           <div class="pain-comparison-box">
             <div class="comparison-row broken-row">
               <span class="comp-icon">✕</span>
-              <div class="comp-text"><strong>Spotlight:</strong> Typing and search lag interrupt focus.</div>
+              <div class="comp-text"><strong>Spotlight:</strong> Search lag breaks focus.</div>
             </div>
             <div class="comparison-row fixed-row">
               <span class="comp-icon">✓</span>
-              <div class="comp-text"><strong>NNTS:</strong> <kbd class="ui-kbd">Caps</kbd> + Key instant jump; tap again to cycle same-letter apps.</div>
+              <div class="comp-text"><strong>NNTS:</strong> <kbd class="ui-kbd">Caps</kbd> + Key instant jump; tap again to cycle.</div>
             </div>
           </div>
 
@@ -266,7 +256,7 @@
             <div class="letter-cycling-preview">
               <div class="cycling-header">
                 <span class="cycling-letter">KEY [T]</span>
-                <span class="cycling-indicator">1 / 2 ↻ DETERMINISTIC CYCLE</span>
+                <span class="cycling-indicator">1 / 2 ↻ CYCLE</span>
               </div>
               <div class="cycling-apps-row">
                 <div class="cycle-app-card active">
@@ -294,23 +284,23 @@
           <div class="pain-comparison-box">
             <div class="comparison-row broken-row">
               <span class="comp-icon">✕</span>
-              <div class="comp-text"><strong>Cmd+C:</strong> 1,000 redundant hand movements per day.</div>
+              <div class="comp-text"><strong>Cmd+C:</strong> 1,000 extra keystrokes daily.</div>
             </div>
             <div class="comparison-row fixed-row">
               <span class="comp-icon">✓</span>
-              <div class="comp-text"><strong>NNTS:</strong> Highlight text to auto-copy with instant HUD toast.</div>
+              <div class="comp-text"><strong>NNTS:</strong> Highlight text to auto-copy.</div>
             </div>
           </div>
 
           <!-- Interactive Live Drag-Select Tester Box -->
           <div class="pain-visual-demo">
             <div class="copy-select-tester-box">
-              <div class="tester-instructions">👇 TRY IT: Drag to select any text:</div>
+              <div class="tester-instructions">Try it: Select text below</div>
               <div class="tester-selectable-text" id="live-select-zone">
-                Highlight this sentence to test automatic copy-on-select. Zero Cmd+C needed.
+                Highlight this text to copy automatically.
               </div>
               <div class="tester-feedback-chip" id="tester-copy-chip">
-                <span>📋 Auto-Copied to Clipboard!</span>
+                <span>📋 Copied!</span>
               </div>
             </div>
           </div>
@@ -325,10 +315,8 @@
          ==================================================================== -->
     <section class="nnts-section nnts-video-section" id="proofs">
       <div class="section-header">
-        <h2 class="section-heading">Raw, Unedited Screen Recordings</h2>
-        <p class="section-description">
-          Real-time profile jumps and copy-on-select on Apple Silicon with 0ms lag.
-        </p>
+        <h2 class="section-heading">Proof (60fps)</h2>
+        
       </div>
 
       <div class="video-cathode-chassis">
@@ -336,11 +324,11 @@
         <div class="video-channel-tuner-bar">
           <button class="video-tuner-btn active" data-src="assets/media/screenrec-switch-app.mp4">
             <span class="tuner-led">●</span>
-            <span class="tuner-title">CH 01 &bull; Instant Profile & App Switching (60fps)</span>
+            <span class="tuner-title">CH 01 &bull; Profile & App Switching</span>
           </button>
           <button class="video-tuner-btn" data-src="assets/media/screenrec-select-copy.mp4">
             <span class="tuner-led">●</span>
-            <span class="tuner-title">CH 02 &bull; Linux Copy-on-Select in Action (60fps)</span>
+            <span class="tuner-title">CH 02 &bull; Copy-on-Select</span>
           </button>
         </div>
 
@@ -362,13 +350,13 @@
     <section class="nnts-section nnts-download-strip">
       <div class="strip-card">
         <div class="strip-content">
-          <h2 class="strip-title">Supercharge Your Daily macOS Workflow</h2>
-          <p class="strip-desc">Free forever for 4 pinned apps and all Chrome & Brave profiles. No registration required.</p>
+          <h2 class="strip-title">Get NNTS</h2>
+          <p class="strip-desc">Free forever. No registration.</p>
           
           <div class="strip-buttons">
             <a href="https://github.com/unacau/xomsky/releases/latest/download/Xomsky.dmg" class="strip-primary-btn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-              <span>Download DMG (Universal &bull; 2.1 MB)</span>
+              <span>Download DMG (2.1 MB)</span>
             </a>
 
             <div class="strip-brew-box" id="strip-brew-pill">
@@ -391,7 +379,7 @@
             <img src="assets/nnts/canonical_nnts_vector_wordmark.png" alt="NNTS" width="64" height="64" class="footer-logo">
             <span>NNTS / Xomsky</span>
           </div>
-          <p class="footer-copy">&copy; 2026 NNTS. Engineered for macOS Sonoma, Sequoia & Tahoe.</p>
+          <p class="footer-copy">&copy; 2026 NNTS. macOS 14+.</p>
         </div>
 
         <div class="footer-links">
@@ -409,7 +397,7 @@
   <!-- Cursor Toast for Interactive Drag-Select Demo -->
   <div class="live-cursor-hud-toast" id="live-cursor-toast">
     <span class="toast-icon">📋</span>
-    <span class="toast-msg">Copied to Clipboard!</span>
+    <span class="toast-msg">Copied!</span>
   </div>
 
   <script src="app.min.js?v=6.0"></script>
