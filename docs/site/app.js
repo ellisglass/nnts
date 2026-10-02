@@ -606,9 +606,26 @@
   document.addEventListener("DOMContentLoaded", () => {
     // 1. Audio Button Toggle
     const audioBtn = document.getElementById("audio-toggle-btn");
+    const updateAudioButtonUI = (enabled) => {
+      if (!audioBtn) return;
+      if (enabled) {
+        audioBtn.classList.remove("is-muted");
+        audioBtn.classList.add("is-active");
+        audioBtn.setAttribute("title", "Tactile Relay Audio: ON (Click to mute)");
+        audioBtn.setAttribute("aria-label", "Mute Audio");
+      } else {
+        audioBtn.classList.add("is-muted");
+        audioBtn.classList.remove("is-active");
+        audioBtn.setAttribute("title", "Tactile Relay Audio: OFF (Click to unmute)");
+        audioBtn.setAttribute("aria-label", "Unmute Audio");
+      }
+    };
+
     if (audioBtn) {
+      updateAudioButtonUI(audio.soundEnabled);
       audioBtn.addEventListener("click", () => {
         const state = audio.toggle();
+        updateAudioButtonUI(state);
         if (state) audio.playRelayClick();
       });
     }
