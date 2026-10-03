@@ -48,10 +48,12 @@ jobs:
       - name: Cache Swift Package Manager
         uses: actions/cache@v6
         with:
-          path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          path: |
+            .build/checkouts
+            .build/repositories
+          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
-            ${{ runner.os }}-spm-
+            ${{ runner.os }}-spm-v2-
 
       - name: Select Xcode 16+
         run: |
@@ -78,10 +80,12 @@ jobs:
       - name: Cache Swift Package Manager
         uses: actions/cache@v6
         with:
-          path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          path: |
+            .build/checkouts
+            .build/repositories
+          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
-            ${{ runner.os }}-spm-
+            ${{ runner.os }}-spm-v2-
 
       - name: Select Xcode 16+
         run: |
