@@ -496,55 +496,168 @@
           if (st) st.scrollIntoView({ behavior: "smooth", block: "center" });
         });
       }
-
-      // Section 2 Pain Cards -> Tune TV & Scroll Up
-      const rackItems = document.querySelectorAll(".rack-item");
-      rackItems.forEach((item) => {
-        item.addEventListener("click", () => {
-          this.tuneChannel(1);
-          const st = document.getElementById("hero-tv-station");
-          if (st) st.scrollIntoView({ behavior: "smooth", block: "center" });
-        });
-      });
     }
   }
 
   // ==========================================================================
-  // 3. COPY ON SELECT LIVE SIMULATOR
+  // 3. INTERACTIVE BENTO LAB (SECTION 2: CORE SUPERPOWERS)
   // ==========================================================================
-  function setupCopyOnSelectSimulator() {
-    const selectZone = document.getElementById("live-select-zone");
-    const toast = document.getElementById("live-cursor-toast");
-    const chip = document.getElementById("tester-copy-chip");
-    if (!selectZone || !toast) return;
+  function setupBentoLabInteractions() {
+    // A. Radial Mouse Glow on Bento Cards
+    const bentoCards = document.querySelectorAll("[data-bento-card]");
+    bentoCards.forEach((card) => {
+      card.addEventListener("mousemove", (e) => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
+        card.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
+      });
+    });
 
-    let toastTimer = null;
+    // B. Card 1: Browser Profile Switcher
+    const profileBtns = document.querySelectorAll(".bento-profile-btn");
+    const activeProfileKey = document.getElementById("active-profile-key");
+    const simUrl = document.getElementById("sim-profile-url");
+    const simAvatar = document.getElementById("sim-profile-avatar");
+    const simName = document.getElementById("sim-profile-name");
+    const simTag = document.getElementById("sim-page-tag");
+    const simTitle = document.getElementById("sim-page-title");
+    const simWindow = document.getElementById("sim-metric-window");
+    const simViewport = document.getElementById("sim-profile-viewport");
 
-    selectZone.addEventListener("mouseup", (e) => {
-      const selection = window.getSelection().toString().trim();
-      if (selection.length >= 3) {
-        audio.playCopyChime();
+    profileBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const profileId = btn.dataset.profile;
+        const name = btn.dataset.name;
+        const url = btn.dataset.url;
+        const img = btn.dataset.img;
 
-        // Calculate bounded coordinates so toast never clips outside the viewport
-        const toastWidth = 140;
-        const toastHeight = 36;
-        const safeX = Math.min(e.clientX, window.innerWidth - toastWidth - 16);
-        const safeY = Math.min(e.clientY, window.innerHeight - toastHeight - 16);
+        profileBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
 
-        toast.style.left = `${safeX}px`;
-        toast.style.top = `${safeY}px`;
-        toast.classList.add("is-visible");
+        if (activeProfileKey) activeProfileKey.textContent = profileId;
+        if (simUrl) simUrl.textContent = url;
+        if (simAvatar) simAvatar.src = img;
+        if (simName) simName.textContent = name;
+        if (simTag) simTag.textContent = `PROFILE 0${profileId} ACTIVE`;
+        if (simTitle) simTitle.innerHTML = `${name} Workspace &bull; Direct Switch`;
+        if (simWindow) simWindow.textContent = `Chrome: ${name} (ID #${profileId})`;
 
-        if (chip) {
-          chip.classList.add("visible");
+        if (simViewport) {
+          simViewport.classList.remove("flash-pulse");
+          void simViewport.offsetWidth;
+          simViewport.classList.add("flash-pulse");
         }
 
-        if (toastTimer) clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => {
-          toast.classList.remove("is-visible");
-        }, 1100);
+        audio.playRelayClick();
+      });
+    });
+
+    // C. Card 2: Mechanical Keycap & First-Letter App Cycler
+    const cycleBtn = document.getElementById("bento-cycle-btn");
+    const cycleIndicator = document.getElementById("bento-cycle-indicator");
+    const app1 = document.getElementById("cycler-app-1");
+    const app2 = document.getElementById("cycler-app-2");
+    let currentAppSlot = 1;
+
+    function triggerCycleStep() {
+      currentAppSlot = currentAppSlot === 1 ? 2 : 1;
+      if (cycleBtn) {
+        cycleBtn.classList.add("pressed");
+        setTimeout(() => cycleBtn.classList.remove("pressed"), 180);
+      }
+      if (currentAppSlot === 1) {
+        if (app1) {
+          app1.classList.add("active");
+          const check = app1.querySelector(".cycler-check");
+          if (check) check.textContent = "✓";
+          const slot = app1.querySelector(".cycler-app-slot");
+          if (slot) slot.innerHTML = "Slot 1/2 &bull; Active";
+        }
+        if (app2) {
+          app2.classList.remove("active");
+          const check = app2.querySelector(".cycler-check");
+          if (check) check.textContent = "";
+          const slot = app2.querySelector(".cycler-app-slot");
+          if (slot) slot.innerHTML = "Slot 2/2 &bull; Next";
+        }
+        if (cycleIndicator) cycleIndicator.textContent = "1 / 2 ↻ CYCLE";
+      } else {
+        if (app1) {
+          app1.classList.remove("active");
+          const check = app1.querySelector(".cycler-check");
+          if (check) check.textContent = "";
+          const slot = app1.querySelector(".cycler-app-slot");
+          if (slot) slot.innerHTML = "Slot 1/2 &bull; Next";
+        }
+        if (app2) {
+          app2.classList.add("active");
+          const check = app2.querySelector(".cycler-check");
+          if (check) check.textContent = "✓";
+          const slot = app2.querySelector(".cycler-app-slot");
+          if (slot) slot.innerHTML = "Slot 2/2 &bull; Active";
+        }
+        if (cycleIndicator) cycleIndicator.textContent = "2 / 2 ↻ CYCLE";
+      }
+      audio.playRelayClick();
+    }
+
+    if (cycleBtn) {
+      cycleBtn.addEventListener("click", triggerCycleStep);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key.toLowerCase() === "t" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        triggerCycleStep();
       }
     });
+
+    // D. Card 3: Linux-Style Copy-on-Select Sandbox
+    const selectZone = document.getElementById("live-select-zone");
+    const sandboxToast = document.getElementById("sandbox-live-toast");
+    const cursorToast = document.getElementById("live-cursor-toast");
+    const counterNum = document.getElementById("copy-saved-count");
+    const counterBadge = document.getElementById("copy-saved-counter-badge");
+    let copyCount = 0;
+    let toastTimer = null;
+
+    if (selectZone) {
+      selectZone.addEventListener("mouseup", (e) => {
+        const selection = window.getSelection().toString().trim();
+        if (selection.length >= 3) {
+          copyCount += 1;
+          if (counterNum) counterNum.textContent = copyCount.toString();
+          if (counterBadge) {
+            counterBadge.classList.remove("pulse");
+            void counterBadge.offsetWidth;
+            counterBadge.classList.add("pulse");
+          }
+
+          audio.playCopyChime();
+
+          if (sandboxToast) {
+            sandboxToast.classList.add("is-visible");
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+              sandboxToast.classList.remove("is-visible");
+            }, 1200);
+          }
+
+          if (cursorToast) {
+            const toastWidth = 140;
+            const toastHeight = 36;
+            const safeX = Math.min(e.clientX, window.innerWidth - toastWidth - 16);
+            const safeY = Math.min(e.clientY, window.innerHeight - toastHeight - 16);
+            cursorToast.style.left = `${safeX}px`;
+            cursorToast.style.top = `${safeY}px`;
+            cursorToast.classList.add("is-visible");
+            setTimeout(() => {
+              cursorToast.classList.remove("is-visible");
+            }, 1100);
+          }
+        }
+      });
+    }
   }
 
   // ==========================================================================
@@ -647,7 +760,7 @@
     }
 
     // 3. Simulators & Proofs
-    setupCopyOnSelectSimulator();
+    setupBentoLabInteractions();
     setupBrewInstallCopy();
     setupKeyboardListener(tv);
   });

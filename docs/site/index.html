@@ -260,122 +260,170 @@
          ==================================================================== -->
     <section class="nnts-section nnts-pains-section" id="superpowers">
       <div class="section-header">
-        <h2 class="section-heading">Three Flaws Fixed</h2>
-        
+        <div class="section-badge-pill">02 // CORE SUPERPOWERS</div>
+        <h2 class="section-heading">Three macOS Flaws, Permanently Fixed</h2>
+        <p class="section-description">Test each interaction live in the browser. Zero latency, physical keycaps, and Sonner physics.</p>
       </div>
 
-      <div class="pains-triptych-grid">
+      <div class="bento-lab-grid">
         
-        <!-- PAIN 1: CHROME & BRAVE PROFILES -->
-        <div class="pain-bento-card">
-          <div class="pain-card-badge killer-badge">
-            <span class="card-num">01</span>
-          </div>
-
-          <h3 class="pain-card-title">Chrome & Brave Profiles</h3>
-          
-          <div class="pain-comparison-box">
-            <div class="comparison-row broken-row">
-              <span class="comp-icon">✕</span>
-              <div class="comp-text"><strong>Cmd+Tab:</strong> Profiles stacked together.</div>
-            </div>
-            <div class="comparison-row fixed-row">
-              <span class="comp-icon">✓</span>
-              <div class="comp-text"><strong>NNTS:</strong> <kbd class="ui-kbd">caps lock</kbd> + <kbd class="ui-kbd">C</kbd>/<kbd class="ui-kbd">B</kbd> + <kbd class="ui-kbd">1..4</kbd> jumps directly to window.</div>
+        <!-- BENTO CARD 1: CHROME & BRAVE PROFILES (FEATURE HERO) -->
+        <div class="bento-card bento-card-profiles" data-bento-card>
+          <div class="bento-card-header">
+            <span class="bento-tag tag-green">01 // BROWSER PROFILES</span>
+            <div class="bento-hotkey-badge">
+              <kbd class="bento-kbd">caps lock</kbd> + <kbd class="bento-kbd">C</kbd> + <kbd class="bento-kbd" id="active-profile-key">1</kbd>
             </div>
           </div>
 
-          <div class="pain-visual-demo">
-            <div class="profile-avatars-rack">
-              <div class="rack-item active">
-                <img src="assets/images/profiles_v2/personal.png" alt="Profile 1" class="rack-avatar">
-                <span class="rack-badge">1 &bull; Personal</span>
+          <div class="bento-card-content">
+            <h3 class="bento-title">Direct Profile Window Jump</h3>
+            <p class="bento-desc">macOS <kbd class="inline-kbd">Cmd+Tab</kbd> bundles all browser windows into one blind stack. NNTS raises the specific profile in &lt;16ms.</p>
+            
+            <!-- Live Profile Simulator Window -->
+            <div class="bento-sim-window">
+              <div class="bento-sim-titlebar">
+                <div class="sim-traffic-lights">
+                  <span class="tl-dot red"></span>
+                  <span class="tl-dot yellow"></span>
+                  <span class="tl-dot green"></span>
+                </div>
+                <div class="sim-url-bar">
+                  <span class="sim-lock-icon">🔒</span>
+                  <span class="sim-url-text" id="sim-profile-url">app.almosteleven.com/personal</span>
+                </div>
+                <div class="sim-profile-pill" id="sim-profile-pill">
+                  <img src="assets/images/profiles_v2/personal.png" alt="Profile" id="sim-profile-avatar" class="sim-pill-avatar">
+                  <span id="sim-profile-name">Personal</span>
+                </div>
               </div>
-              <div class="rack-item">
-                <img src="assets/images/profiles_v2/work.png" alt="Profile 2" class="rack-avatar">
-                <span class="rack-badge">2 &bull; Work</span>
+              <div class="bento-sim-viewport" id="sim-profile-viewport">
+                <div class="sim-page-header">
+                  <div class="sim-page-tag" id="sim-page-tag">PROFILE 01 ACTIVE</div>
+                  <div class="sim-page-title" id="sim-page-title">Personal Workspace &bull; Direct Switch</div>
+                </div>
+                <div class="sim-page-metrics">
+                  <div class="sim-metric-chip">
+                    <span class="m-label">RAISE LATENCY</span>
+                    <span class="m-val text-green">11.4 ms</span>
+                  </div>
+                  <div class="sim-metric-chip">
+                    <span class="m-label">TARGET WINDOW</span>
+                    <span class="m-val" id="sim-metric-window">Chrome: Personal (ID #1)</span>
+                  </div>
+                </div>
               </div>
-              <div class="rack-item">
-                <img src="assets/images/profiles_v2/client.png" alt="Profile 3" class="rack-avatar">
-                <span class="rack-badge">3 &bull; Client</span>
+            </div>
+
+            <!-- Profile Interactive Selector Shelf -->
+            <div class="bento-profile-shelf" id="bento-profile-shelf">
+              <button class="bento-profile-btn active" data-profile="1" data-name="Personal" data-url="app.almosteleven.com/personal" data-img="assets/images/profiles_v2/personal.png">
+                <img src="assets/images/profiles_v2/personal.png" alt="Personal" class="shelf-avatar">
+                <span class="shelf-label">1 &bull; Personal</span>
+              </button>
+              <button class="bento-profile-btn" data-profile="2" data-name="Work" data-url="linear.app/nnts/team" data-img="assets/images/profiles_v2/work.png">
+                <img src="assets/images/profiles_v2/work.png" alt="Work" class="shelf-avatar">
+                <span class="shelf-label">2 &bull; Work</span>
+              </button>
+              <button class="bento-profile-btn" data-profile="3" data-name="Client" data-url="github.com/unacau/nnts" data-img="assets/images/profiles_v2/client.png">
+                <img src="assets/images/profiles_v2/client.png" alt="Client" class="shelf-avatar">
+                <span class="shelf-label">3 &bull; Client</span>
+              </button>
+              <button class="bento-profile-btn" data-profile="4" data-name="Side Project" data-url="figma.com/@nnts-suite" data-img="assets/images/profiles_v2/side_project.png">
+                <img src="assets/images/profiles_v2/side_project.png" alt="Side Project" class="shelf-avatar">
+                <span class="shelf-label">4 &bull; Side Project</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BENTO CARD 2: FIRST-LETTER APP CYCLING -->
+        <div class="bento-card bento-card-cycling" data-bento-card>
+          <div class="bento-card-header">
+            <span class="bento-tag tag-cyan">02 // NO SEARCH LAG</span>
+            <div class="bento-hotkey-badge">
+              <kbd class="bento-kbd">caps lock</kbd> + <kbd class="bento-kbd">T</kbd>
+            </div>
+          </div>
+
+          <div class="bento-card-content">
+            <h3 class="bento-title">First-Letter App Cycling</h3>
+            <p class="bento-desc">No Spotlight indexing delays. Hold <kbd class="inline-kbd">caps lock</kbd> and tap the first letter; tap again to cycle instantly.</p>
+            
+            <!-- Live Interactive 3D Keycap & Carousel -->
+            <div class="bento-key-cycler-box">
+              <div class="cycler-meta-bar">
+                <span class="cycler-key-label">PRESS KEY OR CLICK:</span>
+                <span class="cycler-step-badge" id="bento-cycle-indicator">1 / 2 ↻ CYCLE</span>
               </div>
-              <div class="rack-item">
-                <img src="assets/images/profiles_v2/side_project.png" alt="Profile 4" class="rack-avatar">
-                <span class="rack-badge">4 &bull; Side Project</span>
+
+              <div class="cycler-stage">
+                <!-- Physical Mechanical Keycap -->
+                <button class="mechanical-keycap" id="bento-cycle-btn" title="Click or press 'T' on your keyboard to cycle">
+                  <span class="keycap-top">T</span>
+                  <span class="keycap-sub">TAP</span>
+                </button>
+
+                <!-- Switching App Cards -->
+                <div class="cycler-app-stack">
+                  <div class="cycler-app-item active" id="cycler-app-1">
+                    <img src="assets/images/icon_telegram.png" alt="Telegram" class="cycler-app-icon">
+                    <div class="cycler-app-info">
+                      <span class="cycler-app-name">Telegram</span>
+                      <span class="cycler-app-slot">Slot 1/2 &bull; Active</span>
+                    </div>
+                    <span class="cycler-check">✓</span>
+                  </div>
+                  <div class="cycler-app-item" id="cycler-app-2">
+                    <img src="assets/images/icon_terminal.png" alt="Terminal" class="cycler-app-icon">
+                    <div class="cycler-app-info">
+                      <span class="cycler-app-name">Terminal</span>
+                      <span class="cycler-app-slot">Slot 2/2 &bull; Next</span>
+                    </div>
+                    <span class="cycler-check"></span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-
-        <!-- PAIN 2: FIRST-LETTER QUICK APPS -->
-        <div class="pain-bento-card">
-          <div class="pain-card-badge speed-badge">
-            <span class="card-num">02</span>
-          </div>
-
-          <h3 class="pain-card-title">First-Letter App Cycling</h3>
-          
-          <div class="pain-comparison-box">
-            <div class="comparison-row broken-row">
-              <span class="comp-icon">✕</span>
-              <div class="comp-text"><strong>Spotlight:</strong> Search lag breaks focus.</div>
-            </div>
-            <div class="comparison-row fixed-row">
-              <span class="comp-icon">✓</span>
-              <div class="comp-text"><strong>NNTS:</strong> <kbd class="ui-kbd">caps lock</kbd> + Key instant jump; tap again to cycle.</div>
+        <!-- BENTO CARD 3: LINUX COPY-ON-SELECT -->
+        <div class="bento-card bento-card-copy" data-bento-card>
+          <div class="bento-card-header">
+            <span class="bento-tag tag-magenta">03 // ZERO CMD+C</span>
+            <div class="bento-counter-badge" id="copy-saved-counter-badge">
+              <span class="counter-num" id="copy-saved-count">0</span> Cmd+C Saved
             </div>
           </div>
 
-          <div class="pain-visual-demo">
-            <div class="letter-cycling-preview">
-              <div class="cycling-header">
-                <span class="cycling-letter">KEY [T]</span>
-                <span class="cycling-indicator">1 / 2 ↻ CYCLE</span>
+          <div class="bento-card-content">
+            <div class="bento-copy-header-row">
+              <div>
+                <h3 class="bento-title">Linux-Style Copy-on-Select</h3>
+                <p class="bento-desc">Highlight any text with mouse drag or double-click. Releasing mouse copies immediately to clipboard without pressing <kbd class="inline-kbd">Cmd+C</kbd>.</p>
               </div>
-              <div class="cycling-apps-row">
-                <div class="cycle-app-card active">
-                  <img src="assets/images/icon_telegram.png" alt="Telegram" class="cycle-icon">
-                  <span class="cycle-title">Telegram (1)</span>
+            </div>
+
+            <!-- Interactive Live Editor Sandbox -->
+            <div class="bento-code-sandbox" id="bento-code-sandbox">
+              <div class="sandbox-header">
+                <span class="sandbox-lang">macOS Shell &bull; Drag to select text</span>
+                <span class="sandbox-hint">Double-click or drag &gt;10pt</span>
+              </div>
+              <div class="sandbox-editor-body" id="live-select-zone">
+                <div class="editor-line">
+                  <span class="code-comment">// Highlight any part of this line:</span>
                 </div>
-                <div class="cycle-app-card">
-                  <img src="assets/images/icon_terminal.png" alt="Terminal" class="cycle-icon">
-                  <span class="cycle-title">Terminal (2)</span>
+                <div class="editor-line">
+                  <span class="code-kw">brew</span> <span class="code-fn">install</span> <span class="code-str">--cask nnts</span> <span class="code-comment">/* zero Cmd+C needed */</span>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-
-        <!-- PAIN 3: COPY ON SELECT -->
-        <div class="pain-bento-card">
-          <div class="pain-card-badge micro-badge">
-            <span class="card-num">03</span>
-          </div>
-
-          <h3 class="pain-card-title">Linux Copy-on-Select</h3>
-          
-          <div class="pain-comparison-box">
-            <div class="comparison-row broken-row">
-              <span class="comp-icon">✕</span>
-              <div class="comp-text"><strong>Cmd+C:</strong> 1,000 extra keystrokes daily.</div>
-            </div>
-            <div class="comparison-row fixed-row">
-              <span class="comp-icon">✓</span>
-              <div class="comp-text"><strong>NNTS:</strong> Highlight text to auto-copy.</div>
-            </div>
-          </div>
-
-          <!-- Interactive Live Drag-Select Tester Box -->
-          <div class="pain-visual-demo">
-            <div class="copy-select-tester-box">
-              <div class="tester-instructions">Try it: Select text below</div>
-              <div class="tester-selectable-text" id="live-select-zone">
-                Highlight this text to copy automatically.
-              </div>
-              <div class="tester-feedback-chip" id="tester-copy-chip">
-                <span>📋 Copied!</span>
+              <div class="sandbox-toast-anchor">
+                <div class="sandbox-toast-pill" id="sandbox-live-toast">
+                  <span class="toast-check">✓</span>
+                  <span class="toast-text">Copied to clipboard</span>
+                </div>
               </div>
             </div>
           </div>
