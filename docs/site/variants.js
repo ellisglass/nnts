@@ -1,5 +1,5 @@
 /**
- * Xomsky — Interactive UI & Verification Engine (variants.js)
+ * NNTS — Interactive UI & Verification Engine (variants.js)
  * Implements:
  * 1. 60fps Authentic macOS Video Demonstrations & Scrubbing
  * 2. Reactive Mascot Companion (real-time HUD toasts & squish physics)
@@ -26,7 +26,7 @@
 
   function playTactileClick(type = "soft") {
     // Respect global sound toggle state
-    if (window.xomskySound && !window.xomskySound.soundOn) return;
+    if (window.nntsSound && !window.nntsSound.soundOn) return;
 
     try {
       const ctx = getAudioContext();
@@ -71,7 +71,7 @@
 
   function initCopyToast() {
     copyToastEl = document.createElement("div");
-    copyToastEl.className = "xomsky-copy-toast";
+    copyToastEl.className = "nnts-copy-toast";
     copyToastEl.innerHTML = `<span class="toast-check">✓</span> <span class="toast-text">Copied to Clipboard</span>`;
     document.body.appendChild(copyToastEl);
 
@@ -263,7 +263,7 @@
     if (mobileCopyBtn) {
       mobileCopyBtn.addEventListener("click", (e) => {
         if (e) e.preventDefault();
-        const text = "brew install unacau/tap/xomsky";
+        const text = "brew install unacau/tap/nnts";
         try {
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).catch(() => {});
@@ -417,7 +417,7 @@
     document.querySelectorAll(".hero-install-strip, .terminal-install-bar").forEach((strip) => {
       strip.addEventListener("click", (e) => {
         const cmdEl = strip.querySelector(".hero-install-cmd, .terminal-cmd");
-        const text = cmdEl ? cmdEl.textContent.trim() : "brew install unacau/tap/xomsky";
+        const text = cmdEl ? cmdEl.textContent.trim() : "brew install unacau/tap/nnts";
 
         try {
           if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -455,10 +455,10 @@
   });
 
   // Export globally
-  window.xomskyInteractions = {
+  window.nntsInteractions = {
     playTactileClick,
     showCopyToast,
     handleMascotReaction
   };
-  window.xomskyVariants = window.xomskyInteractions;
+  window.nntsVariants = window.nntsInteractions;
 })();

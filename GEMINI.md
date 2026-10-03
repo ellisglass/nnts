@@ -17,7 +17,7 @@
   - `Engine/AntigravityEngine.swift`: Discovery and fast cycling for Antigravity & Antigravity IDE.
   - `Engine/CopyOnSelectEngine.swift`: Linux/X11-style automatic clipboard copying on text drag selection (>10pt) and multi-click selection.
   - `Engine/LicenseEngine.swift`: Polar.sh online license verification via non-blocking async `Task` on `@MainActor`, offline caching, and checkout redirection.
-  - `Engine/XomskyMotion.swift`: Procedural mascot micro-interactions (`NNTSMotion`) using SwiftUI springs.
+  - `Engine/NNTSMotion.swift`: Procedural mascot micro-interactions (`NNTSMotion`) using SwiftUI springs.
   - `Views/MinimalHUDWindow.swift`: Non-activating floating bezel HUD overlay with profile avatars and active card indicators.
   - `Views/CopyToastWindow.swift`: Non-intrusive cursor-following HUD toast for copy confirmation with rapid auto-dismiss (<1.2s).
   - `AppDelegate.swift`: Menu bar status item, hotkey routing, and lifecycle management.

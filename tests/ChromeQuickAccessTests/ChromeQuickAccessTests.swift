@@ -1452,7 +1452,7 @@ struct ChromeQuickAccessUnitTests {
         #expect(engine.validateLicenseKey("   ") == false)
         #expect(engine.validateLicenseKey("\n\t") == false)
         
-        // Invalid key checks: shorter than 8 characters or missing NNTS/XOMSKY/KHOMYAK prefix
+        // Invalid key checks: shorter than 8 characters or missing NNTS prefix
         #expect(engine.validateLicenseKey("ABC") == false)
         #expect(engine.validateLicenseKey("1234567") == false)
         #expect(engine.validateLicenseKey("   short   ") == false)
@@ -1461,8 +1461,6 @@ struct ChromeQuickAccessUnitTests {
         #expect(engine.validateLicenseKey("NNTS-PRO-LICENSE-001") == true)
         #expect(engine.validateLicenseKey("  NNTS-VALID-KEY  ") == true)
         #expect(engine.validateLicenseKey("NNTS-OWNER-KEY-001") == true)
-        #expect(engine.validateLicenseKey("XOMSKY-PRO-LICENSE-001") == true)
-        #expect(engine.validateLicenseKey("KHOMYAK-VIP-KEY") == true)
     }
     
     @Test @MainActor
@@ -1578,7 +1576,7 @@ struct ChromeQuickAccessUnitTests {
         #expect(engine.isPro == false)
         
         engine.testMockOnlineValidationResult = true
-        let success = engine.activate(key: "XOMSKY-OVERRIDE-CLEAR-KEY")
+        let success = engine.activate(key: "NNTS-OVERRIDE-CLEAR-KEY")
         #expect(success == true)
         #expect(engine.isPro == true)
         #expect(engine.testOverrideProStatus == nil)
@@ -1693,15 +1691,13 @@ struct ChromeQuickAccessUnitTests {
             engine.deactivate()
         }
         
-        // 1. Format validation: XOMSKY- and KHOMYAK- prefixes pass basic format check
-        #expect(engine.validateLicenseKey("XOMSKY-OWNER-KEY-001") == true)
-        #expect(engine.validateLicenseKey("xomsky-owner-lowercase") == true)
-        #expect(engine.validateLicenseKey("XOMSKY-VIP-CHAMPION-2026") == true)
-        #expect(engine.validateLicenseKey("XOMSKY-GIVEAWAY-FREE-ACCESS") == true)
-        #expect(engine.validateLicenseKey("KHOMYAK-OWNER-RETRO") == true)
-        #expect(engine.validateLicenseKey("KHOMYAK-VIP-RETRO") == true)
+        // 1. Format validation: NNTS- prefix passes basic format check
+        #expect(engine.validateLicenseKey("NNTS-OWNER-KEY-001") == true)
+        #expect(engine.validateLicenseKey("nnts-owner-lowercase") == true)
+        #expect(engine.validateLicenseKey("NNTS-VIP-CHAMPION-2026") == true)
+        #expect(engine.validateLicenseKey("NNTS-GIVEAWAY-FREE-ACCESS") == true)
         #expect(engine.validateLicenseKey("RANDOM-KEY-123") == false)
-        #expect(engine.validateLicenseKey("XOMSKY") == false) // too short (< 8 chars)
+        #expect(engine.validateLicenseKey("NNTS") == false) // too short (< 8 chars)
         
         // 2. Unmocked backdoor keys MUST NOT activate offline without Polar validation
         engine.deactivate()
@@ -1709,11 +1705,9 @@ struct ChromeQuickAccessUnitTests {
         #expect(engine.isPro == false)
         
         let formerBackdoorKeys = [
-            "XOMSKY-OWNER-DIRECT-ACCESS",
-            "XOMSKY-VIP-CONTEST-WINNER",
-            "XOMSKY-GIVEAWAY-OFFLINE",
-            "KHOMYAK-OWNER-RETRO",
-            "KHOMYAK-GIVEAWAY-TEST"
+            "NNTS-OWNER-DIRECT-ACCESS",
+            "NNTS-VIP-CONTEST-WINNER",
+            "NNTS-GIVEAWAY-OFFLINE"
         ]
         
         for key in formerBackdoorKeys {
@@ -1742,20 +1736,20 @@ struct ChromeQuickAccessUnitTests {
         // 1. Unmocked customer key in tests fails cleanly without bypass cheat
         engine.deactivate()
         engine.testMockOnlineValidationResult = nil
-        let unmockedResult = engine.activate(key: "XOMSKY-UNMOCKED-CUSTOMER-KEY")
+        let unmockedResult = engine.activate(key: "NNTS-UNMOCKED-CUSTOMER-KEY")
         #expect(unmockedResult == false)
         #expect(engine.isPro == false)
         
         // 2. Mock failure: online validation fails (e.g. invalid customer key on Polar)
         engine.deactivate()
         engine.testMockOnlineValidationResult = false
-        let failedResult = engine.activate(key: "XOMSKY-INVALID-CUSTOMER-KEY")
+        let failedResult = engine.activate(key: "NNTS-INVALID-CUSTOMER-KEY")
         #expect(failedResult == false)
         #expect(engine.isPro == false)
         
         // 3. Mock success: online validation passes (valid customer key on Polar)
         engine.testMockOnlineValidationResult = true
-        let validCustomerKey = "XOMSKY-CUSTOMER-VALID-KEY"
+        let validCustomerKey = "NNTS-CUSTOMER-VALID-KEY"
         let successResult = engine.activate(key: validCustomerKey)
         #expect(successResult == true)
         #expect(engine.isPro == true)
@@ -1764,20 +1758,20 @@ struct ChromeQuickAccessUnitTests {
         // 4. Async activation test (Bool and Detailed)
         engine.deactivate()
         engine.testMockOnlineValidationResult = false
-        let asyncFail = await engine.activateOnline(key: "XOMSKY-ASYNC-FAIL")
+        let asyncFail = await engine.activateOnline(key: "NNTS-ASYNC-FAIL")
         #expect(asyncFail == false)
         #expect(engine.isPro == false)
         
-        let detailedFail = await engine.activateOnlineDetailed(key: "XOMSKY-ASYNC-FAIL")
+        let detailedFail = await engine.activateOnlineDetailed(key: "NNTS-ASYNC-FAIL")
         #expect(detailedFail != .success)
         
         engine.testMockOnlineValidationResult = true
-        let asyncSuccess = await engine.activateOnline(key: "XOMSKY-ASYNC-SUCCESS")
+        let asyncSuccess = await engine.activateOnline(key: "NNTS-ASYNC-SUCCESS")
         #expect(asyncSuccess == true)
         #expect(engine.isPro == true)
-        #expect(engine.activeLicenseKey == "XOMSKY-ASYNC-SUCCESS")
+        #expect(engine.activeLicenseKey == "NNTS-ASYNC-SUCCESS")
         
-        let detailedSuccess = await engine.activateOnlineDetailed(key: "XOMSKY-ASYNC-SUCCESS")
+        let detailedSuccess = await engine.activateOnlineDetailed(key: "NNTS-ASYNC-SUCCESS")
         #expect(detailedSuccess == .success)
     }
     
@@ -2006,30 +2000,48 @@ struct ChromeQuickAccessUnitTests {
     }
     
     @Test
-    func testXomskyMotionConstants() {
+    func testNNTSMotionConstants() {
         _ = NNTSMotion.interactiveSnap
         _ = NNTSMotion.magneticGlide
         _ = NNTSMotion.tactileBop
         _ = NNTSMotion.cardMorph
         _ = NNTSMotion.microPress
-        _ = XomskyMotion.interactiveSnap
-        _ = XomskyMotion.magneticGlide
     }
     
     @Test @MainActor
     func testMascotProceduralIconGenerationAndBlinking() {
         let normalIcon = AppDelegate.makeMascotStatusIcon()
-        #expect(normalIcon.size.width == 18)
+        #expect(normalIcon.size.width == 29)
         #expect(normalIcon.size.height == 18)
         
         let blinkingIcon = AppDelegate.makeMascotStatusIcon(blinkProgress: 1.0)
-        #expect(blinkingIcon.size.width == 18)
+        #expect(blinkingIcon.size.width == 29)
+        #expect(blinkingIcon.size.height == 18)
         
         let gazeLeftIcon = AppDelegate.makeMascotStatusIcon(eyeGazeX: -0.8)
-        #expect(gazeLeftIcon.size.width == 18)
+        #expect(gazeLeftIcon.size.width == 29)
+        #expect(gazeLeftIcon.size.height == 18)
         
         let gazeRightIcon = AppDelegate.makeMascotStatusIcon(eyeGazeX: 0.8)
-        #expect(gazeRightIcon.size.width == 18)
+        #expect(gazeRightIcon.size.width == 29)
+        #expect(gazeRightIcon.size.height == 18)
+    }
+    
+    @Test @MainActor
+    func testStatusIconStylesAndPersistence() {
+        let icon = AppDelegate.makeStatusIcon()
+        #expect(icon.size.width == 29)
+        #expect(icon.size.height == 18)
+        #expect(icon.isTemplate == true)
+        
+        let pressedIcon = AppDelegate.makeStatusIcon(pressed: true)
+        #expect(pressedIcon.size.width == 29)
+        #expect(pressedIcon.size.height == 18)
+        #expect(pressedIcon.isTemplate == true)
+        
+        let nntsIcon = AppDelegate.makeNNTSKeycapIcon()
+        #expect(nntsIcon.size.width == 29)
+        #expect(nntsIcon.isTemplate == true)
     }
     
     @Test @MainActor
@@ -2065,28 +2077,28 @@ struct ChromeQuickAccessUnitTests {
     // MARK: - UpdateEngine Tests
     @Test
     func testUpdateEngineDetectsHomebrewViaBundlePath() {
-        let bundlePath = "/opt/homebrew/Caskroom/xomsky/1.1.1/Xomsky.app"
+        let bundlePath = "/opt/homebrew/Caskroom/nnts/2.0.1/NNTS.app"
         let source = UpdateEngine.detectInstallationSource(bundlePath: bundlePath) { _ in false }
         #expect(source == .homebrew)
     }
 
     @Test
     func testUpdateEngineDetectsHomebrewViaCaskroomDirectory() {
-        let bundlePath = "/Applications/Xomsky.app"
+        let bundlePath = "/Applications/NNTS.app"
         let source = UpdateEngine.detectInstallationSource(bundlePath: bundlePath) { path in
-            path == "/opt/homebrew/Caskroom/xomsky"
+            path == "/opt/homebrew/Caskroom/nnts"
         }
         #expect(source == .homebrew)
 
         let sourceIntel = UpdateEngine.detectInstallationSource(bundlePath: bundlePath) { path in
-            path == "/usr/local/Caskroom/xomsky"
+            path == "/usr/local/Caskroom/nnts"
         }
         #expect(sourceIntel == .homebrew)
     }
 
     @Test
     func testUpdateEngineDetectsDirectDownloadWhenNoCaskroom() {
-        let bundlePath = "/Applications/Xomsky.app"
+        let bundlePath = "/Applications/NNTS.app"
         let source = UpdateEngine.detectInstallationSource(bundlePath: bundlePath) { _ in false }
         #expect(source == .directDownload)
     }
@@ -2126,7 +2138,7 @@ struct ChromeQuickAccessUnitTests {
         
         --------
         
-        Full Changelog: https://github.com/unacau/xomsky/compare/v1.1.4...v1.1.5
+        Full Changelog: https://github.com/unacau/nnts/compare/v2.0.0...v2.0.1
         """
         
         let highlights = UpdateEngine.parseReleaseHighlights(from: sampleMarkdown, maxBullets: 4)
@@ -2228,10 +2240,9 @@ struct ChromeQuickAccessUnitTests {
     }
 
     @Test @MainActor
-    func testCopyOnSelectXomskyWindowDetection() {
+    func testCopyOnSelectNNTSWindowDetection() {
         let engine = CopyOnSelectEngine()
         _ = engine.isInteractingWithNNTSWindow
-        _ = engine.isInteractingWithXomskyWindow
         #expect(engine.dragThreshold == 10.0)
     }
 
@@ -2735,15 +2746,12 @@ struct ChromeQuickAccessUnitTests {
         engine.testOverrideProStatus = nil
         // When receipt check is enforced, a raw key without valid receipt is rejected
         LicenseEngine.testIgnoreReceiptCheckInTests = false
-        _ = engine.saveKeychainLicense(key: "XOMSKY-PIRATED-KEY-12345")
+        _ = engine.saveKeychainLicense(key: "NNTS-PIRATED-KEY-12345")
         engine.deleteKeychainReceipt()
         engine.deleteKeychainActivationId()
         LicenseEngine.storage.removeObject(forKey: "NNTSProReceiptToken")
         LicenseEngine.storage.removeObject(forKey: "NNTSProActivationId")
         LicenseEngine.storage.removeObject(forKey: "NNTSProLicenseKey")
-        LicenseEngine.storage.removeObject(forKey: "XomskyProReceiptToken")
-        LicenseEngine.storage.removeObject(forKey: "XomskyProActivationId")
-        LicenseEngine.storage.removeObject(forKey: "XomskyProLicenseKey")
         
         engine.checkLicenseStatus()
         #expect(engine.isPro == false, "Tampered license without cryptographic receipt must be rejected")
@@ -2762,7 +2770,7 @@ struct ChromeQuickAccessUnitTests {
         engine.testOverrideProStatus = nil
         LicenseEngine.testIgnoreReceiptCheckInTests = false
         
-        let testKey = "XOMSKY-BUNDLE-TEST-KEY-1"
+        let testKey = "NNTS-BUNDLE-TEST-KEY-1"
         let testAid = "act_bundle_\(UUID().uuidString)"
         let validReceipt = LicenseEngine.computeReceiptToken(key: testKey, activationId: testAid)
         
@@ -2797,7 +2805,7 @@ struct ChromeQuickAccessUnitTests {
         engine.testOverrideProStatus = nil
         LicenseEngine.testIgnoreReceiptCheckInTests = false
         
-        let legacyKey = "XOMSKY-LEGACY-MIGRATION-KEY"
+        let legacyKey = "NNTS-LEGACY-MIGRATION-KEY"
         let legacyAid = "act_legacy_\(UUID().uuidString)"
         let legacyReceipt = LicenseEngine.computeReceiptToken(key: legacyKey, activationId: legacyAid)
         

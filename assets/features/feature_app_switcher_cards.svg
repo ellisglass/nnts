@@ -115,7 +115,7 @@
     <text x="14" y="162" class="mono-code" fill="#52E075">Status: Ready to Ship</text>
   </g>
 
-  <!-- Floating Xomsky HUD Overlay (Appears in center of screen) -->
+  <!-- Floating NNTS HUD Overlay (Appears in center of screen) -->
   <g transform="translate(230, 335)" filter="url(#card-shadow)">
     <rect width="540" height="105" rx="24" fill="url(#hud-glass)" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
 

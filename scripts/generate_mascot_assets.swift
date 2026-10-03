@@ -306,7 +306,7 @@ func savePNG(image: NSImage, path: String, pixelSize: Int) {
 
 // MARK: - 5. Execute Pipeline
 let appRoot = "/Users/igorekishev/.gemini/antigravity/worktrees/mac-productivity-suite/update_branding_and_icons"
-let iconsetDir = "/tmp/XomskyAppIcon.iconset"
+let iconsetDir = "/tmp/NNTSAppIcon.iconset"
 let fileManager = FileManager.default
 
 try? fileManager.removeItem(atPath: iconsetDir)

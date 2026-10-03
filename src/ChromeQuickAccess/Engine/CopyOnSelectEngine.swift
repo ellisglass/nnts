@@ -79,10 +79,6 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         }
     }
     
-    public var isInteractingWithXomskyWindow: Bool {
-        return isInteractingWithNNTSWindow
-    }
-    
     private let logger = Logger(subsystem: "com.almosteleven.nnts", category: "copy-on-select")
     
     public init() {}

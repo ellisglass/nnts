@@ -35,6 +35,8 @@ binaries/
 # User-specific runtime configurations & backups
 *.backup_*
 *.backup
+*.bak_*
+.bak_*
 
 # IDE & Editor Settings
 .vscode/

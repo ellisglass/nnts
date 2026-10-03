@@ -1,12 +1,13 @@
 /**
- * Xomsky — Flagship Option C & Interactive Verification Styles (variants.css)
+ * NNTS — Flagship Option C & Interactive Verification Styles (variants.css)
  * Consolidated, production-optimized CSS with zero legacy bloat.
  */
 
 /* ==========================================================================
    1. Live Copy-on-Select Toast
    ========================================================================== */
-.xomsky-copy-toast {
+.nnts-copy-toast,
+.nnts-copy-toast {
   position: fixed;
   z-index: 10000;
   display: inline-flex;
@@ -32,18 +33,18 @@
   transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.xomsky-copy-toast.visible {
+.nnts-copy-toast.visible {
   opacity: 1;
   transform: scale(1) translateY(0);
 }
 
-.xomsky-copy-toast .toast-check {
+.nnts-copy-toast .toast-check {
   color: #10B981;
   font-weight: 800;
   font-size: 0.9rem;
 }
 
-.xomsky-copy-toast .toast-text {
+.nnts-copy-toast .toast-text {
   letter-spacing: -0.01em;
 }
 
@@ -597,7 +598,7 @@
 }
 
 /* ==========================================================================
-   Section 2: Why I Built Xomsky (The 3 Core Pains)
+   Section 2: Why I Built NNTS (The 3 Core Pains)
    ========================================================================== */
 .founder-section {
   width: 100%;

@@ -19,16 +19,14 @@ public final class UpdateEngine: Sendable {
         fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
     ) -> InstallationSource {
         // 1. Running directly out of Caskroom
-        if bundlePath.contains("Caskroom/nnts") || bundlePath.contains("Caskroom/xomsky") {
+        if bundlePath.contains("Caskroom/nnts") {
             return .homebrew
         }
         
         // 2. Common Homebrew Cask metadata locations on Apple Silicon and Intel Macs
         let commonCaskPaths = [
             "/opt/homebrew/Caskroom/nnts",
-            "/usr/local/Caskroom/nnts",
-            "/opt/homebrew/Caskroom/xomsky",
-            "/usr/local/Caskroom/xomsky"
+            "/usr/local/Caskroom/nnts"
         ]
         if commonCaskPaths.contains(where: { fileExists($0) }) {
             return .homebrew

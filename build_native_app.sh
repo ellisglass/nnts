@@ -44,7 +44,7 @@ mkdir -p "${MACOS_DIR}" "${CONTENTS_DIR}" "${RESOURCES_DIR}" "${BUILD_DIR}/temp"
 
 SOURCES=(
     "src/ChromeQuickAccess/Engine/KeyCodes.swift"
-    "src/ChromeQuickAccess/Engine/XomskyMotion.swift"
+    "src/ChromeQuickAccess/Engine/NNTSMotion.swift"
     "src/ChromeQuickAccess/Engine/CapsLockEngine.swift"
     "src/ChromeQuickAccess/Engine/ChromeProfileEngine.swift"
     "src/ChromeQuickAccess/Engine/AntigravityEngine.swift"
@@ -106,7 +106,6 @@ if [ "${FAST_DEV}" = true ]; then
     if [ "${RELAUNCH}" = true ]; then
         echo "[*] Updating /Applications/${APP_NAME}.app and relaunching..."
         pkill -x "${APP_NAME}" 2>/dev/null || true
-        pkill -x "Xomsky" 2>/dev/null || true
         sleep 0.3
         rm -rf "/Applications/${APP_NAME}.app"
         cp -R "${APP_BUNDLE}" "/Applications/${APP_NAME}.app"

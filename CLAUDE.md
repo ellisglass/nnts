@@ -1,10 +1,10 @@
-# Project: Xomsky (Хомяк) — macOS Productivity Suite (v1.0.0)
+# Project: NNTS — macOS Productivity Suite (v2.0.0)
 
 > **Positioning:** Утилита для быстрого доступа и интуитивного доступа к выбранным приложениям через **Капслок + Первая Буква Приложения**, со специальной фичей — **быстрый доступ к окнам конкретного хром/брейв профайла через Капс Лок + C/B + 1-4**, и для **копирования текста при выделении** (Copy-on-Select).
 >
 > **The 3 Core Pains (Why It Exists):**
-> 1. *Killer Feature #1:* Окна профилей Chrome/Brave — в macOS системный `Cmd+Tab` не разделяет профили, переключение сломано. `Caps + C/B + 1..4` поднимает окно конкретного профиля.
-> 2. *Feature #2:* Доступ к приложениям по первой букве (`Caps + T/I/A/N/F`) без набора текста в Spotlight/Raycast.
+> 1. *Killer Feature #1:* Окна профилей Chrome/Brave — в macOS системный `Cmd+Tab` не разделяет профили, переключение сломано. `caps lock + c/b + 1..4` поднимает окно конкретного профиля.
+> 2. *Feature #2:* Доступ к приложениям по первой букве (`caps lock + [a-z]`) без набора текста в Spotlight/Raycast.
 > 3. *Feature #3:* Copy-on-Select — выделил текст = скопировал, устранение 1 000 лишних `Cmd+C` в день.
 
 ## Tech Stack & Runtime
@@ -12,7 +12,7 @@
 - **Toolchain**: Swift 6+ (Strict Concurrency, `@MainActor`, `Sendable`), Swift Package Manager (SPM).
 - **Core Frameworks**: AppKit, CoreGraphics (`CGEventTap`), ApplicationServices (Accessibility `AXUIElement`), IOHID (`hidutil`), SwiftUI.
 - **Zero Heavy Runtime Dependencies**: No Karabiner daemon, no Hammerspoon runtime.
-- **Unified Logging Subsystem**: `com.almosteleven.xomsky`.
+- **Unified Logging Subsystem**: `com.almosteleven.nnts`.
 
 ## Key Build & Verification Commands
 - **Run Tests**: `make test` or `swift test` or `./tests/run_tests.sh`

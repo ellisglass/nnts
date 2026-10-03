@@ -39,6 +39,3 @@ public enum NNTSMotion: Sendable {
         blendDuration: 0.02
     )
 }
-
-public typealias XomskyMotion = NNTSMotion
-

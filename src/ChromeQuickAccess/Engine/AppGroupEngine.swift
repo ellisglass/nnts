@@ -802,7 +802,7 @@ public final class AppGroupEngine: ObservableObject, @unchecked Sendable {
         return Array(chosen.prefix(freePinnedAppsLimit))
     }
     
-    /// Known phantom/fallback bundle IDs produced by legacy Xomsky versions when categories were empty.
+    /// Known phantom/fallback bundle IDs produced by legacy versions when categories were empty.
     public static let legacyPhantomBundleIDs: Set<String> = [
         "com.openai.chat",
         "com.apple.dt.Xcode",

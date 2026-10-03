@@ -554,7 +554,7 @@
     const stripBtn = document.getElementById("strip-brew-btn");
 
     function copyBrew(el, btnEl) {
-      const cmd = "brew install --cask xomsky";
+      const cmd = "brew install --cask nnts";
       navigator.clipboard.writeText(cmd).then(() => {
         audio.playCopyChime();
         if (btnEl) {

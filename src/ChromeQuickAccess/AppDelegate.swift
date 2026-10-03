@@ -429,7 +429,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         guard let button = statusItem?.button else { return }
         
-        let icon = AppDelegate.makeMascotStatusIcon()
+        let icon = AppDelegate.makeStatusIcon()
         button.image = icon
         button.imagePosition = .imageOnly
         button.toolTip = "NNTS — App & Profile Switcher"
@@ -463,12 +463,12 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     public func performMascotBlink() {
         guard let button = self.statusItem?.button else { return }
-        button.image = AppDelegate.makeMascotStatusIcon(blinkProgress: 1.0)
+        button.image = AppDelegate.makeStatusIcon(pressed: true)
         
         Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 120_000_000)
             guard let self = self else { return }
-            self.statusItem?.button?.image = AppDelegate.makeMascotStatusIcon(blinkProgress: 0.0)
+            self.statusItem?.button?.image = AppDelegate.makeStatusIcon(pressed: false)
             self.scheduleNextBlink()
         }
     }
@@ -476,140 +476,72 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     public func triggerMascotGaze(offset: CGFloat) {
         mascotGazeResetTask?.cancel()
         guard let button = self.statusItem?.button else { return }
-        button.image = AppDelegate.makeMascotStatusIcon(eyeGazeX: offset)
+        button.image = AppDelegate.makeStatusIcon(pressed: true)
         
         mascotGazeResetTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 350_000_000)
             guard !Task.isCancelled, let self = self else { return }
-            self.statusItem?.button?.image = AppDelegate.makeMascotStatusIcon()
+            self.statusItem?.button?.image = AppDelegate.makeStatusIcon(pressed: false)
         }
     }
     
-    /// Generates a resolution-independent, full-color vector status bar icon of the NNTS cyber mascot emblem
-    /// featuring its circular titanium CRT bezel, cathode scanline raster, cyber gaze tracking,
-    /// and procedural blinking.
+    public func updateStatusIcon() {
+        guard let button = self.statusItem?.button else { return }
+        button.image = AppDelegate.makeStatusIcon()
+    }
+    
+    // MARK: - NNTS Status Bar Icon
+    public static func makeStatusIcon(pressed: Bool = false) -> NSImage {
+        let size = NSSize(width: 29, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            guard let cg = NSGraphicsContext.current?.cgContext else { return false }
+            
+            let dy: CGFloat = pressed ? -0.8 : 0.0
+            let keyRect = CGRect(x: 1.25, y: 1.25 + dy, width: 26.5, height: 15.5)
+            let path = CGPath(roundedRect: keyRect, cornerWidth: 3.5, cornerHeight: 3.5, transform: nil)
+            cg.addPath(path)
+            cg.setLineWidth(1.25)
+            cg.setStrokeColor(NSColor.black.cgColor)
+            cg.strokePath()
+            
+            let text = "NNTS" as NSString
+            let font = NSFont.systemFont(ofSize: 7.2, weight: .black)
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: NSColor.black
+            ]
+            let strSize = text.size(withAttributes: attrs)
+            let textRect = CGRect(
+                x: (29 - strSize.width) / 2.0,
+                y: (18 - strSize.height) / 2.0 + dy - 0.5,
+                width: strSize.width,
+                height: strSize.height
+            )
+            text.draw(in: textRect, withAttributes: attrs)
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+    
+    public static func makeStatusIcon(
+        eyeGazeX: CGFloat = 0.0,
+        eyeGazeY: CGFloat = 0.0,
+        blinkProgress: CGFloat = 0.0
+    ) -> NSImage {
+        return makeStatusIcon(pressed: blinkProgress >= 0.5 || abs(eyeGazeX) > 0.1)
+    }
+    
+    public static func makeNNTSKeycapIcon(pressed: Bool = false) -> NSImage {
+        return makeStatusIcon(pressed: pressed)
+    }
+    
     public static func makeMascotStatusIcon(
         eyeGazeX: CGFloat = 0.0,
         eyeGazeY: CGFloat = 0.0,
         blinkProgress: CGFloat = 0.0
     ) -> NSImage {
-        let size = NSSize(width: 18, height: 18)
-        let image = NSImage(size: size, flipped: false) { rect in
-            guard let cg = NSGraphicsContext.current?.cgContext else { return false }
-            
-            let s = rect.width / 32.0
-            cg.scaleBy(x: s, y: s)
-
-            // Palette (Titanium Rim, Bezel, Dark Cathode, Phosphor Accent, Hair, Face Tone)
-            let cTitaniumRim = NSColor(red: 0.24, green: 0.24, blue: 0.30, alpha: 1.0).cgColor
-            let cTitaniumBezel = NSColor(red: 0.14, green: 0.13, blue: 0.18, alpha: 1.0).cgColor
-            let cCathodeBg = NSColor(red: 0.09, green: 0.08, blue: 0.13, alpha: 1.0).cgColor
-            let cPhosphor = NSColor(red: 0.22, green: 1.0, blue: 0.08, alpha: 1.0).cgColor
-            let cWhite = NSColor.white.cgColor
-            let cDark = NSColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1.0).cgColor
-            let cSkin = NSColor(red: 0.90, green: 0.76, blue: 0.73, alpha: 1.0).cgColor
-            let cHair = NSColor(red: 0.11, green: 0.10, blue: 0.14, alpha: 1.0).cgColor
-
-            cg.setLineCap(.round)
-            cg.setLineJoin(.round)
-
-            func Y(_ y: CGFloat) -> CGFloat { 32.0 - y }
-
-            // 1. Outer CRT Coin / Bezel
-            let coinRect = CGRect(x: 1.5, y: 1.5, width: 29.0, height: 29.0)
-            cg.setFillColor(cCathodeBg)
-            cg.setStrokeColor(cTitaniumRim)
-            cg.setLineWidth(1.8)
-            cg.addEllipse(in: coinRect)
-            cg.drawPath(using: .fillStroke)
-
-            // 2. Inner Cathode Bezel Ring
-            let innerRect = CGRect(x: 3.5, y: 3.5, width: 25.0, height: 25.0)
-            cg.setStrokeColor(cTitaniumBezel)
-            cg.setLineWidth(1.0)
-            cg.strokeEllipse(in: innerRect)
-
-            // 3. Cyber Persona Hair Silhouette (top & sides)
-            let hair = CGMutablePath()
-            hair.move(to: CGPoint(x: 7.0, y: Y(24.0)))
-            hair.addCurve(to: CGPoint(x: 16.0, y: Y(6.5)), control1: CGPoint(x: 7.0, y: Y(11.0)), control2: CGPoint(x: 10.0, y: Y(6.5)))
-            hair.addCurve(to: CGPoint(x: 25.0, y: Y(24.0)), control1: CGPoint(x: 22.0, y: Y(6.5)), control2: CGPoint(x: 25.0, y: Y(11.0)))
-            hair.addLine(to: CGPoint(x: 22.5, y: Y(24.0)))
-            hair.addCurve(to: CGPoint(x: 16.0, y: Y(11.0)), control1: CGPoint(x: 22.5, y: Y(14.0)), control2: CGPoint(x: 20.0, y: Y(10.5)))
-            hair.addCurve(to: CGPoint(x: 9.5, y: Y(24.0)), control1: CGPoint(x: 12.0, y: Y(10.5)), control2: CGPoint(x: 9.5, y: Y(14.0)))
-            hair.closeSubpath()
-            cg.addPath(hair)
-            cg.setFillColor(cHair)
-            cg.fillPath()
-
-            // 4. Face Contour
-            let face = CGMutablePath()
-            face.move(to: CGPoint(x: 10.5, y: Y(12.5)))
-            face.addLine(to: CGPoint(x: 21.5, y: Y(12.5)))
-            face.addCurve(to: CGPoint(x: 16.0, y: Y(24.5)), control1: CGPoint(x: 21.5, y: Y(21.0)), control2: CGPoint(x: 18.5, y: Y(24.5)))
-            face.addCurve(to: CGPoint(x: 10.5, y: Y(12.5)), control1: CGPoint(x: 13.5, y: Y(24.5)), control2: CGPoint(x: 10.5, y: Y(21.0)))
-            face.closeSubpath()
-            cg.addPath(face)
-            cg.setFillColor(cSkin)
-            cg.fillPath()
-
-            // 5. Dynamic Cyber Eyes & Gaze Tracking
-            func drawEye(cx: CGFloat, svgY: CGFloat) {
-                let cy = Y(svgY)
-                if blinkProgress >= 0.75 {
-                    let slit = CGMutablePath()
-                    slit.move(to: CGPoint(x: cx - 2.4, y: cy))
-                    slit.addLine(to: CGPoint(x: cx + 2.4, y: cy))
-                    cg.addPath(slit)
-                    cg.setStrokeColor(cDark)
-                    cg.setLineWidth(1.2)
-                    cg.strokePath()
-                    return
-                }
-
-                let px = cx + eyeGazeX
-                let py = cy + eyeGazeY
-
-                // Sclera / eye background
-                cg.setFillColor(cWhite)
-                cg.addEllipse(in: CGRect(x: cx - 2.5, y: cy - 1.8, width: 5.0, height: 3.6))
-                cg.fillPath()
-
-                // Iris / Pupil with gaze tracking
-                cg.setFillColor(cDark)
-                cg.addEllipse(in: CGRect(x: px - 1.4, y: py - 1.4, width: 2.8, height: 2.8))
-                cg.fillPath()
-
-                // Cyber highlight
-                cg.setFillColor(cPhosphor)
-                cg.addEllipse(in: CGRect(x: px + 0.4, y: py - 0.7, width: 1.0, height: 1.0))
-                cg.fillPath()
-            }
-            drawEye(cx: 13.2, svgY: 15.5)
-            drawEye(cx: 18.8, svgY: 15.5)
-
-            // 6. Subtle Cyber Lips
-            let lips = CGMutablePath()
-            lips.move(to: CGPoint(x: 14.5, y: Y(21.2)))
-            lips.addLine(to: CGPoint(x: 17.5, y: Y(21.2)))
-            cg.addPath(lips)
-            cg.setStrokeColor(NSColor(red: 0.75, green: 0.35, blue: 0.40, alpha: 1.0).cgColor)
-            cg.setLineWidth(0.8)
-            cg.strokePath()
-
-            return true
-        }
-        image.isTemplate = false
-        return image
-    }
-    
-    @available(*, deprecated, renamed: "makeMascotStatusIcon")
-    public static func makeKhomyakStatusIcon(
-        eyeGazeX: CGFloat = 0.0,
-        eyeGazeY: CGFloat = 0.0,
-        blinkProgress: CGFloat = 0.0
-    ) -> NSImage {
-        return makeMascotStatusIcon(eyeGazeX: eyeGazeX, eyeGazeY: eyeGazeY, blinkProgress: blinkProgress)
+        return makeStatusIcon(pressed: blinkProgress >= 0.5 || abs(eyeGazeX) > 0.1)
     }
     
     public func updateMenu() {
@@ -1604,7 +1536,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         Open source under MIT License.
         """
         alert.alertStyle = .informational
-        alert.icon = AppDelegate.makeMascotStatusIcon()
+        alert.icon = NSApp.applicationIconImage ?? AppDelegate.makeStatusIcon()
         
         alert.addButton(withTitle: "OK")
         alert.addButton(withTitle: "GitHub ↗")
@@ -1665,7 +1597,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let alert = NSAlert()
         alert.messageText = "New Update Available: v\(latestVersion)"
         alert.alertStyle = .informational
-        alert.icon = AppDelegate.makeMascotStatusIcon()
+        alert.icon = NSApp.applicationIconImage ?? AppDelegate.makeStatusIcon()
         
         let highlights = UpdateEngine.parseReleaseHighlights(from: releaseNotes, maxBullets: 4)
         var highlightsBlock = ""
@@ -1721,7 +1653,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.messageText = "NNTS is Up to Date"
         alert.informativeText = "Version \(currentVersion) is currently the newest version available."
         alert.alertStyle = .informational
-        alert.icon = AppDelegate.makeMascotStatusIcon()
+        alert.icon = NSApp.applicationIconImage ?? AppDelegate.makeStatusIcon()
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }
