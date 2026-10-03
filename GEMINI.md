@@ -3,8 +3,8 @@
 > **Positioning:** Утилита для быстрого доступа и интуитивного доступа к выбранным приложениям через **Капслок + Первая Буква Приложения**, со специальной фичей — **быстрый доступ к окнам конкретного хром/брейв профайла через Капс Лок + C/B + 1-4**, и для **копирования текста при выделении** (Copy-on-Select).
 >
 > **The 3 Core Pains (Why It Exists):**
-> 1. *Killer Feature #1:* Окна профилей Chrome/Brave — в macOS системный `Cmd+Tab` не разделяет профили, переключение сломано. `Caps + C/B + 1..4` поднимает окно конкретного профиля.
-> 2. *Feature #2:* Доступ к приложениям по первой букве (`Caps + [A–Z]`: `Caps + O` Obsidian, `Caps + S` Spotify/Settings, `Caps + F` Finder, `Caps + T` Telegram/Terminal) с мгновенным циклированием нескольких приложений на одной букве (`1/2 ↻`).
+> 1. *Killer Feature #1:* Окна профилей Chrome/Brave — в macOS системный `Cmd+Tab` не разделяет профили, переключение сломано. `caps lock + c/b + 1..4` поднимает окно конкретного профиля.
+> 2. *Feature #2:* Доступ к приложениям по первой букве (`caps lock + [a–z]`: `caps lock + o` Obsidian, `caps lock + s` Spotify/Settings, `caps lock + f` Finder, `caps lock + t` Telegram/Terminal) с мгновенным циклированием нескольких приложений на одной букве (`1/2 ↻`).
 > 3. *Feature #3:* Copy-on-Select — выделил текст = скопировал, устранение 1 000 лишних `Cmd+C` в день.
 
 ## Tech Stack & Architecture
@@ -106,5 +106,36 @@
   - Prior to initiating non-trivial refactorings, mass deletions, or risky structural changes, create an ephemeral git checkpoint (`git stash create` or transient checkpoint branch) enabling 1-second recovery via single-command rollback.
 - **Headless Visual Proof (Visual-First UI Verification)**:
   - When modifying UI, CSS, or layout components, capture a local visual snapshot or render artifact using browser tools before reporting completion, rather than offloading manual rendering and visual inspection to the user.
+  - **Binary Pre-Flight**: Never invoke external CLI tools like `shot-scraper` blindly. Prioritize macOS native `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --headless=new --screenshot=<out> <url>` or `/usr/sbin/screencapture` for active windows. Always verify executable presence with `test -x` before running headless screenshot commands.
 - **Adaptive Verbosity (Minimalism on High Confidence)**:
   - On unambiguous, high-confidence micro-tasks (bugfixes, typography adjustments, config changes), strictly output a 1-line status statement followed immediately by the diff or artifact link. Eliminate conversational introductions, recapitulations, and polite pleasantries.
+- **Micro-Chunk Edit & Failure-Circuit-Breaker Invariant**:
+  - When modifying Swift/JS files with `replace_file_content`, target minimal contiguous chunks (≤15 lines). Always inspect exact line numbers immediately before editing with `view_file`.
+  - If `replace_file_content` fails twice consecutively on the same block, NEVER retry a third time with the same tool; immediately break the loop by switching to a targeted Python rewrite script or rewriting the atomic module.
+- **Deterministic GitHub CLI & Release Queries**:
+  - Zero extrapolation of `gh` CLI JSON fields. In `gh release view --json`, only request documented standard fields: `tagName,name,url,publishedAt,assets,isDraft,isPrerelease` (fields like `isLatest` are invalid and fail). Query `gh run list --limit 5` before requesting specific run logs.
+- **Ephemeral Port & Daemon Teardown Invariant**:
+  - When previewing or testing the site (`docs/` or `site/`), bind to dynamic ephemeral ports to prevent port collisions (avoid hardcoded 8000, 8844, 3000). Always record the spawned background task and terminate it cleanly upon task completion.
+- **Safe Scratch Scripting & Fallback Fonts**:
+  - Never execute heavy multi-line Python scripts via inline stdin heredocs (`python3 - << 'EOF'`). Write dedicated scripts to `scratch/`. When rendering text via PIL/Pillow on macOS, always wrap system font loading in `try ... except Exception: font = ImageFont.load_default()` to handle font availability differences across macOS Sonoma, Sequoia, and Tahoe.
+- **Remote Git Pre-Flight & Push Safety**:
+  - Before pushing release commits or tags, verify remote configuration with `git remote -v` and fetch tracking branches (`git fetch origin`). Never push tags blindly if upstream branch push hasn't succeeded.
+- **Swift 6 Concurrency & Actor-Isolated Scratch Scripts**:
+  - Never call `@MainActor`-isolated methods from synchronous top-level code in standalone test scripts (`call to main actor-isolated global function in a synchronous nonisolated context`). Structure verification scripts with `@main struct Runner { @MainActor static func main() async { ... } }` or wrap execution in `Task { @MainActor in ... }`.
+- **Atomic Test Synchronization During Code Refactoring**:
+  - When removing or renaming classes, methods, or properties in `src/ChromeQuickAccess/`, update or prune corresponding unit test assertions in `tests/ChromeQuickAccessTests/` in the same atomic change. Never leave orphaned symbols in test suites that break `make test`.
+- **Headless Chrome Dynamic Port & Process Isolation**:
+  - When launching Chrome for UI snapshots, use dynamic ports (`--remote-debugging-port=0`) or pre-check port occupancy (`lsof -ti :9222`) to avoid `bind() failed: Address already in use (48)`. Always cleanly terminate headless Chrome child processes after rendering.
+- **Workspace Boundary Containment Guardrail**:
+  - Strictly maintain filesystem isolation within `/Users/igorekishev/Igor/igorekishev/mac-productivity-suite`. Never pass paths to neighboring project workspaces in `Cwd` or `CommandLine` to prevent pre-tool hook security violations.
+- **Context-Conscious Slice Reading for Large Files**:
+  - For files exceeding 300 lines (e.g. `MinimalHUDWindow.swift`, `ChromeQuickAccessTests.swift`), always use `view_file` with explicit `StartLine` and `EndLine` ranges rather than dumping the full file into context.
+- **Strict English-Only Deliverables & Assets Invariant**:
+  - All promotional graphics, marketing bento grids, screenshots, README files, documentation, release notes, and UI assets must be strictly in English.
+  - Categorically never generate, maintain, or commit Russian-language graphic variants or localizations. The product's global positioning and identity are 100% English.
+- **Strict Lowercase "caps lock" Invariant**:
+  - Categorically never write "Caps", "CAPS", "Caps Lock", or "Caps lock" in marketing copy, documentation, graphics, promotional assets, or user-facing text.
+  - Always write `caps lock` in full lowercase, two words.
+- **Canonical Brand Typeface (Space Grotesk Bold)**:
+  - Space Grotesk Bold is the official, locked brand and display typeface for NNTS across all promotional graphics, bento grids, showcases, and web UI.
+  - Static font files reside in `assets/fonts/SpaceGrotesk-Bold.ttf`.
