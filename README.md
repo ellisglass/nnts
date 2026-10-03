@@ -1,6 +1,6 @@
 # NNTS
 
-[![Version](https://img.shields.io/badge/version-2.0.0-007AFF.svg?style=flat-square)](https://github.com/unacau/nnts/releases/latest)
+[![Version](https://img.shields.io/badge/version-2.0.1-007AFF.svg?style=flat-square)](https://github.com/unacau/nnts/releases/latest)
 [![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-black.svg?style=flat-square)](https://github.com/unacau/nnts)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
@@ -16,7 +16,7 @@ brew install unacau/tap/nnts
 ## Shortcuts
 
 <p align="center">
-  <img src="assets/nnts_bento_grid.png" alt="NNTS Shortcuts & Bento Grid" width="100%">
+  <img src="assets/nnts_bento_grid_animated.gif" alt="NNTS Shortcuts & Animated Bento Grid" width="100%">
 </p>
 
 | Shortcut | Action | Target / Details |
