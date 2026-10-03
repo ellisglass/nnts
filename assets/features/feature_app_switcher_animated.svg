@@ -12,14 +12,64 @@
       <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.5" />
     </filter>
     <filter id="active-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#007AFF" flood-opacity="0.6" />
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#39FF14" flood-opacity="0.55" />
     </filter>
   </defs>
 
   <style>
     .mono-code { font-family: 'SF Mono', Menlo, Monaco, Consolas, monospace; font-size: 11px; fill: #adbac7; }
-    .card-title { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 13px; font-weight: 600; fill: #ffffff; }
-    .badge-key { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', monospace; font-size: 12px; font-weight: bold; fill: #ffffff; }
+    .card-title { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 11px; font-weight: 600; fill: #ffffff; }
+    .badge-key { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', monospace; font-size: 10px; font-weight: bold; fill: #ffffff; }
+
+    /* Emil Kowalski fluid capsule movement */
+    @keyframes glideCapsule {
+      0%, 20% {
+        transform: translate(18px, 14px);
+      }
+      25%, 45% {
+        transform: translate(122px, 14px);
+      }
+      50%, 70% {
+        transform: translate(226px, 14px);
+      }
+      75%, 95% {
+        transform: translate(330px, 14px);
+      }
+      100% {
+        transform: translate(18px, 14px);
+      }
+    }
+
+    @keyframes pulseActiveBorder {
+      0%, 20% {
+        stroke: #30D158;
+      }
+      25%, 45% {
+        stroke: #5856D6;
+      }
+      50%, 70% {
+        stroke: #FF2D55;
+      }
+      75%, 95% {
+        stroke: #FF9F0A;
+      }
+      100% {
+        stroke: #30D158;
+      }
+    }
+
+    .hud-active-capsule {
+      animation: glideCapsule 6s cubic-bezier(0.23, 1, 0.32, 1) infinite,
+                 pulseActiveBorder 6s steps(1) infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hud-active-capsule {
+        animation: none;
+        transform: translate(18px, 14px);
+        stroke: #30D158;
+      }
+    }
   </style>
 
   <!-- Background -->
@@ -40,16 +90,16 @@
     <circle cx="16" cy="14" r="4" fill="#ff5f56" />
     <circle cx="28" cy="14" r="4" fill="#ffbd2e" />
     <circle cx="40" cy="14" r="4" fill="#27c93f" />
-    <text x="56" y="18" class="card-title" font-size="11">Ghostty — caps lock + T</text>
+    <text x="56" y="18" class="card-title">Ghostty — caps lock + T</text>
     <rect x="175" y="6" width="30" height="16" rx="4" fill="#30D158" />
-    <text x="190" y="18" class="badge-key" text-anchor="middle" font-size="10">T</text>
+    <text x="190" y="18" class="badge-key" text-anchor="middle">T</text>
 
     <!-- Terminal Content -->
     <text x="14" y="52" class="mono-code" fill="#30D158">~ $ <tspan fill="#e6edf3">git status</tspan></text>
     <text x="14" y="72" class="mono-code" fill="#768390">On branch main</text>
     <text x="14" y="90" class="mono-code" fill="#768390">up to date with 'origin'</text>
     <text x="14" y="116" class="mono-code" fill="#30D158">~ $ <tspan fill="#e6edf3">swift test</tspan></text>
-    <text x="14" y="136" class="mono-code" fill="#52E075">✔ 99/99 passed</text>
+    <text x="14" y="136" class="mono-code" fill="#52E075">✔ 119/119 passed</text>
     <text x="14" y="156" class="mono-code" fill="#768390">Latency: 11.2ms</text>
     <rect x="14" y="172" width="6" height="12" fill="#30D158" />
   </g>
@@ -61,9 +111,9 @@
     <circle cx="16" cy="14" r="4" fill="#ff5f56" />
     <circle cx="28" cy="14" r="4" fill="#ffbd2e" />
     <circle cx="40" cy="14" r="4" fill="#27c93f" />
-    <text x="56" y="18" class="card-title" font-size="11">IDE — caps lock + I</text>
+    <text x="56" y="18" class="card-title">IDE — caps lock + I</text>
     <rect x="175" y="6" width="30" height="16" rx="4" fill="#5856D6" />
-    <text x="190" y="18" class="badge-key" text-anchor="middle" font-size="10">I</text>
+    <text x="190" y="18" class="badge-key" text-anchor="middle">I</text>
 
     <!-- Code Content -->
     <text x="14" y="52" class="mono-code" fill="#F05138">import <tspan fill="#ffffff">SwiftUI</tspan></text>
@@ -82,9 +132,9 @@
     <circle cx="16" cy="14" r="4" fill="#ff5f56" />
     <circle cx="28" cy="14" r="4" fill="#ffbd2e" />
     <circle cx="40" cy="14" r="4" fill="#27c93f" />
-    <text x="56" y="18" class="card-title" font-size="11">Agent — caps lock + A</text>
+    <text x="56" y="18" class="card-title">Agent — caps lock + A</text>
     <rect x="175" y="6" width="30" height="16" rx="4" fill="#FF2D55" />
-    <text x="190" y="18" class="badge-key" text-anchor="middle" font-size="10">A</text>
+    <text x="190" y="18" class="badge-key" text-anchor="middle">A</text>
 
     <!-- AI Agent Content -->
     <text x="14" y="52" class="mono-code" fill="#FF2D55">● Antigravity 2.0</text>
@@ -102,9 +152,9 @@
     <circle cx="16" cy="14" r="4" fill="#ff5f56" />
     <circle cx="28" cy="14" r="4" fill="#ffbd2e" />
     <circle cx="40" cy="14" r="4" fill="#27c93f" />
-    <text x="56" y="18" class="card-title" font-size="11">Notes — caps lock + N</text>
+    <text x="56" y="18" class="card-title">Notes — caps lock + N</text>
     <rect x="186" y="6" width="30" height="16" rx="4" fill="#FF9F0A" />
-    <text x="201" y="18" class="badge-key" text-anchor="middle" font-size="10">N</text>
+    <text x="201" y="18" class="badge-key" text-anchor="middle">N</text>
 
     <!-- Markdown Content -->
     <text x="14" y="52" class="mono-code" fill="#FF9F0A" font-weight="bold"># Architecture Notes</text>
@@ -119,9 +169,14 @@
   <g transform="translate(230, 335)" filter="url(#card-shadow)">
     <rect width="540" height="105" rx="24" fill="url(#hud-glass)" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
 
-    <!-- Card 1: Terminal (Active/Selected) -->
-    <g transform="translate(18, 14)">
+    <!-- Animated Selection Capsule (Glides between cards) -->
+    <g class="hud-active-capsule">
       <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.18)" stroke="#30D158" stroke-width="2" filter="url(#active-glow)" />
+    </g>
+
+    <!-- Card 1: Terminal -->
+    <g transform="translate(18, 14)">
+      <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.10)" stroke-width="1" />
       <text x="45" y="32" font-family="-apple-system, sans-serif" font-size="22" text-anchor="middle">💻</text>
       <text x="45" y="52" font-family="-apple-system, sans-serif" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">Terminal</text>
       <text x="45" y="66" font-family="monospace" font-size="9" fill="#30D158" text-anchor="middle">[ T ]</text>
@@ -129,7 +184,7 @@
 
     <!-- Card 2: IDE -->
     <g transform="translate(122, 14)">
-      <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+      <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.10)" stroke-width="1" />
       <text x="45" y="32" font-family="-apple-system, sans-serif" font-size="22" text-anchor="middle">🛠️</text>
       <text x="45" y="52" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#adbac7" text-anchor="middle">IDE</text>
       <text x="45" y="66" font-family="monospace" font-size="9" fill="#8b949e" text-anchor="middle">[ I ]</text>
@@ -137,7 +192,7 @@
 
     <!-- Card 3: AI Agent -->
     <g transform="translate(226, 14)">
-      <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+      <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.10)" stroke-width="1" />
       <text x="45" y="32" font-family="-apple-system, sans-serif" font-size="22" text-anchor="middle">🧠</text>
       <text x="45" y="52" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#adbac7" text-anchor="middle">AI Agent</text>
       <text x="45" y="66" font-family="monospace" font-size="9" fill="#8b949e" text-anchor="middle">[ A ]</text>
@@ -145,7 +200,7 @@
 
     <!-- Card 4: Notes -->
     <g transform="translate(330, 14)">
-      <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+      <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.10)" stroke-width="1" />
       <text x="45" y="32" font-family="-apple-system, sans-serif" font-size="22" text-anchor="middle">📝</text>
       <text x="45" y="52" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#adbac7" text-anchor="middle">Notes</text>
       <text x="45" y="66" font-family="monospace" font-size="9" fill="#8b949e" text-anchor="middle">[ N ]</text>
@@ -153,7 +208,7 @@
 
     <!-- Card 5: Finder -->
     <g transform="translate(434, 14)">
-      <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+      <rect width="90" height="76" rx="14" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.10)" stroke-width="1" />
       <text x="45" y="32" font-family="-apple-system, sans-serif" font-size="22" text-anchor="middle">📂</text>
       <text x="45" y="52" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#adbac7" text-anchor="middle">Finder</text>
       <text x="45" y="66" font-family="monospace" font-size="9" fill="#8b949e" text-anchor="middle">[ F ]</text>

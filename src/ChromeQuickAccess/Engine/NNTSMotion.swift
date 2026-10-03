@@ -18,11 +18,11 @@ public enum NNTSMotion: Sendable {
         blendDuration: 0.08
     )
     
-    /// Bouncy celebratory spring for pin confirmations and mascot emotes
+    /// Subtle celebratory spring for pin confirmations and mascot emotes (calibrated per Apple/Emil Kowalski fluid motion)
     public static let tactileBop = Animation.spring(
-        response: 0.28,
-        dampingFraction: 0.58,
-        blendDuration: 0.0
+        response: 0.22,
+        dampingFraction: 0.78,
+        blendDuration: 0.04
     )
     
     /// Smooth accordion expansion for HUD card width and slot allocation

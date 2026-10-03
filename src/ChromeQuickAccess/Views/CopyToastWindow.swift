@@ -60,10 +60,9 @@ public struct CopyToastView: View {
         )
         .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
         .shadow(color: Color.white.opacity(0.15), radius: 1, x: 0, y: -0.5)
-        .scaleEffect(isVisible ? 1.0 : 0.80)
+        .scaleEffect(isVisible ? 1.0 : 0.94)
         .opacity(isVisible ? 1.0 : 0.0)
-        .offset(y: isVisible ? 0 : 6)
-        .animation(NNTSMotion.tactileBop, value: isVisible)
+        .offset(y: isVisible ? 0 : 4)
         .preferredColorScheme(.dark)
     }
 }
