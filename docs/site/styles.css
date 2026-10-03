@@ -30,6 +30,8 @@
   
   --ease-elastic: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 *, *::before, *::after {
@@ -190,8 +192,12 @@ body.nnts-body {
   font-family: var(--font-mono);
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: transform 150ms var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), color 150ms var(--ease-out);
   border: 1px solid transparent;
+}
+
+.nnts-btn:active {
+  transform: scale(0.97);
 }
 
 .nnts-btn-tactile {
@@ -385,7 +391,7 @@ body.nnts-body {
   text-decoration: none;
   font-weight: 700;
   box-shadow: 0 0 16px rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
+  transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
   border: 1px solid var(--titanium-white);
 }
 
@@ -394,6 +400,10 @@ body.nnts-body {
   border-color: var(--phosphor-green);
   box-shadow: 0 0 28px var(--phosphor-green-glow);
   transform: translateY(-2px);
+}
+
+.hero-primary-cta:active {
+  transform: scale(0.97);
 }
 
 .cta-text-wrap {
@@ -425,12 +435,16 @@ body.nnts-body {
   font-size: 0.78rem;
   color: var(--titanium-white);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 150ms var(--ease-out), border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
 }
 
 .hero-terminal-pill:hover {
   border-color: var(--phosphor-green);
   box-shadow: 0 0 16px rgba(57, 255, 20, 0.2);
+}
+
+.hero-terminal-pill:active {
+  transform: scale(0.98);
 }
 
 .term-prompt {
@@ -454,7 +468,11 @@ body.nnts-body {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  transition: all 0.15s ease;
+  transition: background-color 120ms var(--ease-out), color 120ms var(--ease-out), border-color 120ms var(--ease-out), transform 120ms var(--ease-out);
+}
+
+.term-copy-btn:active {
+  transform: scale(0.95);
 }
 
 .hero-terminal-pill:hover .term-copy-btn {
@@ -556,7 +574,7 @@ body.nnts-body {
   height: 3px;
   border-radius: 2px;
   background: #1a1a24;
-  transition: all 0.08s ease;
+  transition: background-color 0.08s var(--ease-out), box-shadow 0.08s var(--ease-out);
 }
 
 .realistic-alienware-remote .remote-ir-diode.firing {
@@ -718,7 +736,7 @@ body.nnts-body {
   height: 5px;
   border-radius: 50%;
   background-color: #333;
-  transition: all 0.1s ease;
+  transition: background-color 0.1s var(--ease-out), box-shadow 0.1s var(--ease-out);
 }
 
 .remote-tx-status.active {
@@ -1087,13 +1105,17 @@ body.nnts-body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.2);
-  transition: all 0.12s ease;
+  transition: transform 120ms var(--ease-out), border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
   padding: 0;
 }
 
 .tv-hardware-power-btn:hover {
   border-color: var(--phosphor-green);
   transform: scale(1.08);
+}
+
+.tv-hardware-power-btn:active {
+  transform: scale(0.95);
 }
 
 .tv-hw-power-icon {
@@ -1112,7 +1134,7 @@ body.nnts-body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
 }
 
 .tv-power-led.standby {
@@ -1138,7 +1160,7 @@ body.nnts-body {
   background: #14141c;
   border-radius: 2px;
   border: 1px solid #333;
-  transition: all 0.08s ease;
+  transition: background-color 0.08s var(--ease-out), box-shadow 0.08s var(--ease-out);
 }
 
 .tv-ir-sensor-eye.pulse .sensor-glow {
@@ -1621,7 +1643,11 @@ body.nnts-body {
   font-size: 0.8rem;
   color: var(--titanium-text-dim);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: transform 140ms var(--ease-out), background-color 140ms var(--ease-out), border-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
+}
+
+.video-tuner-btn:active {
+  transform: scale(0.97);
 }
 
 .video-tuner-btn:hover {
@@ -1858,13 +1884,17 @@ body.nnts-body {
   border-radius: 8px;
   font-weight: 700;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 }
 
 .strip-primary-btn:hover {
   background: var(--phosphor-green);
   box-shadow: 0 0 24px var(--phosphor-green-glow);
   transform: translateY(-2px);
+}
+
+.strip-primary-btn:active {
+  transform: scale(0.97);
 }
 
 .strip-brew-box {
@@ -1888,13 +1918,17 @@ body.nnts-body {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: background-color 120ms var(--ease-out), color 120ms var(--ease-out), border-color 120ms var(--ease-out), transform 120ms var(--ease-out);
 }
 
 .strip-brew-copy-btn:hover {
   background: var(--phosphor-green);
   color: var(--void-deep);
   border-color: var(--phosphor-green);
+}
+
+.strip-brew-copy-btn:active {
+  transform: scale(0.95);
 }
 
 /* ==========================================================================
@@ -1968,11 +2002,12 @@ body.nnts-body {
 .live-cursor-hud-toast {
   position: fixed;
   z-index: 10000;
-  display: none;
+  display: inline-flex;
   align-items: center;
   gap: 0.45rem;
   background: rgba(14, 14, 20, 0.94);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--phosphor-green);
   box-shadow: 0 0 16px var(--phosphor-green-glow), 0 8px 24px rgba(0, 0, 0, 0.8);
   padding: 0.35rem 0.75rem;
@@ -1981,15 +2016,14 @@ body.nnts-body {
   font-size: 0.75rem;
   color: var(--titanium-white);
   pointer-events: none;
-  transform: translate(12px, 12px);
-  animation: toast-fade 1.2s forwards;
+  opacity: 0;
+  transform: translate(12px, 18px);
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
-@keyframes toast-fade {
-  0% { opacity: 0; transform: translate(12px, 18px); }
-  15% { opacity: 1; transform: translate(12px, 12px); }
-  80% { opacity: 1; }
-  100% { opacity: 0; transform: translate(12px, 8px); }
+.live-cursor-hud-toast.is-visible {
+  opacity: 1;
+  transform: translate(12px, 12px);
 }
 
 /* ==========================================================================
@@ -2040,3 +2074,24 @@ body.nnts-body {
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   ACCESSIBILITY: PREFERS REDUCED MOTION
+   Apple HIG & Emil Kowalski animation compliance
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .crt-scanlines-overlay,
+  .crt-vignette-overlay,
+  .tv-scanlines-layer,
+  .crt-vector-arc {
+    display: none !important;
+  }
+}
+

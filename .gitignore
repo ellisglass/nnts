@@ -45,3 +45,5 @@ binaries/
 xcuserdata/
 DerivedData/
 scratch/
+assets/archive/site_backups/
+assets/archive/site_variants_and_threejs/

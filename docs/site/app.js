@@ -518,28 +518,31 @@
     const chip = document.getElementById("tester-copy-chip");
     if (!selectZone || !toast) return;
 
+    let toastTimer = null;
+
     selectZone.addEventListener("mouseup", (e) => {
       const selection = window.getSelection().toString().trim();
       if (selection.length >= 3) {
         audio.playCopyChime();
 
-        // Show floating HUD cursor toast
-        toast.style.left = `${e.clientX}px`;
-        toast.style.top = `${e.clientY}px`;
-        toast.style.display = "inline-flex";
+        // Calculate bounded coordinates so toast never clips outside the viewport
+        const toastWidth = 140;
+        const toastHeight = 36;
+        const safeX = Math.min(e.clientX, window.innerWidth - toastWidth - 16);
+        const safeY = Math.min(e.clientY, window.innerHeight - toastHeight - 16);
 
-        // Reset toast animation
-        toast.style.animation = "none";
-        toast.offsetHeight; // trigger reflow
-        toast.style.animation = "toast-fade 1.2s forwards";
+        toast.style.left = `${safeX}px`;
+        toast.style.top = `${safeY}px`;
+        toast.classList.add("is-visible");
 
         if (chip) {
           chip.classList.add("visible");
         }
 
-        setTimeout(() => {
-          toast.style.display = "none";
-        }, 1200);
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toast.classList.remove("is-visible");
+        }, 1100);
       }
     });
   }
