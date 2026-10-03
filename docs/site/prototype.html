@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NNTS — Bento Superpowers (Emil Kowalski Prototype Harness)</title>
+  <link rel="stylesheet" href="styles.min.css">
+  <style>
+    /* ==========================================================================
+       PROTOTYPE HARNESS CHROME (VERBATIM FROM EMIL KOWALSKI PICKER.MD SPEC)
+       ========================================================================== */
+    body {
+      background: #06070a;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 90px;
+    }
+
+    .proto-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 10, 14, 0.8);
+      backdrop-filter: blur(12px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .proto-title-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .proto-badge {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(57, 255, 20, 0.1);
+      color: var(--phosphor-green);
+      border: 1px solid rgba(57, 255, 20, 0.25);
+      font-weight: 700;
+    }
+
+    .proto-heading {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .proto-meta {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--titanium-text-dim);
+    }
+
+    #stage {
+      flex: 1;
+      padding: 2.5rem 1.5rem;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Official Picker styles from PICKER.md */
+    .proto-picker {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(10, 10, 10, 0.82);
+      -webkit-backdrop-filter: blur(12px) saturate(1.4);
+      backdrop-filter: blur(12px) saturate(1.4);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 8px 24px rgba(0, 0, 0, 0.24),
+        0 2px 6px rgba(0, 0, 0, 0.12);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      line-height: 1;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .proto-picker-highlight {
+      position: absolute;
+      top: 4px;
+      left: 0;
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      will-change: transform;
+    }
+
+    .proto-picker[data-ready] .proto-picker-highlight {
+      transition:
+        transform 250ms cubic-bezier(0.23, 1, 0.32, 1),
+        width 250ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .proto-picker[data-ready] .proto-picker-highlight { transition: none; }
+    }
+
+    .proto-picker-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 28px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.55);
+      font: inherit;
+      cursor: pointer;
+      transition: color 150ms ease-out;
+    }
+
+    .proto-picker-item:hover {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .proto-picker-item:active {
+      transform: scale(0.97);
+    }
+
+    .proto-picker-item:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.4);
+      outline-offset: 2px;
+    }
+
+    .proto-picker-item[data-active] {
+      color: #fff;
+    }
+
+    .proto-picker-divider {
+      width: 1px;
+      height: 16px;
+      margin: 0 4px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .proto-picker-replay {
+      padding: 0 10px;
+      font-size: 14px;
+    }
+
+    /* ==========================================================================
+       VARIANT-SPECIFIC OVERRIDES & EXPERIMENTAL PLAYGROUNDS
+       ========================================================================== */
+    .variant-intro {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .variant-axis-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--electric-cyan);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .variant-title {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .variant-desc {
+      color: var(--titanium-text-dim);
+      font-size: 0.95rem;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    /* VARIANT 2: CUPERTINO GLASS STYLING */
+    .cupertino-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    @media (max-width: 960px) {
+      .cupertino-grid { grid-template-columns: 1fr; }
+    }
+
+    .cupertino-card {
+      background: rgba(25, 28, 38, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(28px) saturate(1.8);
+      -webkit-backdrop-filter: blur(28px) saturate(1.8);
+      border-radius: 20px;
+      padding: 1.8rem;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+      transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease-out;
+    }
+    .cupertino-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+    }
+
+    .cupertino-pill-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1.2rem;
+    }
+
+    .cupertino-profile-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.9rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: background-color 150ms ease-out, transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .cupertino-profile-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateX(4px);
+    }
+    .cupertino-profile-pill:active {
+      transform: scale(0.97);
+    }
+    .cupertino-profile-pill.active {
+      background: rgba(57, 255, 20, 0.12);
+      border-color: rgba(57, 255, 20, 0.4);
+      box-shadow: 0 0 16px rgba(57, 255, 20, 0.2);
+    }
+
+    /* VARIANT 3: KEYMASTER 3D STYLING */
+    .keymaster-deck {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .keychord-interactive-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      padding: 2rem;
+      background: #0e1017;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+    }
+
+    .keychord-cap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(180deg, #2b2e38 0%, #17181f 100%);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      box-shadow: 0 8px 0 #0d0e13, 0 12px 20px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      user-select: none;
+      transition: transform 90ms ease-out, box-shadow 90ms ease-out;
+    }
+    .keychord-cap:active, .keychord-cap.is-pressed {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 #0d0e13, 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+    .keychord-cap-label {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .keychord-cap-sub {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--phosphor-green);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Prototype Chrome -->
+  <header class="proto-header">
+    <div class="proto-title-badge">
+      <span class="proto-badge">EMIL KOWALSKI PROTOTYPE HARNESS</span>
+      <h1 class="proto-heading">NNTS Bento Grid Divergence Explorer</h1>
+    </div>
+    <div class="proto-meta">
+      Keys: <kbd>1</kbd>–<kbd>3</kbd> switch &bull; <kbd>←</kbd>/<kbd>→</kbd> step &bull; <kbd>R</kbd> replay
+    </div>
+  </header>
+
+  <!-- Mount Stage for Variants -->
+  <main id="stage"></main>
+
+  <!-- The Spec Picker Chrome (Verbatim from PICKER.md) -->
+  <nav class="proto-picker" aria-label="Prototype variants">
+    <span class="proto-picker-highlight" aria-hidden="true"></span>
+    <button class="proto-picker-item" data-active aria-current="true">Tactile Lab</button>
+    <button class="proto-picker-item">Cupertino Glass</button>
+    <button class="proto-picker-item">Keymaster 3D</button>
+    <span class="proto-picker-divider" aria-hidden="true"></span>
+    <button class="proto-picker-item proto-picker-replay" aria-label="Replay animation (R)">↻</button>
+  </nav>
+
+  <script>
+    // ==========================================================================
+    // AUDIO ENGINE FOR PROTOTYPE
+    // ==========================================================================
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playClick() {
+      try {
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(580, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.045);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+      } catch (e) {}
+    }
+
+    // ==========================================================================
+    // 3 DIVERGENT BENTO SUPERPOWER VARIANTS
+    // ==========================================================================
+    const variants = [
+      // ------------------------------------------------------------------------
+      // VARIANT 1: TACTILE LAB (Cyber-Physical)
+      // ------------------------------------------------------------------------
+      () => `
+        <div class="variant-intro">
+          <div class="variant-axis-tag">Axis: Density & Cyber-Physical Tactility</div>
+          <h2 class="variant-title">Variant 1: Tactile Lab</h2>
+          <p class="variant-desc">Dark industrial aesthetic with real-time hardware metrics, 11.4ms raise counters, and live CRT phosphor feedback.</p>
+        </div>
+
+        <div class="bento-lab-grid">
+          <!-- Card 1: Browser Profiles -->
+          <div class="bento-card bento-card-profiles" data-bento-card>
+            <div class="bento-card-header">
+              <span class="bento-tag tag-green">01 // BROWSER PROFILES</span>
+              <div class="bento-hotkey-badge">
+                <kbd class="bento-kbd">caps lock</kbd> + <kbd class="bento-kbd">C</kbd> + <kbd class="bento-kbd" id="p1-key">1</kbd>
+              </div>
+            </div>
+            <div class="bento-card-content">
+              <h3 class="bento-title">Direct Profile Window Jump</h3>
+              <p class="bento-desc">macOS Cmd+Tab bundles all windows into one stack. NNTS raises the specific profile in &lt;16ms.</p>
+              
+              <div class="bento-sim-window">
+                <div class="bento-sim-titlebar">
+                  <div class="sim-traffic-lights"><span class="tl-dot red"></span><span class="tl-dot yellow"></span><span class="tl-dot green"></span></div>
+                  <div class="sim-url-bar"><span class="sim-lock-icon">🔒</span><span class="sim-url-text" id="p1-url">app.almosteleven.com/personal</span></div>
+                  <div class="sim-profile-pill"><span id="p1-name">Personal</span></div>
+                </div>
+                <div class="bento-sim-viewport" id="p1-viewport">
+                  <div class="sim-page-header">
+                    <div class="sim-page-tag" id="p1-tag">PROFILE 01 ACTIVE</div>
+                    <div class="sim-page-title" id="p1-title">Personal Workspace &bull; Direct Switch</div>
+                  </div>
+                  <div class="sim-page-metrics">
+                    <div class="sim-metric-chip"><span class="m-label">RAISE LATENCY</span><span class="m-val text-green">11.4 ms</span></div>
+                    <div class="sim-metric-chip"><span class="m-label">TARGET WINDOW</span><span class="m-val">Chrome: Personal (ID #1)</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bento-profile-shelf">
+                <button class="bento-profile-btn active" onclick="switchV1(1, 'Personal', 'app.almosteleven.com/personal')">1 &bull; Personal</button>
+                <button class="bento-profile-btn" onclick="switchV1(2, 'Work', 'linear.app/nnts/team')">2 &bull; Work</button>
+                <button class="bento-profile-btn" onclick="switchV1(3, 'Client', 'github.com/unacau/nnts')">3 &bull; Client</button>
+                <button class="bento-profile-btn" onclick="switchV1(4, 'Side Project', 'figma.com/@nnts-suite')">4 &bull; Side Project</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: App Cycling -->
+          <div class="bento-card bento-card-cycling" data-bento-card>
+            <div class="bento-card-header">
+              <span class="bento-tag tag-cyan">02 // NO SEARCH LAG</span>
+              <div class="bento-hotkey-badge"><kbd class="bento-kbd">caps lock</kbd> + <kbd class="bento-kbd">T</kbd></div>
+            </div>
+            <div class="bento-card-content">
+              <h3 class="bento-title">First-Letter App Cycling</h3>
+              <p class="bento-desc">Hold caps lock and tap T; tap again to cycle instantly.</p>
+              <div class="cycler-stage" style="margin-top: 1rem;">
+                <button class="mechanical-keycap" onclick="cycleV1(this)">
+                  <span class="keycap-top">T</span>
+                  <span class="keycap-sub">TAP</span>
+                </button>
+                <div class="cycler-app-stack">
+                  <div class="cycler-app-item active" id="v1-app-1"><span class="cycler-app-name">Telegram</span><span class="cycler-check">✓</span></div>
+                  <div class="cycler-app-item" id="v1-app-2"><span class="cycler-app-name">Terminal</span><span class="cycler-check"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Copy-on-Select -->
+          <div class="bento-card bento-card-copy" data-bento-card>
+            <div class="bento-card-header">
+              <span class="bento-tag tag-magenta">03 // ZERO CMD+C</span>
+            </div>
+            <div class="bento-card-content">
+              <h3 class="bento-title">Linux-Style Copy-on-Select</h3>
+              <p class="bento-desc">Select text below with mouse to copy immediately.</p>
+              <div class="bento-code-sandbox" onmouseup="toastV1()">
+                <div class="sandbox-editor-body">
+                  <span class="code-kw">brew</span> <span class="code-fn">install</span> <span class="code-str">--cask nnts</span>
+                </div>
+                <div class="sandbox-toast-pill" id="v1-toast" style="opacity:0; transition: opacity 150ms ease-out;">
+                  <span class="toast-check">✓</span> Copied!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // ------------------------------------------------------------------------
+      // VARIANT 2: CUPERTINO GLASS (Liquid Glass & Apple Fluid)
+      // ------------------------------------------------------------------------
+      () => `
+        <div class="variant-intro">
+          <div class="variant-axis-tag">Axis: Aesthetics & Apple Fluid Motion (WWDC 2018)</div>
+          <h2 class="variant-title">Variant 2: Cupertino Glass</h2>
+          <p class="variant-desc">macOS Tahoe Liquid Glass with translucent frosted depth, prominent floating MinimalHUDWindow overlay, and spring capsules.</p>
+        </div>
+
+        <div class="cupertino-grid">
+          <!-- Glass Card 1 -->
+          <div class="cupertino-card">
+            <span class="bento-tag tag-green">KILLER #1 &bull; PROFILES</span>
+            <h3 style="font-family: var(--font-display); font-size: 1.3rem; margin: 0.8rem 0 0.4rem 0;">Chromium Spaces</h3>
+            <p style="color: var(--titanium-text-dim); font-size: 0.88rem; line-height: 1.4;">Unbundle browser chaos. Dedicated caps lock chords raise the exact window in a blink.</p>
+
+            <div style="position: relative; margin: 1.2rem 0; min-height: 110px; display: flex; align-items: center; justify-content: center;">
+              <div class="apple-hud-overlay is-visible" style="position: static; transform: none; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <img src="assets/images/profiles_v2/personal.png" alt="Profile" id="v2-avatar" class="hud-profile-avatar">
+                <div class="hud-profile-meta">
+                  <div class="hud-profile-title" id="v2-name">Personal Workspace</div>
+                  <div class="hud-profile-sub">Google Chrome &bull; Active Profile</div>
+                </div>
+                <div class="hud-hotkey-badge"><kbd class="hud-kbd">caps lock</kbd> + <kbd class="hud-kbd">C</kbd> + <kbd class="hud-kbd" id="v2-num">1</kbd></div>
+              </div>
+            </div>
+
+            <div class="cupertino-pill-group">
+              <div class="cupertino-profile-pill active" onclick="switchV2(1, 'Personal', 'assets/images/profiles_v2/personal.png', this)">
+                <img src="assets/images/profiles_v2/personal.png" width="20" height="20" style="border-radius:50%;">
+                <span style="font-size:0.85rem; font-weight:600;">1 &bull; Personal</span>
+              </div>
+              <div class="cupertino-profile-pill" onclick="switchV2(2, 'Work Team', 'assets/images/profiles_v2/work.png', this)">
+                <img src="assets/images/profiles_v2/work.png" width="20" height="20" style="border-radius:50%;">
+                <span style="font-size:0.85rem; font-weight:600;">2 &bull; Work Team</span>
+              </div>
+              <div class="cupertino-profile-pill" onclick="switchV2(3, 'Client Ops', 'assets/images/profiles_v2/client.png', this)">
+                <img src="assets/images/profiles_v2/client.png" width="20" height="20" style="border-radius:50%;">
+                <span style="font-size:0.85rem; font-weight:600;">3 &bull; Client Ops</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Glass Card 2 -->
+          <div class="cupertino-card">
+            <span class="bento-tag tag-cyan">FEATURE #2 &bull; QUICK APPS</span>
+            <h3 style="font-family: var(--font-display); font-size: 1.3rem; margin: 0.8rem 0 0.4rem 0;">Universal Letter Navigation</h3>
+            <p style="color: var(--titanium-text-dim); font-size: 0.88rem; line-height: 1.4;">Zero indexing lag. Instant deterministic cycling for conflicting apps on the same key.</p>
+            
+            <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.8rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:0.8rem 1rem; border-radius:12px;">
+                <span style="font-family:var(--font-mono); font-size:0.8rem;">caps lock + T</span>
+                <span style="color:var(--electric-cyan); font-weight:700; font-size:0.85rem;">1 / 2 ↻</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:0.8rem 1rem; border-radius:12px;">
+                <span style="font-family:var(--font-mono); font-size:0.8rem;">caps lock + O</span>
+                <span style="color:var(--phosphor-green); font-weight:700; font-size:0.85rem;">Obsidian (Direct)</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:0.8rem 1rem; border-radius:12px;">
+                <span style="font-family:var(--font-mono); font-size:0.8rem;">caps lock + S</span>
+                <span style="color:var(--electric-cyan); font-weight:700; font-size:0.85rem;">Spotify / Settings ↻</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Glass Card 3 -->
+          <div class="cupertino-card">
+            <span class="bento-tag tag-magenta">FEATURE #3 &bull; SELECTION</span>
+            <h3 style="font-family: var(--font-display); font-size: 1.3rem; margin: 0.8rem 0 0.4rem 0;">Copy-on-Select</h3>
+            <p style="color: var(--titanium-text-dim); font-size: 0.88rem; line-height: 1.4;">Linux X11 superpower ported natively to macOS. Drag to select = clipboard filled.</p>
+            
+            <div style="margin-top: 2rem; padding: 1.2rem; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.15);" onmouseup="toastV1()">
+              <p style="font-family: var(--font-mono); font-size: 0.85rem; margin: 0; color: #fff;">
+                "Select me now to save a keystroke."
+              </p>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // ------------------------------------------------------------------------
+      // VARIANT 3: KEYMASTER 3D (Keyboard-First Power)
+      // ------------------------------------------------------------------------
+      () => `
+        <div class="variant-intro">
+          <div class="variant-axis-tag">Axis: Interaction Model & Keyboard Ergonomics</div>
+          <h2 class="variant-title">Variant 3: Keymaster 3D</h2>
+          <p class="variant-desc">Keyboard-first control deck with interactive physical keychords, live keystroke state, and slot visualizer.</p>
+        </div>
+
+        <div class="keymaster-deck">
+          <div class="keychord-interactive-bar">
+            <div class="keychord-cap" id="v3-cap-caps" onclick="pressCap(this)">
+              <span class="keychord-cap-label">⇪</span>
+              <span class="keychord-cap-sub">caps lock</span>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 1.5rem; color: var(--titanium-text-dim);">+</span>
+            <div class="keychord-cap" id="v3-cap-c" onclick="pressCap(this)">
+              <span class="keychord-cap-label">C</span>
+              <span class="keychord-cap-sub">CHROME</span>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 1.5rem; color: var(--titanium-text-dim);">+</span>
+            <div class="keychord-cap" id="v3-cap-num" onclick="pressCap(this)">
+              <span class="keychord-cap-label" id="v3-chord-digit">1</span>
+              <span class="keychord-cap-sub">PROFILE</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+            <button class="bento-profile-btn active" onclick="switchV3(1, this)" style="padding:1rem; border-radius:12px; font-weight:700;">CH 1: Personal</button>
+            <button class="bento-profile-btn" onclick="switchV3(2, this)" style="padding:1rem; border-radius:12px; font-weight:700;">CH 2: Work</button>
+            <button class="bento-profile-btn" onclick="switchV3(3, this)" style="padding:1rem; border-radius:12px; font-weight:700;">CH 3: Client</button>
+            <button class="bento-profile-btn" onclick="switchV3(4, this)" style="padding:1rem; border-radius:12px; font-weight:700;">CH 4: Side Project</button>
+          </div>
+        </div>
+      `
+    ];
+
+    // ==========================================================================
+    // INTERACTION HANDLERS FOR VARIANTS
+    // ==========================================================================
+    window.switchV1 = (id, name, url) => {
+      playClick();
+      const pKey = document.getElementById("p1-key");
+      const pUrl = document.getElementById("p1-url");
+      const pName = document.getElementById("p1-name");
+      const pTag = document.getElementById("p1-tag");
+      const pTitle = document.getElementById("p1-title");
+      if (pKey) pKey.textContent = id;
+      if (pUrl) pUrl.textContent = url;
+      if (pName) pName.textContent = name;
+      if (pTag) pTag.textContent = "PROFILE 0" + id + " ACTIVE";
+      if (pTitle) pTitle.innerHTML = name + " Workspace &bull; Direct Switch";
+      const btns = document.querySelectorAll(".bento-profile-shelf .bento-profile-btn");
+      btns.forEach((b, i) => b.classList.toggle("active", i === (id - 1)));
+    };
+
+    window.cycleV1 = (btn) => {
+      playClick();
+      btn.style.transform = "translateY(4px)";
+      setTimeout(() => btn.style.transform = "none", 120);
+      const app1 = document.getElementById("v1-app-1");
+      const app2 = document.getElementById("v1-app-2");
+      if (app1 && app2) {
+        const is1 = app1.classList.contains("active");
+        app1.classList.toggle("active", !is1);
+        app2.classList.toggle("active", is1);
+        app1.querySelector(".cycler-check").textContent = is1 ? "" : "✓";
+        app2.querySelector(".cycler-check").textContent = is1 ? "✓" : "";
+      }
+    };
+
+    window.toastV1 = () => {
+      playClick();
+      const toast = document.getElementById("v1-toast");
+      if (toast) {
+        toast.style.opacity = "1";
+        setTimeout(() => toast.style.opacity = "0", 1200);
+      }
+    };
+
+    window.switchV2 = (id, name, img, el) => {
+      playClick();
+      document.querySelectorAll(".cupertino-profile-pill").forEach(p => p.classList.remove("active"));
+      el.classList.add("active");
+      const v2Avatar = document.getElementById("v2-avatar");
+      const v2Name = document.getElementById("v2-name");
+      const v2Num = document.getElementById("v2-num");
+      if (v2Avatar) v2Avatar.src = img;
+      if (v2Name) v2Name.textContent = name;
+      if (v2Num) v2Num.textContent = id;
+    };
+
+    window.pressCap = (cap) => {
+      playClick();
+      cap.classList.add("is-pressed");
+      setTimeout(() => cap.classList.remove("is-pressed"), 150);
+    };
+
+    window.switchV3 = (id, btn) => {
+      playClick();
+      document.querySelectorAll(".keymaster-deck .bento-profile-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const numCap = document.getElementById("v3-chord-digit");
+      if (numCap) numCap.textContent = id;
+      const caps = document.querySelectorAll(".keychord-cap");
+      caps.forEach(c => {
+        c.classList.add("is-pressed");
+        setTimeout(() => c.classList.remove("is-pressed"), 150);
+      });
+    };
+
+    // ==========================================================================
+    // OFFICIAL PICKER WIRING (VERBATIM FROM PICKER.MD)
+    // ==========================================================================
+    const stage = document.getElementById('stage');
+    const picker = document.querySelector('.proto-picker');
+    const highlight = picker.querySelector('.proto-picker-highlight');
+    const items = [...picker.querySelectorAll('.proto-picker-item:not(.proto-picker-replay)')];
+    const replay = picker.querySelector('.proto-picker-replay');
+    let current = 0;
+
+    function moveHighlight() {
+      const el = items[current];
+      highlight.style.width = el.offsetWidth + 'px';
+      highlight.style.transform = `translateX(${el.offsetLeft}px)`;
+    }
+
+    function mount(i) {
+      stage.innerHTML = variants[i]();
+    }
+
+    function setActive(i) {
+      if (i < 0 || i >= variants.length) return;
+      current = i;
+      items.forEach((el, j) => {
+        el.toggleAttribute('data-active', j === i);
+        if (j === i) el.setAttribute('aria-current', 'true');
+        else el.removeAttribute('aria-current');
+      });
+      moveHighlight();
+      const url = new URL(location);
+      url.searchParams.set('v', i + 1);
+      history.replaceState(null, '', url);
+      mount(i);
+    }
+
+    items.forEach((el, i) => el.addEventListener('click', () => setActive(i)));
+    replay?.addEventListener('click', () => mount(current));
+    window.addEventListener('resize', moveHighlight);
+
+    document.addEventListener('keydown', (e) => {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= variants.length) setActive(num - 1);
+      else if (e.key === 'ArrowRight') setActive((current + 1) % variants.length);
+      else if (e.key === 'ArrowLeft') setActive((current - 1 + variants.length) % variants.length);
+      else if (e.key === 'r' || e.key === 'R') mount(current);
+    });
+
+    setActive((parseInt(new URLSearchParams(location.search).get('v'), 10) || 1) - 1);
+    requestAnimationFrame(() => requestAnimationFrame(() => picker.setAttribute('data-ready', '')));
+  </script>
+</body>
+</html>

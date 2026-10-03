@@ -33,6 +33,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 0. Migrate any legacy phantom pinned apps from older versions
         AppGroupEngine.migrateLegacyPinnedAppsIfNeeded()
+        ChromeProfileEngine.shared.restoreSecurityScopedFolderAccessIfNeeded()
         
         // 1. Setup Menu Bar Status Item
         setupStatusItem()
@@ -68,6 +69,16 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         AppGroupEngine.startGlobalAppSwitchObserver()
         updateDynamicShortcuts()
         updateMenu()
+        
+        // Smart Snap: Silently capture avatars from active browser windows with Zero Disk Access
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            let count = await ChromeProfileEngine.shared.snapActiveBrowserAvatars()
+            if count > 0 {
+                self?.updateDynamicShortcuts()
+                self?.updateMenu()
+            }
+        }
     }
     
     private func startAccessibilityPolling() {
@@ -670,7 +681,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             small.lockFocus()
             icon.draw(in: NSRect(x: 0, y: 0, width: 18, height: 18))
             small.unlockFocus()
+            if icon.isTemplate {
+                small.isTemplate = true
+            }
             item.image = small
+            if #available(macOS 27.0, *) {
+                item.preferredImageVisibility = .visible
+            }
         }
         
         if let aLabel = accessibilityLabel {
@@ -1053,6 +1070,29 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(permItem)
         }
         
+        let snapItem = makeAlignedMenuItem(
+            title: "Smart Snap Avatars (Zero Disk)",
+            icon: NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Smart Snap Avatars"),
+            accessibilityHelp: "Extract profile avatars visually from running browser windows with Zero Disk Access",
+            action: #selector(handleSmartSnapAvatars),
+            target: self
+        )
+        snapItem.toolTip = "Visually capture profile avatars directly from running browser windows with zero disk permissions"
+        menu.addItem(snapItem)
+        
+        let hasLinkedBookmark = UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") != nil
+        if profileEngine.isLocalStateBlocked && !hasLinkedBookmark {
+            let linkItem = makeAlignedMenuItem(
+                title: "Link Chrome Avatars… (1-Click)",
+                icon: NSImage(systemSymbolName: "person.crop.circle.badge.plus", accessibilityDescription: "Link Chrome Avatars"),
+                accessibilityHelp: "Select Chrome folder once to load real profile avatars without Full Disk Access",
+                action: #selector(handleLinkChromeAvatars),
+                target: self
+            )
+            linkItem.toolTip = "1-click folder link to load real Google profile avatars into the menu bar and HUD"
+            menu.addItem(linkItem)
+        }
+        
         menu.addItem(NSMenuItem.separator())
         
         // 5. License & Lifecycle
@@ -1182,6 +1222,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             if let avatar = p.avatarImage?.copy() as? NSImage {
                 avatar.size = NSSize(width: 16, height: 16)
                 popUp.lastItem?.image = avatar
+                if #available(macOS 27.0, *) {
+                    popUp.lastItem?.preferredImageVisibility = .visible
+                }
             }
         }
         alert.accessoryView = popUp
@@ -1421,6 +1464,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             if let icon = item.icon.copy() as? NSImage {
                 icon.size = NSSize(width: 16, height: 16)
                 popUp.lastItem?.image = icon
+                if #available(macOS 27.0, *) {
+                    popUp.lastItem?.preferredImageVisibility = .visible
+                }
             }
         }
         alert.accessoryView = popUp
@@ -1494,6 +1540,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 CopyOnSelectEngine.shared.start()
             }
         }
+        ChromeProfileEngine.shared.clearAvatarCache()
         ChromeProfileEngine.shared.refreshProfiles()
         AntigravityEngine.shared.refreshItems()
         for engine in AppGroupEngine.allEngines {
@@ -1516,6 +1563,78 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func handleOpenAccessibilitySettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
+        }
+    }
+    
+    @objc private func handleOpenFullDiskAccessSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
+    @objc public func handleLinkChromeAvatars(_ sender: Any? = nil) {
+        NSApp.activate(ignoringOtherApps: true)
+        
+        let panel = NSOpenPanel()
+        panel.title = "Link Chrome Profile Avatars"
+        panel.prompt = "Link Folder"
+        panel.message = "Click 'Link Folder' to connect your Google Chrome folder and display real profile photos:"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
+        panel.level = .floating
+        
+        let defaultPath = ("~/Library/Application Support/Google/Chrome" as NSString).expandingTildeInPath
+        panel.directoryURL = URL(fileURLWithPath: defaultPath)
+        
+        let response = panel.runModal()
+        guard response == .OK, let selectedURL = panel.url else { return }
+        
+        let count = ChromeProfileEngine.shared.importAvatarsFromFolder(url: selectedURL)
+        ChromeProfileEngine.shared.clearAvatarCache()
+        ChromeProfileEngine.shared.refreshProfiles()
+        self.updateDynamicShortcuts()
+        self.updateMenu()
+        
+        let alert = NSAlert()
+        if count > 0 {
+            alert.messageText = "Chrome Avatars Connected!"
+            alert.informativeText = "Successfully connected \(count) profile avatars. Your real Google account photos are now active in the menu bar and HUD."
+            alert.alertStyle = .informational
+        } else {
+            alert.messageText = "Folder Connected"
+            alert.informativeText = "The Chrome folder was connected. Real profile photos will display as they are cached by Google."
+            alert.alertStyle = .informational
+        }
+        alert.addButton(withTitle: "OK")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.window.level = .floating
+        alert.runModal()
+    }
+    
+    @objc public func handleSmartSnapAvatars(_ sender: Any? = nil) {
+        logger.info("Manual Smart Snap triggered from menu.")
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let count = await ChromeProfileEngine.shared.snapActiveBrowserAvatars()
+            self.updateDynamicShortcuts()
+            self.updateMenu()
+            
+            let alert = NSAlert()
+            if count > 0 {
+                alert.messageText = "Avatars Snapped Successfully!"
+                alert.informativeText = "Smart Snap captured \(count) profile avatars directly from open browser windows with Zero Disk Access."
+                alert.alertStyle = .informational
+            } else {
+                alert.messageText = "Smart Snap (Zero Disk Access)"
+                alert.informativeText = "No new profile windows were available to snap. Keep your browser open with the desired profile window active, and NNTS will snap its avatar automatically!"
+                alert.alertStyle = .informational
+            }
+            alert.addButton(withTitle: "OK")
+            NSApp.activate(ignoringOtherApps: true)
+            alert.window.level = .floating
+            alert.runModal()
         }
     }
     

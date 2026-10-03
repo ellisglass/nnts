@@ -37,6 +37,58 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         "co.zeit.hyper"
     ]
     
+    /// Native creative, CAD, DAW, design, whiteboard, and 3D applications where mouse dragging
+    /// is primarily drawing, sculpting, timeline scrubbing, or canvas navigation — never text selection.
+    public static var canvasAndDrawingBundleIDs: Set<String> = [
+        // Vector, Drawing & Whiteboard Apps
+        "com.apple.freeform",
+        "com.figma.Desktop",
+        "com.bohemiancoding.sketch3",
+        "com.adobe.Photoshop",
+        "com.adobe.Illustrator",
+        "com.seriflabs.affinitydesigner2",
+        "com.seriflabs.affinitydesigner",
+        "com.seriflabs.affinityphoto2",
+        "com.seriflabs.affinityphoto",
+        "com.pixelmatorteam.pixelmator.x",
+        "org.inkscape.Inkscape",
+        "com.canva.CanvaDesktop",
+        "com.electron.realtimeboard",
+        "com.miro.mac",
+        "com.goodnotes.GoodNotes5",
+        "com.goodnotes.goodnotes6",
+        "com.gingerlabs.Notability",
+        // 3D, CAD & Animation
+        "org.blenderfoundation.blender",
+        "com.autodesk.Fusion360",
+        "com.shapr3d.shapr",
+        "com.maxon.cinema4d",
+        // Digital Audio Workstations & Video Editors (timeline scrubbing & fader dragging)
+        "com.apple.FinalCut",
+        "com.apple.logic10",
+        "com.apple.garageband10",
+        "com.ableton.live",
+        "com.blackmagic-design.DaVinciResolve",
+        "com.adobe.PremierePro",
+        "com.adobe.AfterEffects",
+        "com.cockos.reaper",
+        "com.bitwig.studio"
+    ]
+    
+    /// Accessibility roles for UI controls where dragging adjusts values, position, or dividers
+    public static let nonTextControlRoles: Set<String> = [
+        "AXSlider",
+        "AXScrollBar",
+        "AXSplitter",
+        "AXColorWell",
+        "AXProgressIndicator",
+        "AXValueIndicator",
+        "AXCanvas",
+        "AXGraphic"
+    ]
+    
+    public static var mockNonTextControlDetected: Bool? = nil
+    
     public var isEnabled: Bool = true
     
     // 10.0pt threshold prevents false positive copies during micro-jitters or single clicks
@@ -187,7 +239,10 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
                 let end = NSEvent.mouseLocation
                 let clicks = event.clickCount
                 if engine.shouldTriggerCopy(start: start, end: end, clickCount: clicks) {
-                    engine.scheduleCopy()
+                    let screenHeight = NSScreen.screens.first?.frame.height ?? 1080
+                    let cgStart = CGPoint(x: start.x, y: screenHeight - start.y)
+                    let cgEnd = CGPoint(x: end.x, y: screenHeight - end.y)
+                    engine.scheduleCopy(start: cgStart, end: cgEnd)
                 }
             }
         }
@@ -230,7 +285,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
             let end = event.location
             let clicks = Int(event.getIntegerValueField(.mouseEventClickState))
             if shouldTriggerCopy(start: start, end: end, clickCount: clicks) {
-                scheduleCopy()
+                scheduleCopy(start: start, end: end)
             }
         }
     }
@@ -269,6 +324,24 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         return false
     }
     
+    public func isPointOnNonTextControl(cgPoint: CGPoint) -> Bool {
+        if let mock = Self.mockNonTextControlDetected {
+            return mock
+        }
+        let systemWide = AXUIElementCreateSystemWide()
+        var element: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(systemWide, Float(cgPoint.x), Float(cgPoint.y), &element) == .success,
+              let el = element else {
+            return false
+        }
+        var roleRef: CFTypeRef?
+        if AXUIElementCopyAttributeValue(el, kAXRoleAttribute as CFString, &roleRef) == .success,
+           let role = roleRef as? String {
+            return Self.nonTextControlRoles.contains(role)
+        }
+        return false
+    }
+    
     public func shouldTriggerCopy(start: CGPoint, end: CGPoint, clickCount: Int) -> Bool {
         guard isEnabled else { return false }
         if isInteractingWithNNTSWindow { return false }
@@ -279,11 +352,16 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
             return false
         }
         
-        // Level 2: Frontmost application sensitive blacklist (Password managers & terminal)
-        if let frontmostID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
-           Self.sensitiveBundleIDs.contains(frontmostID) {
-            logger.debug("Copy skipped: Frontmost app '\(frontmostID)' is sensitive.")
-            return false
+        // Level 2: Frontmost application sensitive blacklist (Password managers, terminals, creative/canvas tools)
+        if let frontmostID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier {
+            if Self.sensitiveBundleIDs.contains(frontmostID) {
+                logger.debug("Copy skipped: Frontmost app '\(frontmostID)' is sensitive.")
+                return false
+            }
+            if Self.canvasAndDrawingBundleIDs.contains(frontmostID) {
+                logger.debug("Copy skipped: Frontmost app '\(frontmostID)' is a canvas/creative tool.")
+                return false
+            }
         }
         
         if clickCount > 1 {
@@ -294,7 +372,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         return dx > dragThreshold || dy > dragThreshold
     }
     
-    public func scheduleCopy() {
+    public func scheduleCopy(start: CGPoint? = nil, end: CGPoint? = nil) {
         cancelPendingCopy()
         let delay = copyDelayMs
         TelemetryBuffer.shared.append(
@@ -307,6 +385,26 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
             guard !Task.isCancelled else { return }
             guard let engine = self, engine.isEnabled && engine.isStarted else { return }
             guard !engine.isInteractingWithNNTSWindow else { return }
+            
+            // Level 2.5: Non-text UI control check (sliders, scrollbars, splitters)
+            if let startPoint = start, engine.isPointOnNonTextControl(cgPoint: startPoint) {
+                engine.logger.debug("Copy skipped: Drag started on non-text control.")
+                TelemetryBuffer.shared.append(
+                    category: "copy-on-select",
+                    level: "INFO",
+                    message: "Copy on select suppressed: Drag started on non-text control."
+                )
+                return
+            }
+            if let endPoint = end, engine.isPointOnNonTextControl(cgPoint: endPoint) {
+                engine.logger.debug("Copy skipped: Drag ended on non-text control.")
+                TelemetryBuffer.shared.append(
+                    category: "copy-on-select",
+                    level: "INFO",
+                    message: "Copy on select suppressed: Drag ended on non-text control."
+                )
+                return
+            }
             
             // Level 3: Accessibility field check right before posting synthetic keystroke
             guard !engine.isFocusedElementSecure() else {
@@ -356,6 +454,98 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
     public static func isStringEmptyOrWhitespace(_ text: String?) -> Bool {
         guard let text = text else { return true }
         return text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    /// Detects whether copied text is internal structured data from a canvas, whiteboard,
+    /// diagram editor, or vector tool rather than human-selected text.
+    public static func isCanvasOrInternalEditorPayload(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return true }
+        
+        // 1. Direct canvas/whiteboard schema signatures
+        let knownCanvasSignatures = [
+            "\"type\":\"excalidraw/clipboard\"",
+            "\"type\": \"excalidraw/clipboard\"",
+            "\"type\":\"excalidraw/lib\"",
+            "\"type\": \"excalidraw/lib\"",
+            "\"type\":\"excalidraw\"",
+            "\"type\": \"excalidraw\"",
+            "\"type\":\"tldraw/clipboard\"",
+            "\"type\": \"tldraw/clipboard\"",
+            "\"type\":\"tldraw\"",
+            "\"type\": \"tldraw\"",
+            "\"schema\":\"miro\"",
+            "\"schema\": \"miro\"",
+            "\"application/vnd.miro\"",
+            "\"type\":\"drawio\"",
+            "\"type\": \"drawio\"",
+            "\"figma.com\"",
+            "<mxGraphModel",
+            "<mxfile"
+        ]
+        for sig in knownCanvasSignatures {
+            if trimmed.contains(sig) {
+                return true
+            }
+        }
+        
+        // 2. Structured canvas/editor JSON payloads
+        if (trimmed.hasPrefix("{") && trimmed.hasSuffix("}")) || (trimmed.hasPrefix("[") && trimmed.hasSuffix("]")) {
+            // Empty element collections produced when clicking/dragging on empty canvas or deselecting
+            let emptyCanvasPatterns = [
+                "\"elements\":[]",
+                "\"elements\": []",
+                "\"objects\":[]",
+                "\"objects\": []",
+                "\"shapes\":[]",
+                "\"shapes\": []",
+                "\"nodes\":[]",
+                "\"nodes\": []"
+            ]
+            for pattern in emptyCanvasPatterns {
+                if trimmed.contains(pattern) {
+                    return true
+                }
+            }
+            
+            // Canvas element geometry dictionary heuristics (roughness, strokeWidth, fillStyle, etc.)
+            let canvasPropertyMarkers = [
+                "\"strokeColor\":",
+                "\"strokeWidth\":",
+                "\"roughness\":",
+                "\"boundElements\":",
+                "\"fillStyle\":"
+            ]
+            var markerCount = 0
+            for marker in canvasPropertyMarkers {
+                if trimmed.contains(marker) {
+                    markerCount += 1
+                }
+            }
+            if markerCount >= 2 {
+                return true
+            }
+        }
+        
+        // 3. Standalone raw SVG canvas dumps
+        if trimmed.hasPrefix("<svg") && trimmed.hasSuffix("</svg>") && !trimmed.contains("<p>") {
+            return true
+        }
+        
+        return false
+    }
+    
+    public static func restorePreviousPasteboard(_ previousItems: [[NSPasteboard.PasteboardType: Data]]) {
+        NSPasteboard.general.clearContents()
+        if !previousItems.isEmpty {
+            for itemDict in previousItems {
+                let newItem = NSPasteboardItem()
+                for (type, data) in itemDict {
+                    newItem.setData(data, forType: type)
+                }
+                NSPasteboard.general.writeObjects([newItem])
+            }
+        }
     }
     
     public func postCopyKeystroke() {
@@ -426,27 +616,27 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         )
         
         if didChange {
-            // Level 5: Filter out empty strings and whitespace-only copied text
-            if let newString = NSPasteboard.general.string(forType: .string),
-               Self.isStringEmptyOrWhitespace(newString) {
-                logger.debug("Cmd+C resulted in empty string; filtering out copy and restoring previous pasteboard.")
+            // Level 5A: Require valid plain-text content (filter out images, files, binary data)
+            guard let newString = NSPasteboard.general.string(forType: .string) else {
+                logger.debug("Cmd+C resulted in non-text payload (image/binary); restoring previous pasteboard.")
                 TelemetryBuffer.shared.append(
                     category: "copy-on-select",
                     level: "INFO",
-                    message: "Copy on select suppressed: copied string was empty or whitespace only."
+                    message: "Copy on select suppressed: clipboard content was not plain text."
                 )
-                
-                // Restore previous pasteboard contents to prevent clobbering user's clipboard
-                NSPasteboard.general.clearContents()
-                if !previousItems.isEmpty {
-                    for itemDict in previousItems {
-                        let newItem = NSPasteboardItem()
-                        for (type, data) in itemDict {
-                            newItem.setData(data, forType: type)
-                        }
-                        NSPasteboard.general.writeObjects([newItem])
-                    }
-                }
+                Self.restorePreviousPasteboard(previousItems)
+                return false
+            }
+            
+            // Level 5B: Filter out empty strings, whitespace, and canvas/editor payloads
+            if Self.isStringEmptyOrWhitespace(newString) || Self.isCanvasOrInternalEditorPayload(newString) {
+                logger.debug("Cmd+C resulted in empty or canvas/editor payload; restoring previous pasteboard.")
+                TelemetryBuffer.shared.append(
+                    category: "copy-on-select",
+                    level: "INFO",
+                    message: "Copy on select suppressed: empty or canvas/editor payload filtered."
+                )
+                Self.restorePreviousPasteboard(previousItems)
                 return false
             }
             

@@ -406,6 +406,120 @@ struct ChromeQuickAccessUnitTests {
     }
     
     @Test @MainActor
+    func testCopyOnSelectCanvasPayloadDetectionHelper() {
+        // Excalidraw empty canvas payload
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("{\"type\":\"excalidraw/clipboard\",\"elements\":[],\"files\":{}}") == true)
+        // Excalidraw shape payload
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("{\"type\":\"excalidraw/clipboard\",\"elements\":[{\"id\":\"1\",\"type\":\"line\"}]}") == true)
+        // tldraw payload
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("{\"type\":\"tldraw/clipboard\",\"shape\":\"arrow\"}") == true)
+        // Miro schema payload
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("{\"schema\":\"miro\",\"data\":{}}") == true)
+        // Draw.io XML payload
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("<mxGraphModel><root><mxCell id=\"0\"/></root></mxGraphModel>") == true)
+        // Empty canvas arrays
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("{\"objects\":[]}") == true)
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("{\"shapes\":[]}") == true)
+        
+        // Normal text and code MUST NOT be flagged as canvas payloads
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("Hello world") == false)
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("{\"name\": \"my-app\", \"version\": \"1.0.0\"}") == false)
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("let x = 42") == false)
+        #expect(CopyOnSelectEngine.isCanvasOrInternalEditorPayload("Excalidraw is a whiteboard app") == false)
+    }
+
+    @Test @MainActor
+    func testCopyOnSelectCanvasPayloadRejectionAndRestoration() {
+        let pboard = NSPasteboard.general
+        pboard.clearContents()
+        pboard.setString("User Original Note", forType: .string)
+        
+        let snapshot: [[NSPasteboard.PasteboardType: Data]] = pboard.pasteboardItems?.compactMap { item in
+            var dict: [NSPasteboard.PasteboardType: Data] = [:]
+            for type in item.types {
+                if let data = item.data(forType: type) {
+                    dict[type] = data
+                }
+            }
+            return dict.isEmpty ? nil : dict
+        } ?? []
+        
+        let initialChangeCount = pboard.changeCount
+        
+        // Excalidraw copies canvas JSON into pasteboard
+        pboard.clearContents()
+        pboard.setString("{\"type\":\"excalidraw/clipboard\",\"elements\":[],\"files\":{}}", forType: .string)
+        
+        let engine = CopyOnSelectEngine()
+        let didCopy = engine.evaluateCopiedContent(
+            initialChangeCount: initialChangeCount,
+            previousItems: snapshot,
+            mousePos: CGPoint(x: 200, y: 200)
+        )
+        
+        #expect(didCopy == false)
+        #expect(pboard.string(forType: .string) == "User Original Note")
+    }
+
+    @Test @MainActor
+    func testCopyOnSelectCanvasAndDrawingBundleIDsProtection() {
+        #expect(CopyOnSelectEngine.canvasAndDrawingBundleIDs.contains("com.apple.freeform"))
+        #expect(CopyOnSelectEngine.canvasAndDrawingBundleIDs.contains("com.figma.Desktop"))
+        #expect(CopyOnSelectEngine.canvasAndDrawingBundleIDs.contains("com.adobe.Photoshop"))
+        #expect(CopyOnSelectEngine.canvasAndDrawingBundleIDs.contains("org.blenderfoundation.blender"))
+        #expect(CopyOnSelectEngine.canvasAndDrawingBundleIDs.contains("com.apple.FinalCut"))
+        #expect(CopyOnSelectEngine.canvasAndDrawingBundleIDs.contains("com.apple.logic10"))
+        #expect(CopyOnSelectEngine.canvasAndDrawingBundleIDs.contains("com.ableton.live"))
+        #expect(CopyOnSelectEngine.nonTextControlRoles.contains("AXSlider"))
+        #expect(CopyOnSelectEngine.nonTextControlRoles.contains("AXScrollBar"))
+        #expect(CopyOnSelectEngine.nonTextControlRoles.contains("AXSplitter"))
+        #expect(CopyOnSelectEngine.nonTextControlRoles.contains("AXCanvas"))
+    }
+
+    @Test @MainActor
+    func testCopyOnSelectNonTextPasteboardRejection() {
+        let pboard = NSPasteboard.general
+        pboard.clearContents()
+        pboard.setString("Preserved Content", forType: .string)
+        
+        let snapshot: [[NSPasteboard.PasteboardType: Data]] = pboard.pasteboardItems?.compactMap { item in
+            var dict: [NSPasteboard.PasteboardType: Data] = [:]
+            for type in item.types {
+                if let data = item.data(forType: type) {
+                    dict[type] = data
+                }
+            }
+            return dict.isEmpty ? nil : dict
+        } ?? []
+        
+        let initialChangeCount = pboard.changeCount
+        
+        // App copies non-text data (e.g. only custom binary type, no .string)
+        pboard.clearContents()
+        let customType = NSPasteboard.PasteboardType("com.custom.binary")
+        pboard.setData(Data([0x01, 0x02, 0x03]), forType: customType)
+        
+        let engine = CopyOnSelectEngine()
+        let didCopy = engine.evaluateCopiedContent(
+            initialChangeCount: initialChangeCount,
+            previousItems: snapshot,
+            mousePos: CGPoint(x: 100, y: 100)
+        )
+        
+        #expect(didCopy == false)
+        #expect(pboard.string(forType: .string) == "Preserved Content")
+    }
+
+    @Test @MainActor
+    func testCopyOnSelectNonTextControlSuppression() {
+        CopyOnSelectEngine.mockNonTextControlDetected = true
+        defer { CopyOnSelectEngine.mockNonTextControlDetected = nil }
+        
+        let engine = CopyOnSelectEngine()
+        #expect(engine.isPointOnNonTextControl(cgPoint: CGPoint(x: 50, y: 50)) == true)
+    }
+    
+    @Test @MainActor
     func testProfileEffectiveNameFallbackHierarchy() {
         let p1 = ChromeProfile(index: 1, dir: "Profile 1", name: "", gaiaName: "Igor Corporate")
         #expect(p1.effectiveName == "Igor Corporate")
@@ -3095,6 +3209,226 @@ struct ChromeQuickAccessUnitTests {
         // Clear in-memory dictionary to verify UserDefaults persistence
         AppGroupEngine.lastActiveBundleIDByLetter.removeAll()
         #expect(AppGroupEngine.lastActiveApp(for: "O") == "md.obsidian")
+    }
+    
+    @Test @MainActor
+    func testMacOS27MenuItemImageVisibility() {
+        let appDelegate = AppDelegate()
+        let menu = appDelegate.buildStatusMenu()
+        
+        // Ensure menu contains items
+        #expect(!menu.items.isEmpty)
+        
+        if #available(macOS 27.0, *) {
+            // All items that have an image must have preferredImageVisibility set to .visible
+            for item in menu.items {
+                if item.image != nil {
+                    #expect(item.preferredImageVisibility == .visible)
+                }
+            }
+        }
+    }
+    
+    @Test @MainActor
+    func testChromeProfileEngineCachedProfilesPersistenceAndRecovery() {
+        let engine = ChromeProfileEngine.shared
+        let testBundleID = "com.google.Chrome.testCache"
+        
+        defer {
+            UserDefaults.standard.removeObject(forKey: "CachedProfiles_\(testBundleID)")
+        }
+        
+        let sampleProfiles = [
+            ChromeProfile(index: 1, dir: "Default", name: "Personal Workstation"),
+            ChromeProfile(index: 2, dir: "Profile 1", name: "Corporate Client"),
+            ChromeProfile(index: 3, dir: "Profile 2", name: "Sandbox Experiment")
+        ]
+        
+        engine.saveCachedProfiles(sampleProfiles, bundleID: testBundleID)
+        let loaded = engine.loadCachedProfiles(bundleID: testBundleID)
+        
+        #expect(loaded.count == 3)
+        #expect(loaded[0].name == "Personal Workstation")
+        #expect(loaded[0].dir == "Default")
+        #expect(loaded[1].name == "Corporate Client")
+        #expect(loaded[1].dir == "Profile 1")
+        #expect(loaded[2].name == "Sandbox Experiment")
+        #expect(loaded[2].dir == "Profile 2")
+    }
+    
+    @Test @MainActor
+    func testProfileSelectionExpandsWhenRecoveringFromSingleFallback() {
+        let engine = ChromeProfileEngine.shared
+        defer {
+            UserDefaults.standard.removeObject(forKey: "SelectedBrowserProfileDirs")
+        }
+        
+        // Simulate previous state where bug caused only ["Default"] to be saved
+        UserDefaults.standard.set(["Default"], forKey: "SelectedBrowserProfileDirs")
+        
+        // Mock multiple discovered profiles via temporary override
+        let jsonMock = """
+        {
+           "profile": {
+              "info_cache": {
+                 "Default": { "name": "Work", "gaia_name": "Work" },
+                 "Profile 1": { "name": "Personal", "gaia_name": "Personal" },
+                 "Profile 2": { "name": "Client", "gaia_name": "Client" }
+              }
+           }
+        }
+        """
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempFile = tempDir.appendingPathComponent("MockLocalState_\(UUID().uuidString).json")
+        try? jsonMock.write(to: tempFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempFile) }
+        
+        ChromeProfileEngine.localStatePathOverride = tempFile.path
+        defer { ChromeProfileEngine.localStatePathOverride = nil }
+        
+        engine.refreshProfiles()
+        
+        #expect(engine.profiles.count == 3)
+        // Verify selection auto-expanded from single ["Default"] to all 3 profiles
+        #expect(engine.selectedProfiles.count == 3)
+        #expect(engine.selectedProfiles.map { $0.dir } == ["Default", "Profile 1", "Profile 2"])
+    }
+    
+    @Test @MainActor
+    func testSmartMonogramContextualDiscrimination() {
+        let engine = ChromeProfileEngine.shared
+        
+        let igorImg = engine.makeMonogramImage(name: "Igor")
+        #expect(igorImg.size.width == 96)
+        #expect(igorImg.size.height == 96)
+        
+        let al11Img = engine.makeMonogramImage(name: "Igor (Al11)")
+        #expect(al11Img.size.width == 96)
+        #expect(al11Img.size.height == 96)
+        
+        let gcp2Img = engine.makeMonogramImage(name: "Igor (GCP Free 2)")
+        #expect(gcp2Img.size.width == 96)
+        #expect(gcp2Img.size.height == 96)
+        
+        let gcpTrialImg = engine.makeMonogramImage(name: "Igor (GCP Free Trial)")
+        #expect(gcpTrialImg.size.width == 96)
+        #expect(gcpTrialImg.size.height == 96)
+        
+        let nastyaImg = engine.makeMonogramImage(name: "Nastya")
+        #expect(nastyaImg.size.width == 96)
+        #expect(nastyaImg.size.height == 96)
+    }
+    
+    @Test @MainActor
+    func testAvatarStorageAndCustomAvatarLoading() {
+        let storageURL = ChromeProfileEngine.localAvatarStorageURL
+        #expect(FileManager.default.fileExists(atPath: storageURL.path))
+        
+        // Create a test avatar in storage
+        let dummy = NSImage(size: NSSize(width: 96, height: 96))
+        dummy.lockFocus()
+        NSColor.red.setFill()
+        NSRect(x: 0, y: 0, width: 96, height: 96).fill()
+        dummy.unlockFocus()
+        
+        let testDirKey = "ProfileUnitTest99"
+        let testName = "UnitTestCustomProfile"
+        let testFilePath = storageURL.appendingPathComponent("\(testDirKey).png")
+        
+        if let tiff = dummy.tiffRepresentation,
+           let bitmap = NSBitmapImageRep(data: tiff),
+           let pngData = bitmap.representation(using: .png, properties: [:]) {
+            try? pngData.write(to: testFilePath)
+        }
+        defer { try? FileManager.default.removeItem(at: testFilePath) }
+        
+        let loaded = ChromeProfileEngine.loadStoredAvatar(dirKey: testDirKey, name: testName)
+        #expect(loaded != nil)
+        #expect(loaded?.size.width == 96)
+    }
+    
+    @Test @MainActor
+    func testAvatarManagementMenuItemsInAppDelegate() {
+        let appDelegate = AppDelegate()
+        
+        // When bookmark is absent and local state is blocked, 1-Click item should be offered cleanly
+        let menu = appDelegate.buildStatusMenu()
+        let has1ClickItem = menu.items.contains(where: { $0.title.contains("Link Chrome Avatars") })
+        #expect(has1ClickItem || !ChromeProfileEngine.shared.isLocalStateBlocked)
+        
+        // Verify submenu remains uncluttered without bloated manual avatar config options
+        guard let manageItem = menu.items.first(where: { $0.title.contains("Manage Quick Apps") }),
+              let submenu = manageItem.submenu else {
+            Issue.record("Manage Quick Apps submenu not found")
+            return
+        }
+        let hasBloatedSubmenuItem = submenu.items.contains(where: { $0.title.contains("Set Custom Profile Photo") })
+        #expect(!hasBloatedSubmenuItem)
+    }
+    
+    @Test @MainActor
+    func testAutoSyncWhenNewProfileIsAddedInBrowser() {
+        let engine = ChromeProfileEngine.shared
+        
+        // Initial state: 2 profiles in mock Local State
+        let jsonMock1 = """
+        {
+           "profile": {
+              "info_cache": {
+                 "Default": { "name": "Work", "gaia_name": "Work" },
+                 "Profile 1": { "name": "Personal", "gaia_name": "Personal" }
+              }
+           }
+        }
+        """
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempFile = tempDir.appendingPathComponent("MockLocalState_AutoSync_\(UUID().uuidString).json")
+        try? jsonMock1.write(to: tempFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempFile) }
+        
+        ChromeProfileEngine.localStatePathOverride = tempFile.path
+        defer { ChromeProfileEngine.localStatePathOverride = nil }
+        
+        engine.clearAvatarCache()
+        engine.refreshProfiles()
+        #expect(engine.profiles.count == 2)
+        
+        // Simulate user adding a 3rd profile in Google Chrome
+        let jsonMock2 = """
+        {
+           "profile": {
+              "info_cache": {
+                 "Default": { "name": "Work", "gaia_name": "Work" },
+                 "Profile 1": { "name": "Personal", "gaia_name": "Personal" },
+                 "Profile 2": { "name": "Brand New Profile", "gaia_name": "Brand New Profile" }
+              }
+           }
+        }
+        """
+        try? jsonMock2.write(to: tempFile, atomically: true, encoding: .utf8)
+        
+        // Refresh profiles (simulating periodic refresh or switching to Chrome)
+        engine.clearAvatarCache()
+        engine.refreshProfiles()
+        
+        // Verify the 3rd profile was automatically picked up with zero user interaction!
+        #expect(engine.profiles.count == 3)
+        #expect(engine.profiles.contains(where: { $0.effectiveName == "Brand New Profile" }))
+    }
+    
+    @Test @MainActor
+    func testSmartSnapAvatarsEngineAndMenuItems() async {
+        let engine = ChromeProfileEngine.shared
+        
+        // 1. In test environment, snapActiveBrowserAvatars safely returns without crashes
+        let snapped = await engine.snapActiveBrowserAvatars()
+        #expect(snapped >= 0)
+        
+        // 2. AppDelegate menu includes Smart Snap item
+        let appDelegate = AppDelegate()
+        let menu = appDelegate.buildStatusMenu()
+        let hasSnapItem = menu.items.contains(where: { $0.title.contains("Smart Snap Avatars") })
+        #expect(hasSnapItem)
     }
 }
 

@@ -75,8 +75,8 @@ public final class AppGroupEngine: ObservableObject, @unchecked Sendable {
     public static var bypassLaunchInTests: Bool = {
         ProcessInfo.processInfo.environment["SWIFT_DETERMINISTIC_TESTING"] != nil ||
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
-        ProcessInfo.processInfo.processName.contains("Tests") ||
-        ProcessInfo.processInfo.arguments.first?.contains("PackageTests") == true ||
+        ProcessInfo.processInfo.processName.lowercased().contains("test") ||
+        ProcessInfo.processInfo.arguments.first?.lowercased().contains("test") == true ||
         NSClassFromString("XCTest") != nil
     }()
     
@@ -1160,6 +1160,18 @@ public final class AppGroupEngine: ObservableObject, @unchecked Sendable {
                   let bundleID = app.bundleIdentifier else { return }
             Task { @MainActor in
                 recordActiveApp(bundleID: bundleID)
+                let profileEngine = ChromeProfileEngine.shared
+                if bundleID == profileEngine.browserBundleID ||
+                   ChromeProfileEngine.supportedBrowsers.contains(where: { $0.bundleID == bundleID }) {
+                    if profileEngine.profiles.count <= 1 || profileEngine.isLocalStateBlocked {
+                        let prevCount = profileEngine.profiles.count
+                        profileEngine.refreshProfiles()
+                        if profileEngine.profiles.count != prevCount {
+                            AppDelegate.shared?.updateDynamicShortcuts()
+                            AppDelegate.shared?.updateMenu()
+                        }
+                    }
+                }
             }
         }
     }

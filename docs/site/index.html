@@ -282,6 +282,18 @@
             
             <!-- Live Profile Simulator Window -->
             <div class="bento-sim-window">
+              <!-- Apple Fluid Minimal HUD Overlay (Emil Kowalski / Apple HIG) -->
+              <div class="apple-hud-overlay" id="apple-hud-overlay" aria-hidden="true">
+                <img src="assets/images/profiles_v2/personal.png" alt="Profile" id="hud-profile-avatar" class="hud-profile-avatar">
+                <div class="hud-profile-meta">
+                  <div class="hud-profile-title" id="hud-profile-title">Personal</div>
+                  <div class="hud-profile-sub" id="hud-profile-sub">Google Chrome &bull; Window Raised</div>
+                </div>
+                <div class="hud-hotkey-badge">
+                  <kbd class="hud-kbd">caps lock</kbd> + <kbd class="hud-kbd">C</kbd> + <kbd class="hud-kbd" id="hud-profile-key">1</kbd>
+                </div>
+              </div>
+
               <div class="bento-sim-titlebar">
                 <div class="sim-traffic-lights">
                   <span class="tl-dot red"></span>
@@ -312,6 +324,25 @@
                     <span class="m-val" id="sim-metric-window">Chrome: Personal (ID #1)</span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- Keymaster 3D Mechanical Keychord Cluster (Variant 3) -->
+            <div class="keychord-cluster" id="keychord-cluster" aria-label="Interactive 3D Mechanical Keychord Controls">
+              <div class="keychord-cap keychord-cap-caps" id="keychord-cap-caps" title="Tap or hold caps lock">
+                <span class="keychord-led-indicator" title="Driverless Remap Active (F18)"></span>
+                <span class="keychord-cap-label">⇪</span>
+                <span class="keychord-cap-sub">caps lock</span>
+              </div>
+              <span class="keychord-sep">+</span>
+              <div class="keychord-cap keychord-cap-c" id="keychord-cap-c" title="Tap C for Chrome profiles">
+                <span class="keychord-cap-label">C</span>
+                <span class="keychord-cap-sub">CHROME</span>
+              </div>
+              <span class="keychord-sep">+</span>
+              <div class="keychord-cap keychord-cap-digit" id="keychord-cap-digit" title="Tap 1-4 for specific profile">
+                <span class="keychord-cap-label" id="keychord-digit-label">1</span>
+                <span class="keychord-cap-sub">PROFILE</span>
               </div>
             </div>
 
@@ -353,36 +384,58 @@
             <!-- Live Interactive 3D Keycap & Carousel -->
             <div class="bento-key-cycler-box">
               <div class="cycler-meta-bar">
-                <span class="cycler-key-label">PRESS KEY OR CLICK:</span>
+                <span class="cycler-key-label">INTERACTIVE 3D KEYCHORD:</span>
                 <span class="cycler-step-badge" id="bento-cycle-indicator">1 / 2 ↻ CYCLE</span>
               </div>
 
-              <div class="cycler-stage">
-                <!-- Physical Mechanical Keycap -->
-                <button class="mechanical-keycap" id="bento-cycle-btn" title="Click or press 'T' on your keyboard to cycle">
-                  <span class="keycap-top">T</span>
-                  <span class="keycap-sub">TAP</span>
-                </button>
-
-                <!-- Switching App Cards -->
-                <div class="cycler-app-stack">
-                  <div class="cycler-app-item active" id="cycler-app-1">
-                    <img src="assets/images/icon_telegram.png" alt="Telegram" class="cycler-app-icon">
-                    <div class="cycler-app-info">
-                      <span class="cycler-app-name">Telegram</span>
-                      <span class="cycler-app-slot">Slot 1/2 &bull; Active</span>
-                    </div>
-                    <span class="cycler-check">✓</span>
-                  </div>
-                  <div class="cycler-app-item" id="cycler-app-2">
-                    <img src="assets/images/icon_terminal.png" alt="Terminal" class="cycler-app-icon">
-                    <div class="cycler-app-info">
-                      <span class="cycler-app-name">Terminal</span>
-                      <span class="cycler-app-slot">Slot 2/2 &bull; Next</span>
-                    </div>
-                    <span class="cycler-check"></span>
-                  </div>
+              <!-- Keymaster 3D Quick Apps Keychord Cluster -->
+              <div class="keychord-cluster keychord-cluster-cyan" id="quickapp-keychord-cluster" aria-label="Interactive 3D Mechanical Keychord for Quick Apps">
+                <div class="keychord-cap keychord-cap-caps keychord-cap-cyan" id="quickapp-cap-caps" title="Tap or hold caps lock">
+                  <span class="keychord-led-indicator keychord-led-cyan" title="Driverless Remap Active (F18)"></span>
+                  <span class="keychord-cap-label">⇪</span>
+                  <span class="keychord-cap-sub">caps lock</span>
                 </div>
+                <span class="keychord-sep">+</span>
+                <div class="keychord-cap keychord-cap-letter keychord-cap-cyan" id="quickapp-cap-letter" title="Tap letter or click to cycle apps on this key">
+                  <span class="keychord-cap-label" id="quickapp-letter-label">T</span>
+                  <span class="keychord-cap-sub" id="quickapp-letter-sub">CYCLE ↻</span>
+                </div>
+              </div>
+
+              <!-- Switching App Cards -->
+              <div class="cycler-app-stack" id="cycler-app-stack">
+                <div class="cycler-app-item active" id="cycler-app-1">
+                  <img src="assets/images/icon_telegram.png" alt="Telegram" class="cycler-app-icon" id="cycler-icon-1">
+                  <div class="cycler-app-info">
+                    <span class="cycler-app-name" id="cycler-name-1">Telegram</span>
+                    <span class="cycler-app-slot" id="cycler-slot-1">Slot 1/2 &bull; Active</span>
+                  </div>
+                  <span class="cycler-check" id="cycler-check-1">✓</span>
+                </div>
+                <div class="cycler-app-item" id="cycler-app-2">
+                  <img src="assets/images/icon_terminal.png" alt="Terminal" class="cycler-app-icon" id="cycler-icon-2">
+                  <div class="cycler-app-info">
+                    <span class="cycler-app-name" id="cycler-name-2">Terminal</span>
+                    <span class="cycler-app-slot" id="cycler-slot-2">Slot 2/2 &bull; Next</span>
+                  </div>
+                  <span class="cycler-check" id="cycler-check-2"></span>
+                </div>
+              </div>
+
+              <!-- Quick Apps Letter Selector Shelf -->
+              <div class="bento-letter-shelf" id="bento-letter-shelf">
+                <button class="bento-letter-btn active" data-letter="T" data-app1="Telegram" data-icon1="assets/images/icon_telegram.png" data-app2="Terminal" data-icon2="assets/images/icon_terminal.png" data-mode="cycle">
+                  <span class="letter-badge">T</span> &bull; 1/2 ↻
+                </button>
+                <button class="bento-letter-btn" data-letter="O" data-app1="Obsidian" data-icon1="assets/images/icon_obsidian.png" data-app2="" data-icon2="" data-mode="direct">
+                  <span class="letter-badge">O</span> &bull; Direct
+                </button>
+                <button class="bento-letter-btn" data-letter="S" data-app1="Spotify" data-icon1="assets/images/icon_spotify.png" data-app2="Settings" data-icon2="assets/images/icon_settings.png" data-mode="cycle">
+                  <span class="letter-badge">S</span> &bull; 1/2 ↻
+                </button>
+                <button class="bento-letter-btn" data-letter="F" data-app1="Finder" data-icon1="assets/images/icon_finder.png" data-app2="" data-icon2="" data-mode="direct">
+                  <span class="letter-badge">F</span> &bull; Direct
+                </button>
               </div>
             </div>
           </div>
@@ -398,33 +451,64 @@
           </div>
 
           <div class="bento-card-content">
-            <div class="bento-copy-header-row">
-              <div>
-                <h3 class="bento-title">Linux-Style Copy-on-Select</h3>
-                <p class="bento-desc">Highlight any text with mouse drag or double-click. Releasing mouse copies immediately to clipboard without pressing <kbd class="inline-kbd">Cmd+C</kbd>.</p>
-              </div>
-            </div>
+            <h3 class="bento-title">Linux-Style Copy-on-Select</h3>
+            <p class="bento-desc">Highlight any text with mouse drag or double-click. Releasing mouse copies immediately to clipboard without pressing <kbd class="inline-kbd">Cmd+C</kbd>.</p>
 
-            <!-- Interactive Live Editor Sandbox -->
+            <!-- Interactive Live Terminal Sandbox -->
             <div class="bento-code-sandbox" id="bento-code-sandbox">
               <div class="sandbox-header">
-                <span class="sandbox-lang">macOS Shell &bull; Drag to select text</span>
-                <span class="sandbox-hint">Double-click or drag &gt;10pt</span>
+                <div class="sim-traffic-lights">
+                  <span class="tl-dot red"></span>
+                  <span class="tl-dot yellow"></span>
+                  <span class="tl-dot green"></span>
+                </div>
+                <span class="sandbox-lang">Terminal &bull; Drag to select</span>
+                <span class="sandbox-hint">Zero Cmd+C</span>
               </div>
               <div class="sandbox-editor-body" id="live-select-zone">
                 <div class="editor-line">
                   <span class="code-comment">// Highlight any part of this line:</span>
                 </div>
                 <div class="editor-line">
-                  <span class="code-kw">brew</span> <span class="code-fn">install</span> <span class="code-str">--cask nnts</span> <span class="code-comment">/* zero Cmd+C needed */</span>
+                  <span class="code-kw">brew</span> <span class="code-fn">install</span> <span class="code-str">--cask nnts</span> <span class="code-comment">/* auto-copies */</span>
                 </div>
               </div>
               <div class="sandbox-toast-anchor">
-                <div class="sandbox-toast-pill" id="sandbox-live-toast">
-                  <span class="toast-check">✓</span>
-                  <span class="toast-text">Copied to clipboard</span>
+                <div class="sonner-toast-pill" id="sandbox-live-toast">
+                  <span class="sonner-toast-icon">✓</span>
+                  <span class="toast-text" id="sandbox-toast-text">Copied to clipboard</span>
                 </div>
               </div>
+            </div>
+
+            <!-- Tactile Pasteboard Inspector Widget -->
+            <div class="live-pasteboard-box" id="live-pasteboard-box">
+              <div class="pasteboard-header">
+                <div class="pasteboard-title-group">
+                  <span class="pasteboard-icon">📋</span>
+                  <span class="pasteboard-label">SYSTEM PASTEBOARD</span>
+                </div>
+                <span class="pasteboard-status-badge" id="pasteboard-status">● READY</span>
+              </div>
+              <div class="pasteboard-content">
+                <span class="pasteboard-val" id="pasteboard-val">brew install --cask nnts</span>
+              </div>
+            </div>
+
+            <!-- Quick-Select Preset Snippets Shelf -->
+            <div class="bento-copy-shelf" id="bento-copy-shelf">
+              <button class="bento-copy-pill active" data-clip="brew install --cask nnts">
+                <span class="pill-badge">$</span> brew install
+              </button>
+              <button class="bento-copy-pill" data-clip="curl -fsSL https://nnts.sh | sh">
+                <span class="pill-badge">&gt;</span> curl script
+              </button>
+              <button class="bento-copy-pill" data-clip="nnts_live_tok_99182">
+                <span class="pill-badge">🔑</span> API token
+              </button>
+              <button class="bento-copy-pill" data-clip="git clone unacau/nnts">
+                <span class="pill-badge">⌥</span> git clone
+              </button>
             </div>
           </div>
         </div>

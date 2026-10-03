@@ -523,6 +523,64 @@
     const simTitle = document.getElementById("sim-page-title");
     const simWindow = document.getElementById("sim-metric-window");
     const simViewport = document.getElementById("sim-profile-viewport");
+    const appleHud = document.getElementById("apple-hud-overlay");
+    const hudAvatar = document.getElementById("hud-profile-avatar");
+    const hudName = document.getElementById("hud-profile-title");
+    const hudKey = document.getElementById("hud-profile-key");
+    let hudTimer = null;
+
+    function flashAppleHud(profileId, name, img) {
+      if (!appleHud) return;
+      if (hudAvatar && img) hudAvatar.src = img;
+      if (hudName) hudName.textContent = name;
+      if (hudKey) hudKey.textContent = profileId;
+
+      appleHud.classList.remove("is-visible");
+      void appleHud.offsetWidth;
+      appleHud.classList.add("is-visible");
+
+      if (hudTimer) clearTimeout(hudTimer);
+      hudTimer = setTimeout(() => {
+        appleHud.classList.remove("is-visible");
+      }, 1200);
+    }
+
+    const keychordCaps = document.getElementById("keychord-cap-caps");
+    const keychordC = document.getElementById("keychord-cap-c");
+    const keychordDigit = document.getElementById("keychord-cap-digit");
+    const keychordDigitLabel = document.getElementById("keychord-digit-label");
+
+    function animateKeychordPress() {
+      const caps = [keychordCaps, keychordC, keychordDigit].filter(Boolean);
+      caps.forEach((cap) => {
+        cap.classList.add("is-pressed");
+        setTimeout(() => cap.classList.remove("is-pressed"), 140);
+      });
+    }
+
+    if (keychordDigit) {
+      keychordDigit.addEventListener("click", () => {
+        const activeIdx = Array.from(profileBtns).findIndex((b) => b.classList.contains("active"));
+        const nextIdx = (activeIdx + 1) % profileBtns.length;
+        if (profileBtns[nextIdx]) profileBtns[nextIdx].click();
+      });
+    }
+
+    if (keychordC) {
+      keychordC.addEventListener("click", () => {
+        audio.playRelayClick();
+        keychordC.classList.add("is-pressed");
+        setTimeout(() => keychordC.classList.remove("is-pressed"), 140);
+      });
+    }
+
+    if (keychordCaps) {
+      keychordCaps.addEventListener("click", () => {
+        audio.playRelayClick();
+        keychordCaps.classList.add("is-pressed");
+        setTimeout(() => keychordCaps.classList.remove("is-pressed"), 140);
+      });
+    }
 
     profileBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -535,6 +593,7 @@
         btn.classList.add("active");
 
         if (activeProfileKey) activeProfileKey.textContent = profileId;
+        if (keychordDigitLabel) keychordDigitLabel.textContent = profileId;
         if (simUrl) simUrl.textContent = url;
         if (simAvatar) simAvatar.src = img;
         if (simName) simName.textContent = name;
@@ -548,100 +607,253 @@
           simViewport.classList.add("flash-pulse");
         }
 
+        animateKeychordPress();
+        flashAppleHud(profileId, name, img);
         audio.playRelayClick();
       });
     });
 
-    // C. Card 2: Mechanical Keycap & First-Letter App Cycler
-    const cycleBtn = document.getElementById("bento-cycle-btn");
+    // C. Card 2: Keymaster 3D Quick Apps Keychord & First-Letter Cycler
+    const quickCapCaps = document.getElementById("quickapp-cap-caps");
+    const quickCapLetter = document.getElementById("quickapp-cap-letter");
+    const quickLetterLabel = document.getElementById("quickapp-letter-label");
+    const quickLetterSub = document.getElementById("quickapp-letter-sub");
+    const activeAppBadge = document.getElementById("active-app-letter");
     const cycleIndicator = document.getElementById("bento-cycle-indicator");
+    const letterBtns = document.querySelectorAll(".bento-letter-btn");
     const app1 = document.getElementById("cycler-app-1");
     const app2 = document.getElementById("cycler-app-2");
+    const icon1 = document.getElementById("cycler-icon-1");
+    const name1 = document.getElementById("cycler-name-1");
+    const slot1 = document.getElementById("cycler-slot-1");
+    const check1 = document.getElementById("cycler-check-1");
+    const icon2 = document.getElementById("cycler-icon-2");
+    const name2 = document.getElementById("cycler-name-2");
+    const slot2 = document.getElementById("cycler-slot-2");
+    const check2 = document.getElementById("cycler-check-2");
+
+    let currentLetter = "T";
+    let currentMode = "cycle";
     let currentAppSlot = 1;
 
+    function animateQuickChordPress() {
+      const caps = [quickCapCaps, quickCapLetter].filter(Boolean);
+      caps.forEach((cap) => {
+        cap.classList.add("is-pressed");
+        setTimeout(() => cap.classList.remove("is-pressed"), 140);
+      });
+    }
+
     function triggerCycleStep() {
-      currentAppSlot = currentAppSlot === 1 ? 2 : 1;
-      if (cycleBtn) {
-        cycleBtn.classList.add("pressed");
-        setTimeout(() => cycleBtn.classList.remove("pressed"), 180);
+      if (currentMode !== "cycle") {
+        animateQuickChordPress();
+        audio.playRelayClick();
+        return;
       }
+
+      currentAppSlot = currentAppSlot === 1 ? 2 : 1;
+      animateQuickChordPress();
+
       if (currentAppSlot === 1) {
         if (app1) {
           app1.classList.add("active");
-          const check = app1.querySelector(".cycler-check");
-          if (check) check.textContent = "✓";
-          const slot = app1.querySelector(".cycler-app-slot");
-          if (slot) slot.innerHTML = "Slot 1/2 &bull; Active";
+          if (check1) check1.textContent = "✓";
+          if (slot1) slot1.innerHTML = "Slot 1/2 &bull; Active";
         }
         if (app2) {
           app2.classList.remove("active");
-          const check = app2.querySelector(".cycler-check");
-          if (check) check.textContent = "";
-          const slot = app2.querySelector(".cycler-app-slot");
-          if (slot) slot.innerHTML = "Slot 2/2 &bull; Next";
+          if (check2) check2.textContent = "";
+          if (slot2) slot2.innerHTML = "Slot 2/2 &bull; Next";
         }
         if (cycleIndicator) cycleIndicator.textContent = "1 / 2 ↻ CYCLE";
       } else {
         if (app1) {
           app1.classList.remove("active");
-          const check = app1.querySelector(".cycler-check");
-          if (check) check.textContent = "";
-          const slot = app1.querySelector(".cycler-app-slot");
-          if (slot) slot.innerHTML = "Slot 1/2 &bull; Next";
+          if (check1) check1.textContent = "";
+          if (slot1) slot1.innerHTML = "Slot 1/2 &bull; Next";
         }
         if (app2) {
           app2.classList.add("active");
-          const check = app2.querySelector(".cycler-check");
-          if (check) check.textContent = "✓";
-          const slot = app2.querySelector(".cycler-app-slot");
-          if (slot) slot.innerHTML = "Slot 2/2 &bull; Active";
+          if (check2) check2.textContent = "✓";
+          if (slot2) slot2.innerHTML = "Slot 2/2 &bull; Active";
         }
         if (cycleIndicator) cycleIndicator.textContent = "2 / 2 ↻ CYCLE";
       }
       audio.playRelayClick();
     }
 
-    if (cycleBtn) {
-      cycleBtn.addEventListener("click", triggerCycleStep);
+    function selectLetter(btn) {
+      letterBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const letter = btn.dataset.letter;
+      const a1 = btn.dataset.app1;
+      const i1 = btn.dataset.icon1;
+      const a2 = btn.dataset.app2;
+      const i2 = btn.dataset.icon2;
+      const mode = btn.dataset.mode;
+
+      currentLetter = letter;
+      currentMode = mode;
+      currentAppSlot = 1;
+
+      if (quickLetterLabel) quickLetterLabel.textContent = letter;
+      if (activeAppBadge) activeAppBadge.textContent = letter;
+
+      if (mode === "cycle") {
+        if (quickLetterSub) quickLetterSub.textContent = "CYCLE ↻";
+        if (cycleIndicator) cycleIndicator.textContent = "1 / 2 ↻ CYCLE";
+
+        if (app1) {
+          app1.style.display = "flex";
+          app1.classList.add("active");
+          if (name1) name1.textContent = a1;
+          if (icon1) icon1.src = i1;
+          if (slot1) slot1.innerHTML = "Slot 1/2 &bull; Active";
+          if (check1) check1.textContent = "✓";
+        }
+        if (app2) {
+          app2.style.display = "flex";
+          app2.classList.remove("active");
+          if (name2) name2.textContent = a2;
+          if (icon2) icon2.src = i2;
+          if (slot2) slot2.innerHTML = "Slot 2/2 &bull; Next";
+          if (check2) check2.textContent = "";
+        }
+      } else {
+        if (quickLetterSub) quickLetterSub.textContent = "DIRECT";
+        if (cycleIndicator) cycleIndicator.textContent = "DIRECT FOCUS";
+
+        if (app1) {
+          app1.style.display = "flex";
+          app1.classList.add("active");
+          if (name1) name1.textContent = a1;
+          if (icon1) icon1.src = i1;
+          if (slot1) slot1.innerHTML = "Direct Jump &bull; Active";
+          if (check1) check1.textContent = "✓";
+        }
+        if (app2) {
+          app2.style.display = "none";
+        }
+      }
+
+      animateQuickChordPress();
+      audio.playRelayClick();
+    }
+
+    letterBtns.forEach((btn) => {
+      btn.addEventListener("click", () => selectLetter(btn));
+    });
+
+    if (quickCapLetter) {
+      quickCapLetter.addEventListener("click", triggerCycleStep);
+    }
+
+    if (quickCapCaps) {
+      quickCapCaps.addEventListener("click", () => {
+        audio.playRelayClick();
+        quickCapCaps.classList.add("is-pressed");
+        setTimeout(() => quickCapCaps.classList.remove("is-pressed"), 140);
+      });
     }
 
     window.addEventListener("keydown", (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
-      if (e.key.toLowerCase() === "t" && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        triggerCycleStep();
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toUpperCase();
+      const targetBtn = Array.from(letterBtns).find((b) => b.dataset.letter === k);
+      if (targetBtn) {
+        if (currentLetter === k) {
+          triggerCycleStep();
+        } else {
+          selectLetter(targetBtn);
+        }
       }
     });
 
-    // D. Card 3: Linux-Style Copy-on-Select Sandbox
+    // D. Card 3: Linux-Style Copy-on-Select Sandbox & Tactile Pasteboard
     const selectZone = document.getElementById("live-select-zone");
     const sandboxToast = document.getElementById("sandbox-live-toast");
+    const sandboxToastText = document.getElementById("sandbox-toast-text");
     const cursorToast = document.getElementById("live-cursor-toast");
     const counterNum = document.getElementById("copy-saved-count");
     const counterBadge = document.getElementById("copy-saved-counter-badge");
+    const pasteboardBox = document.getElementById("live-pasteboard-box");
+    const pasteboardVal = document.getElementById("pasteboard-val");
+    const pasteboardStatus = document.getElementById("pasteboard-status");
+    const copyPills = document.querySelectorAll(".bento-copy-pill");
+
     let copyCount = 0;
     let toastTimer = null;
+
+    function triggerCopyFeedback(copiedText) {
+      copyCount += 1;
+      if (counterNum) counterNum.textContent = copyCount.toString();
+      if (counterBadge) {
+        counterBadge.classList.remove("pulse");
+        void counterBadge.offsetWidth;
+        counterBadge.classList.add("pulse");
+      }
+
+      if (pasteboardVal) {
+        pasteboardVal.textContent = copiedText;
+      }
+
+      if (pasteboardBox) {
+        pasteboardBox.classList.add("is-updated");
+        setTimeout(() => pasteboardBox.classList.remove("is-updated"), 350);
+      }
+
+      if (pasteboardStatus) {
+        const ms = Math.floor(Math.random() * 4 + 2);
+        pasteboardStatus.textContent = `● SYNCED (${ms}ms)`;
+        setTimeout(() => {
+          pasteboardStatus.textContent = "● READY";
+        }, 1500);
+      }
+
+      audio.playCopyChime();
+
+      if (sandboxToast) {
+        if (sandboxToastText) {
+          sandboxToastText.textContent = copiedText.length > 24 
+            ? `Copied: "${copiedText.slice(0, 22)}..."` 
+            : `Copied: "${copiedText}"`;
+        }
+        sandboxToast.classList.add("is-visible");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          sandboxToast.classList.remove("is-visible");
+        }, 1200);
+      }
+    }
+
+    if (copyPills.length > 0) {
+      copyPills.forEach((pill) => {
+        pill.addEventListener("click", () => {
+          copyPills.forEach((p) => p.classList.remove("active"));
+          pill.classList.add("active");
+          const clipText = pill.dataset.clip || "brew install --cask nnts";
+          if (selectZone) {
+            selectZone.innerHTML = `
+              <div class="editor-line">
+                <span class="code-comment">// Highlight any part of this line:</span>
+              </div>
+              <div class="editor-line">
+                <span class="code-kw">${clipText}</span> <span class="code-comment">/* auto-copies */</span>
+              </div>
+            `;
+          }
+          triggerCopyFeedback(clipText);
+        });
+      });
+    }
 
     if (selectZone) {
       selectZone.addEventListener("mouseup", (e) => {
         const selection = window.getSelection().toString().trim();
-        if (selection.length >= 3) {
-          copyCount += 1;
-          if (counterNum) counterNum.textContent = copyCount.toString();
-          if (counterBadge) {
-            counterBadge.classList.remove("pulse");
-            void counterBadge.offsetWidth;
-            counterBadge.classList.add("pulse");
-          }
-
-          audio.playCopyChime();
-
-          if (sandboxToast) {
-            sandboxToast.classList.add("is-visible");
-            if (toastTimer) clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => {
-              sandboxToast.classList.remove("is-visible");
-            }, 1200);
-          }
+        if (selection.length >= 2) {
+          triggerCopyFeedback(selection);
 
           if (cursorToast) {
             const toastWidth = 140;

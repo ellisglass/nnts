@@ -77,6 +77,7 @@ public final class ChromeProfileEngine: ObservableObject {
     @Published public private(set) var profiles: [ChromeProfile] = []
     @Published public private(set) var availableBrowsers: [ChromiumBrowserCandidate] = []
     @Published public var browserBundleID: String = "com.google.Chrome"
+    @Published public private(set) var isLocalStateBlocked: Bool = false
     
     public var preferredBrowserBundleID: String? {
         get { UserDefaults.standard.string(forKey: "PreferredBrowserBundleID") }
@@ -205,8 +206,8 @@ public final class ChromeProfileEngine: ObservableObject {
     public static var bypassLaunchInTests: Bool = {
         ProcessInfo.processInfo.environment["SWIFT_DETERMINISTIC_TESTING"] != nil ||
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
-        ProcessInfo.processInfo.processName.contains("Tests") ||
-        ProcessInfo.processInfo.arguments.first?.contains("PackageTests") == true ||
+        ProcessInfo.processInfo.processName.lowercased().contains("test") ||
+        ProcessInfo.processInfo.arguments.first?.lowercased().contains("test") == true ||
         NSClassFromString("XCTest") != nil
     }()
     
@@ -338,11 +339,40 @@ public final class ChromeProfileEngine: ObservableObject {
         
         if let chosen = chosen {
             self.browserBundleID = chosen.bundleID
-            let loaded = parseProfiles(from: chosen.localStatePath)
+            if cachedAvatars.isEmpty {
+                restoreSecurityScopedFolderAccessIfNeeded()
+            }
+            var loaded = parseProfiles(from: chosen.localStatePath)
+            
+            // Resilient fallback for macOS 27: if Local State is blocked, discover via Accessibility or load cache
+            if loaded.isEmpty {
+                let axProfiles = discoverProfilesViaAccessibility(bundleID: chosen.bundleID)
+                if !axProfiles.isEmpty {
+                    logger.info("Discovered \(axProfiles.count) profiles via Accessibility menu for \(chosen.name).")
+                    loaded = axProfiles
+                    saveCachedProfiles(axProfiles, bundleID: chosen.bundleID)
+                } else {
+                    let cached = loadCachedProfiles(bundleID: chosen.bundleID)
+                    if !cached.isEmpty {
+                        logger.info("Loaded \(cached.count) cached profiles for \(chosen.name).")
+                        loaded = cached
+                    }
+                }
+            } else {
+                saveCachedProfiles(loaded, bundleID: chosen.bundleID)
+            }
+            
             self.profiles = loaded.isEmpty ? [makeFallbackProfile()] : loaded
         } else {
             self.browserBundleID = "com.google.Chrome"
-            self.profiles = [makeFallbackProfile()]
+            let axProfiles = discoverProfilesViaAccessibility(bundleID: self.browserBundleID)
+            if !axProfiles.isEmpty {
+                self.profiles = axProfiles
+                saveCachedProfiles(axProfiles, bundleID: self.browserBundleID)
+            } else {
+                let cached = loadCachedProfiles(bundleID: self.browserBundleID)
+                self.profiles = cached.isEmpty ? [makeFallbackProfile()] : cached
+            }
         }
         
         applySavedProfileSelection()
@@ -351,15 +381,60 @@ public final class ChromeProfileEngine: ObservableObject {
     
     private func parseProfiles(from path: String) -> [ChromeProfile] {
         let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: path),
-              let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+        
+        var securityScopedURL: URL? = nil
+        var isAccessGranted = false
+        if Self.localStatePathOverride == nil,
+           let bookmarkData = UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") {
+            var isStale = false
+            if let resolved = try? URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale) {
+                if resolved.startAccessingSecurityScopedResource() {
+                    securityScopedURL = resolved
+                    isAccessGranted = true
+                }
+                if isStale {
+                    if let newBookmark = try? resolved.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+                        UserDefaults.standard.set(newBookmark, forKey: "ChromeFolderSecurityScopedBookmark")
+                    }
+                }
+            }
+        }
+        defer {
+            if isAccessGranted, let url = securityScopedURL {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        
+        let targetFileURL: URL
+        let baseDir: String
+        if let scoped = securityScopedURL {
+            targetFileURL = scoped.appendingPathComponent("Local State")
+            baseDir = scoped.path
+        } else {
+            targetFileURL = URL(fileURLWithPath: path)
+            baseDir = (path as NSString).deletingLastPathComponent
+        }
+        
+        guard fileManager.fileExists(atPath: targetFileURL.path) else {
+            return []
+        }
+        
+        let data: Data
+        do {
+            data = try Data(contentsOf: targetFileURL)
+            self.isLocalStateBlocked = false
+        } catch {
+            self.isLocalStateBlocked = true
+            logger.warning("Local State file at '\(targetFileURL.path)' could not be opened (\(error.localizedDescription)). Access blocked by macOS permissions.")
+            return []
+        }
+        
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let profileObj = json["profile"] as? [String: Any],
               let infoCache = profileObj["info_cache"] as? [String: [String: Any]] else {
             return []
         }
         
-        let baseDir = (path as NSString).deletingLastPathComponent
         var dirKeys = Array(infoCache.keys)
         dirKeys.sort { a, b in
             if a == "Default" { return true }
@@ -409,11 +484,472 @@ public final class ChromeProfileEngine: ObservableObject {
     private func applySavedProfileSelection() {
         let saved = UserDefaults.standard.stringArray(forKey: "SelectedBrowserProfileDirs") ?? []
         let validSaved = saved.filter { s in profiles.contains(where: { $0.dir == s }) }
-        if !validSaved.isEmpty {
+        // If saved was only ["Default"] while multiple profiles are available (e.g. recovering from fallback), expand to prefix(4)
+        if !validSaved.isEmpty && !(validSaved.count == 1 && validSaved.first == "Default" && profiles.count > 1) {
             self.selectedProfileDirs = Array(validSaved.prefix(4))
         } else {
             self.selectedProfileDirs = Array(profiles.prefix(4).map { $0.dir })
         }
+    }
+    
+    /// Discovers active browser profiles directly from the running browser's native macOS menu bar.
+    /// Provides zero-permission resilience on macOS 27 when direct disk access to 'Local State' is denied.
+    public func discoverProfilesViaAccessibility(bundleID: String) -> [ChromeProfile] {
+        let menuItems = getProfilesMenuItems(bundleID: bundleID)
+        guard !menuItems.isEmpty else { return [] }
+        
+        var profileNames: [String] = []
+        for item in menuItems {
+            var titleRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(item, kAXTitleAttribute as CFString, &titleRef)
+            let title = (titleRef as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Filter out empty items and actions (Edit, Add Profile, Guest, separators)
+            if title.isEmpty || title.hasPrefix("Edit") || title.hasPrefix("Add Profile") || title.hasPrefix("Guest") ||
+               title.hasPrefix("Изменить") || title.hasPrefix("Добавить") || title.hasPrefix("Гость") {
+                if !profileNames.isEmpty && (title.isEmpty || title.hasPrefix("Edit") || title.hasPrefix("Add Profile") || title.hasPrefix("Изменить") || title.hasPrefix("Добавить")) {
+                    break
+                }
+                continue
+            }
+            profileNames.append(title)
+        }
+        
+        guard !profileNames.isEmpty else { return [] }
+        
+        var discovered: [ChromeProfile] = []
+        for (idx, name) in profileNames.enumerated() {
+            let dir = idx == 0 ? "Default" : "Profile \(idx)"
+            let avatar: NSImage
+            if let customImg = Self.loadStoredAvatar(dirKey: dir, name: name) {
+                avatar = makeCircularImage(image: customImg)
+            } else {
+                avatar = makeMonogramImage(name: name, colorSeed: idx + 1)
+            }
+            discovered.append(
+                ChromeProfile(
+                    index: idx + 1,
+                    dir: dir,
+                    name: name,
+                    email: nil,
+                    gaiaName: nil,
+                    gaiaGivenName: nil,
+                    avatarImage: avatar
+                )
+            )
+            if discovered.count >= 8 { break }
+        }
+        
+        return discovered
+    }
+    
+    public func saveCachedProfiles(_ profiles: [ChromeProfile], bundleID: String) {
+        guard !profiles.isEmpty else { return }
+        let records: [[String: Any]] = profiles.map { p in
+            [
+                "index": p.index,
+                "dir": p.dir,
+                "name": p.name
+            ]
+        }
+        UserDefaults.standard.set(records, forKey: "CachedProfiles_\(bundleID)")
+    }
+    
+    public func loadCachedProfiles(bundleID: String) -> [ChromeProfile] {
+        guard let records = UserDefaults.standard.array(forKey: "CachedProfiles_\(bundleID)") as? [[String: Any]],
+              !records.isEmpty else {
+            return []
+        }
+        return records.compactMap { dict in
+            guard let index = dict["index"] as? Int,
+                  let dir = dict["dir"] as? String,
+                  let name = dict["name"] as? String else {
+                return nil
+            }
+            let avatar: NSImage
+            if let customImg = Self.loadStoredAvatar(dirKey: dir, name: name) {
+                avatar = makeCircularImage(image: customImg)
+            } else {
+                avatar = makeMonogramImage(name: name, colorSeed: index)
+            }
+            return ChromeProfile(
+                index: index,
+                dir: dir,
+                name: name,
+                email: nil,
+                gaiaName: nil,
+                gaiaGivenName: nil,
+                avatarImage: avatar
+            )
+        }
+    }
+    
+    public func clearAvatarCache() {
+        self.cachedAvatars.removeAll()
+    }
+    
+    // MARK: - Local Custom & Imported Avatar Storage
+    public static var localAvatarStorageURL: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let nntsDir = appSupport.appendingPathComponent("NNTS/Avatars", isDirectory: true)
+        try? FileManager.default.createDirectory(at: nntsDir, withIntermediateDirectories: true)
+        return nntsDir
+    }
+    
+    public static func loadStoredAvatar(dirKey: String, name: String) -> NSImage? {
+        let storage = localAvatarStorageURL
+        let safeName = name.replacingOccurrences(of: "/", with: "-")
+        var candidatePaths: [String] = []
+        let extensions = ["png", "jpg", "jpeg", "heic", "webp"]
+        for ext in extensions {
+            candidatePaths.append(storage.appendingPathComponent("\(dirKey).\(ext)").path)
+            candidatePaths.append(storage.appendingPathComponent("\(name).\(ext)").path)
+            if safeName != name {
+                candidatePaths.append(storage.appendingPathComponent("\(safeName).\(ext)").path)
+            }
+        }
+        for path in candidatePaths {
+            if FileManager.default.fileExists(atPath: path),
+               let img = NSImage(contentsOfFile: path) {
+                return img
+            }
+        }
+        return nil
+    }
+    
+    private var isRestoringBookmark = false
+    
+    @MainActor
+    public func importAvatarsFromFolder(url: URL) -> Int {
+        let isAccessGranted = url.startAccessingSecurityScopedResource()
+        defer {
+            if isAccessGranted { url.stopAccessingSecurityScopedResource() }
+        }
+        
+        let fileManager = FileManager.default
+        let storage = Self.localAvatarStorageURL
+        var importedCount = 0
+        
+        var targetURL = url
+        if fileManager.fileExists(atPath: url.appendingPathComponent("Chrome/Local State").path) {
+            targetURL = url.appendingPathComponent("Chrome")
+        } else if url.lastPathComponent.hasPrefix("Profile") || url.lastPathComponent == "Default" {
+            targetURL = url.deletingLastPathComponent()
+        }
+        
+        // Save bookmark for persistence across app restarts
+        if let bookmarkData = try? targetURL.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+            UserDefaults.standard.set(bookmarkData, forKey: "ChromeFolderSecurityScopedBookmark")
+        }
+        
+        func saveCroppedImage(_ image: NSImage, primaryKey: String, secondaryKey: String? = nil) {
+            let circular = makeCircularImage(image: image)
+            cachedAvatars[primaryKey] = circular
+            if let tiff = circular.tiffRepresentation,
+               let bitmap = NSBitmapImageRep(data: tiff),
+               let pngData = bitmap.representation(using: .png, properties: [:]) {
+                let destURL = storage.appendingPathComponent("\(primaryKey).png")
+                try? pngData.write(to: destURL)
+                if let sec = secondaryKey {
+                    let safeSec = sec.replacingOccurrences(of: "/", with: "-")
+                    if safeSec != primaryKey {
+                        try? pngData.write(to: storage.appendingPathComponent("\(safeSec).png"))
+                    }
+                }
+                importedCount += 1
+            }
+        }
+        
+        // 1. Try reading Local State now that we have permission
+        let localStateURL = targetURL.appendingPathComponent("Local State")
+        if fileManager.fileExists(atPath: localStateURL.path),
+           let data = try? Data(contentsOf: localStateURL),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let profileObj = json["profile"] as? [String: Any],
+           let infoCache = profileObj["info_cache"] as? [String: [String: Any]] {
+            for (dirKey, info) in infoCache {
+                let name = (info["name"] as? String) ?? (info["gaia_name"] as? String) ?? dirKey
+                let profileDir = targetURL.appendingPathComponent(dirKey)
+                var picCandidates = [
+                    profileDir.appendingPathComponent("Google Profile Picture.png"),
+                    profileDir.appendingPathComponent("Google Profile Picture.jpg"),
+                    profileDir.appendingPathComponent("Edge Profile Picture.png"),
+                    profileDir.appendingPathComponent("Custom Profile Picture.png")
+                ]
+                if let gaiaName = info["gaia_picture_file_name"] as? String, !gaiaName.isEmpty {
+                    let sanitized = (gaiaName as NSString).lastPathComponent
+                    if !sanitized.isEmpty && !sanitized.contains("/") && !sanitized.contains("\\") && !sanitized.contains("..") {
+                        picCandidates.insert(profileDir.appendingPathComponent(sanitized), at: 0)
+                    }
+                }
+                if let subfiles = try? fileManager.contentsOfDirectory(atPath: profileDir.path) {
+                    for f in subfiles {
+                        let lower = f.lowercased()
+                        if lower.hasSuffix(".png") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") {
+                            if lower.contains("profile") || lower.contains("avatar") || lower.contains("picture") {
+                                picCandidates.append(profileDir.appendingPathComponent(f))
+                            }
+                        }
+                    }
+                }
+                for pic in picCandidates {
+                    if fileManager.fileExists(atPath: pic.path),
+                       let imgData = try? Data(contentsOf: pic),
+                       let image = NSImage(data: imgData) {
+                        saveCroppedImage(image, primaryKey: dirKey, secondaryKey: name)
+                        break
+                    }
+                }
+            }
+        } else {
+            let candidateDirs = ["Default"] + (1...20).map { "Profile \($0)" }
+            for dir in candidateDirs {
+                let profileDir = url.appendingPathComponent(dir)
+                var picCandidates = [
+                    profileDir.appendingPathComponent("Google Profile Picture.png"),
+                    profileDir.appendingPathComponent("Google Profile Picture.jpg")
+                ]
+                if let subfiles = try? fileManager.contentsOfDirectory(atPath: profileDir.path) {
+                    for f in subfiles {
+                        let lower = f.lowercased()
+                        if lower.hasSuffix(".png") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") {
+                            if lower.contains("profile") || lower.contains("avatar") || lower.contains("picture") {
+                                picCandidates.append(profileDir.appendingPathComponent(f))
+                            }
+                        }
+                    }
+                }
+                for pic in picCandidates {
+                    if fileManager.fileExists(atPath: pic.path),
+                       let imgData = try? Data(contentsOf: pic),
+                       let image = NSImage(data: imgData) {
+                        saveCroppedImage(image, primaryKey: dir)
+                        break
+                    }
+                }
+            }
+        }
+        
+        // Also check if user selected a folder containing loose image files
+        if let directFiles = try? fileManager.contentsOfDirectory(atPath: url.path) {
+            for f in directFiles {
+                let lower = f.lowercased()
+                if lower.hasSuffix(".png") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") || lower.hasSuffix(".heic") {
+                    let fileURL = url.appendingPathComponent(f)
+                    let baseName = (f as NSString).deletingPathExtension
+                    if let image = NSImage(contentsOf: fileURL) {
+                        saveCroppedImage(image, primaryKey: baseName)
+                    }
+                }
+            }
+        }
+        
+        self.cachedAvatars.removeAll()
+        if !isRestoringBookmark {
+            refreshProfiles()
+        }
+        return importedCount
+    }
+    
+    public func restoreSecurityScopedFolderAccessIfNeeded() {
+        guard !isRestoringBookmark else { return }
+        guard let bookmarkData = UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") else { return }
+        isRestoringBookmark = true
+        defer { isRestoringBookmark = false }
+        var isStale = false
+        if let url = try? URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale) {
+            let _ = importAvatarsFromFolder(url: url)
+        }
+    }
+    
+    // MARK: - Smart Snap (Vision / Zero-Disk-Access Profile Snapper)
+    @discardableResult
+    @MainActor
+    public func snapActiveBrowserAvatars() async -> Int {
+        guard !Self.bypassLaunchInTests else { return 0 }
+        let bundleID = self.browserBundleID
+        guard let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleID }) else {
+            logger.info("Smart Snap: Browser \(bundleID) is not currently running.")
+            return 0
+        }
+        
+        let appElement = AXUIElementCreateApplication(runningApp.processIdentifier)
+        AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+        
+        var windowListRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowListRef) == .success,
+              let axWindows = windowListRef as? [AXUIElement], !axWindows.isEmpty else {
+            return 0
+        }
+        
+        let cgWindows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? []
+        let appWindows = cgWindows.filter { ($0[kCGWindowOwnerPID as String] as? pid_t) == runningApp.processIdentifier }
+        
+        var snappedCount = 0
+        
+        for axWin in axWindows {
+            var winPosRef: CFTypeRef?
+            var winSizeRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(axWin, kAXPositionAttribute as CFString, &winPosRef)
+            AXUIElementCopyAttributeValue(axWin, kAXSizeAttribute as CFString, &winSizeRef)
+            
+            var winPos = CGPoint.zero
+            var winSize = CGSize.zero
+            if let p = winPosRef { AXValueGetValue(p as! AXValue, .cgPoint, &winPos) }
+            if let s = winSizeRef { AXValueGetValue(s as! AXValue, .cgSize, &winSize) }
+            guard winSize.width > 250 && winSize.height > 200 else { continue }
+            
+            guard let matchedCG = appWindows.first(where: { dict in
+                guard let bounds = dict[kCGWindowBounds as String] as? [String: Any],
+                      let x = bounds["X"] as? CGFloat,
+                      let y = bounds["Y"] as? CGFloat,
+                      let w = bounds["Width"] as? CGFloat,
+                      let h = bounds["Height"] as? CGFloat else { return false }
+                return abs(x - winPos.x) < 5 && abs(y - winPos.y) < 5 && abs(w - winSize.width) < 5 && abs(h - winSize.height) < 5
+            }), let winID = matchedCG[kCGWindowNumber as String] as? CGWindowID else {
+                continue
+            }
+            
+            var profileBtnPos: CGPoint?
+            var profileBtnSize: CGSize?
+            var profileName: String?
+            
+            func scanForProfileBtn(_ element: AXUIElement, depth: Int = 0) {
+                if depth > 10 || profileBtnPos != nil { return }
+                var roleRef: CFTypeRef?
+                var titleRef: CFTypeRef?
+                var descRef: CFTypeRef?
+                var posRef: CFTypeRef?
+                var sizeRef: CFTypeRef?
+                AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleRef)
+                AXUIElementCopyAttributeValue(element, kAXTitleAttribute as CFString, &titleRef)
+                AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute as CFString, &descRef)
+                AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &posRef)
+                AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeRef)
+                
+                let role = (roleRef as? String) ?? ""
+                let title = (titleRef as? String) ?? ""
+                let desc = (descRef as? String) ?? ""
+                var pos = CGPoint.zero
+                var size = CGSize.zero
+                if let p = posRef { AXValueGetValue(p as! AXValue, .cgPoint, &pos) }
+                if let s = sizeRef { AXValueGetValue(s as! AXValue, .cgSize, &size) }
+                
+                if role == "AXButton" && size.width >= 24 && size.width <= 48 &&
+                   pos.y <= winPos.y + 70 && pos.x >= winPos.x + (winSize.width - 180) &&
+                   !["Close", "FullScreen", "Minimize", "New tab", "Expand Tabs"].contains(title) {
+                    let candidateName = !title.isEmpty ? title : (!desc.isEmpty ? desc : nil)
+                    if let name = candidateName {
+                        profileBtnPos = pos
+                        profileBtnSize = size
+                        profileName = name
+                        return
+                    }
+                }
+                
+                var childrenRef: CFTypeRef?
+                AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &childrenRef)
+                if let children = childrenRef as? [AXUIElement] {
+                    for c in children {
+                        scanForProfileBtn(c, depth: depth + 1)
+                        if profileBtnPos != nil { return }
+                    }
+                }
+            }
+            
+            scanForProfileBtn(axWin)
+            
+            guard let btnPos = profileBtnPos, let btnSize = profileBtnSize, let profName = profileName else {
+                continue
+            }
+            
+            let tempSnapshotPath = NSTemporaryDirectory().appending("nnts_snap_\(winID).png")
+            defer { try? FileManager.default.removeItem(atPath: tempSnapshotPath) }
+            
+            let proc = Process()
+            proc.launchPath = "/usr/sbin/screencapture"
+            proc.arguments = ["-x", "-o", "-l\(winID)", tempSnapshotPath]
+            try? proc.run()
+            proc.waitUntilExit()
+            
+            guard let windowImg = NSImage(contentsOfFile: tempSnapshotPath),
+                  let cgImg = windowImg.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                continue
+            }
+            
+            let scaleX = CGFloat(cgImg.width) / windowImg.size.width
+            let scaleY = CGFloat(cgImg.height) / windowImg.size.height
+            
+            let relX = (btnPos.x - winPos.x) * scaleX
+            let relY = (btnPos.y - winPos.y) * scaleY
+            let btnPixW = btnSize.width * scaleX
+            let btnPixH = btnSize.height * scaleY
+            
+            guard let croppedBtn = cgImg.cropping(to: CGRect(x: relX, y: relY, width: btnPixW, height: btnPixH)) else {
+                continue
+            }
+            
+            let btnW = CGFloat(croppedBtn.width)
+            let btnH = CGFloat(croppedBtn.height)
+            let innerRadius = (min(btnW, btnH) / 2.0) * 0.60
+            let diameter = Int(innerRadius * 2)
+            guard diameter > 10 else { continue }
+            
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+            guard let ctx = CGContext(
+                data: nil,
+                width: diameter,
+                height: diameter,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: bitmapInfo
+            ) else { continue }
+            
+            ctx.addEllipse(in: CGRect(x: 0, y: 0, width: diameter, height: diameter))
+            ctx.clip()
+            
+            let drawRect = CGRect(
+                x: innerRadius - (btnW / 2.0),
+                y: innerRadius - (btnH - (btnH / 2.0)),
+                width: btnW,
+                height: btnH
+            )
+            ctx.draw(croppedBtn, in: drawRect)
+            
+            guard let circularCG = ctx.makeImage() else { continue }
+            let finalAvatar = NSImage(cgImage: circularCG, size: NSSize(width: innerRadius, height: innerRadius))
+            
+            let targetProfile = self.profiles.first(where: {
+                $0.name.lowercased() == profName.lowercased() ||
+                $0.effectiveName.lowercased() == profName.lowercased() ||
+                $0.expectedMenuTitle.lowercased().contains(profName.lowercased())
+            })
+            let dirKey = targetProfile?.dir ?? profName
+            
+            if let tiff = finalAvatar.tiffRepresentation,
+               let rep = NSBitmapImageRep(data: tiff),
+               let pngData = rep.representation(using: .png, properties: [:]) {
+                let dest1 = Self.localAvatarStorageURL.appendingPathComponent("\(dirKey).png")
+                let safeName = profName.replacingOccurrences(of: "/", with: "-")
+                let dest2 = Self.localAvatarStorageURL.appendingPathComponent("\(safeName).png")
+                try? pngData.write(to: dest1)
+                if safeName != dirKey {
+                    try? pngData.write(to: dest2)
+                }
+                
+                self.cachedAvatars[dirKey] = finalAvatar
+                self.cachedAvatars[profName] = finalAvatar
+                snappedCount += 1
+                logger.info("Smart Snap: Captured avatar for profile '\(profName)' (\(dirKey)).")
+            }
+        }
+        
+        if snappedCount > 0 {
+            refreshProfiles()
+        }
+        return snappedCount
     }
     
     // MARK: - Profile Focus & Activation
@@ -512,6 +1048,10 @@ public final class ChromeProfileEngine: ObservableObject {
             AXUIElementSetAttributeValue(targetWindow, kAXMainAttribute as CFString, true as CFTypeRef)
             chromeApp.activate()
             logger.info("Focused existing open window for profile '\(profile.name)'.")
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                await self?.snapActiveBrowserAvatars()
+            }
             return
         }
         
@@ -525,6 +1065,10 @@ public final class ChromeProfileEngine: ObservableObject {
             if res == .success {
                 chromeApp.activate()
                 self.logger.info("Switched to profile '\(profile.name)' via Accessibility menu.")
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 600_000_000)
+                    await self?.snapActiveBrowserAvatars()
+                }
                 
                 // 3. Post-Menu Cleanup: Chrome natively unminimizes a profile's minimized window when selected from the menu,
                 // even if an open window existed on another Space. We revert this to respect the user's explicit preference.
@@ -676,6 +1220,14 @@ public final class ChromeProfileEngine: ObservableObject {
         if let cached = cachedAvatars[dirKey] { return cached }
         
         let name = (info["name"] as? String) ?? (info["gaia_name"] as? String) ?? dirKey
+        
+        // 0. Priority: Use locally stored or Smart-Snapped avatar if available
+        if let stored = Self.loadStoredAvatar(dirKey: dirKey, name: name) {
+            let circular = makeCircularImage(image: stored)
+            cachedAvatars[dirKey] = circular
+            return circular
+        }
+        
         let profileDir = (baseDir as NSString).appendingPathComponent(dirKey)
         
         var candidatePics = [
@@ -692,15 +1244,28 @@ public final class ChromeProfileEngine: ObservableObject {
             }
         }
         
-        let canonicalBase = URL(fileURLWithPath: profileDir).resolvingSymlinksInPath().path
-        for picPath in candidatePics {
-            let canonicalPic = URL(fileURLWithPath: picPath).resolvingSymlinksInPath().path
-            guard canonicalPic.hasPrefix(canonicalBase) else { continue }
-            if FileManager.default.fileExists(atPath: canonicalPic),
-               let image = NSImage(contentsOfFile: canonicalPic) {
-                let circular = makeCircularImage(image: image)
-                cachedAvatars[dirKey] = circular
-                return circular
+        let hasAuthorizedFolder = UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") != nil
+        if hasAuthorizedFolder || Self.bypassLaunchInTests {
+            let canonicalBase = URL(fileURLWithPath: profileDir).resolvingSymlinksInPath().path
+            for picPath in candidatePics {
+                let canonicalPic = URL(fileURLWithPath: picPath).resolvingSymlinksInPath().path
+                guard canonicalPic.hasPrefix(canonicalBase) else { continue }
+                if FileManager.default.fileExists(atPath: canonicalPic),
+                   let image = NSImage(contentsOfFile: canonicalPic) {
+                    let circular = makeCircularImage(image: image)
+                    cachedAvatars[dirKey] = circular
+                    if let tiff = circular.tiffRepresentation,
+                       let bitmap = NSBitmapImageRep(data: tiff),
+                       let pngData = bitmap.representation(using: .png, properties: [:]) {
+                        let dest = Self.localAvatarStorageURL.appendingPathComponent("\(dirKey).png")
+                        try? pngData.write(to: dest)
+                        let safeName = name.replacingOccurrences(of: "/", with: "-")
+                        if safeName != dirKey {
+                            try? pngData.write(to: Self.localAvatarStorageURL.appendingPathComponent("\(safeName).png"))
+                        }
+                    }
+                    return circular
+                }
             }
         }
         
@@ -741,28 +1306,134 @@ public final class ChromeProfileEngine: ObservableObject {
         let output = NSImage(size: size)
         output.lockFocus()
         
-        let colors: [NSColor] = [
-            NSColor(red: 0.22, green: 0.50, blue: 0.95, alpha: 1.0),
-            NSColor(red: 0.58, green: 0.30, blue: 0.88, alpha: 1.0),
-            NSColor(red: 0.95, green: 0.42, blue: 0.25, alpha: 1.0),
-            NSColor(red: 0.18, green: 0.70, blue: 0.45, alpha: 1.0),
-            NSColor(red: 0.92, green: 0.65, blue: 0.15, alpha: 1.0)
-        ]
-        let idx = abs(colorSeed ?? name.hashValue) % colors.count
-        let bg = colors[idx]
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lower = cleanName.lowercased()
+        
+        // 1. Check for parenthesized tag e.g. "Igor (Al11)" -> "Al11", "Igor (GCP Free 2)" -> "GCP Free 2"
+        var tag: String? = nil
+        if let openParen = cleanName.firstIndex(of: "("),
+           let closeParen = cleanName.lastIndex(of: ")"),
+           openParen < closeParen {
+            let inner = String(cleanName[cleanName.index(after: openParen)..<closeParen]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !inner.isEmpty {
+                tag = inner
+            }
+        }
+        
+        let tagLower = tag?.lowercased() ?? ""
+        
+        // 2. Determine contextual gradient colors and distinct token badge
+        let bgGradient: (top: NSColor, bottom: NSColor)
+        var badgeText: String = ""
+        
+        if lower.contains("al11") || tagLower.contains("al11") {
+            // Almost Eleven / Work: Deep Indigo to Violet
+            bgGradient = (
+                top: NSColor(red: 0.40, green: 0.35, blue: 0.95, alpha: 1.0),
+                bottom: NSColor(red: 0.28, green: 0.20, blue: 0.78, alpha: 1.0)
+            )
+            badgeText = "11"
+        } else if lower.contains("gcp") || tagLower.contains("gcp") || lower.contains("cloud") || tagLower.contains("cloud") {
+            if lower.contains("2") || tagLower.contains("2") {
+                // GCP Project 2: Radiant Amber to Warm Tangerine
+                bgGradient = (
+                    top: NSColor(red: 0.98, green: 0.65, blue: 0.15, alpha: 1.0),
+                    bottom: NSColor(red: 0.88, green: 0.45, blue: 0.05, alpha: 1.0)
+                )
+                badgeText = "GC2"
+            } else {
+                // GCP Free / Primary Cloud: Electric Cyan to Azure
+                bgGradient = (
+                    top: NSColor(red: 0.12, green: 0.70, blue: 0.92, alpha: 1.0),
+                    bottom: NSColor(red: 0.02, green: 0.48, blue: 0.78, alpha: 1.0)
+                )
+                badgeText = "GCP"
+            }
+        } else if lower.contains("nastya") || lower.contains("anastasia") || lower.contains("kate") || lower.contains("anna") {
+            // Partner / Warm Coral Rose
+            bgGradient = (
+                top: NSColor(red: 0.95, green: 0.35, blue: 0.52, alpha: 1.0),
+                bottom: NSColor(red: 0.82, green: 0.18, blue: 0.38, alpha: 1.0)
+            )
+            badgeText = "NA"
+        } else if lower.contains("work") || tagLower.contains("work") || lower.contains("corp") || tagLower.contains("corp") || lower.contains("office") {
+            // Corporate / Work: Slate Purple to Deep Indigo
+            bgGradient = (
+                top: NSColor(red: 0.48, green: 0.38, blue: 0.92, alpha: 1.0),
+                bottom: NSColor(red: 0.32, green: 0.22, blue: 0.72, alpha: 1.0)
+            )
+            badgeText = "WK"
+        } else if lower.contains("dev") || tagLower.contains("dev") || lower.contains("code") || tagLower.contains("code") {
+            // Developer: Vivid Emerald to Forest Teal
+            bgGradient = (
+                top: NSColor(red: 0.15, green: 0.75, blue: 0.50, alpha: 1.0),
+                bottom: NSColor(red: 0.05, green: 0.55, blue: 0.35, alpha: 1.0)
+            )
+            badgeText = "DEV"
+        } else if lower.contains("test") || tagLower.contains("test") || lower.contains("qa") || tagLower.contains("qa") {
+            // QA / Testing: Burnt Orange to Rust
+            bgGradient = (
+                top: NSColor(red: 0.95, green: 0.50, blue: 0.20, alpha: 1.0),
+                bottom: NSColor(red: 0.80, green: 0.35, blue: 0.10, alpha: 1.0)
+            )
+            badgeText = "QA"
+        } else if lower.contains("igor") || lower == "personal" || lower == "default" || lower == "default profile" {
+            // Igor / Primary Personal: Vibrant Royal Blue
+            bgGradient = (
+                top: NSColor(red: 0.25, green: 0.55, blue: 0.98, alpha: 1.0),
+                bottom: NSColor(red: 0.12, green: 0.38, blue: 0.85, alpha: 1.0)
+            )
+            badgeText = "IG"
+        } else {
+            // Fallback: Harmonious macOS palette based on hash or colorSeed
+            let palette: [(top: NSColor, bottom: NSColor)] = [
+                (NSColor(red: 0.25, green: 0.55, blue: 0.98, alpha: 1.0), NSColor(red: 0.12, green: 0.38, blue: 0.85, alpha: 1.0)),
+                (NSColor(red: 0.58, green: 0.35, blue: 0.92, alpha: 1.0), NSColor(red: 0.42, green: 0.20, blue: 0.75, alpha: 1.0)),
+                (NSColor(red: 0.95, green: 0.45, blue: 0.25, alpha: 1.0), NSColor(red: 0.82, green: 0.30, blue: 0.12, alpha: 1.0)),
+                (NSColor(red: 0.18, green: 0.72, blue: 0.48, alpha: 1.0), NSColor(red: 0.08, green: 0.55, blue: 0.35, alpha: 1.0)),
+                (NSColor(red: 0.92, green: 0.65, blue: 0.15, alpha: 1.0), NSColor(red: 0.80, green: 0.50, blue: 0.08, alpha: 1.0)),
+                (NSColor(red: 0.12, green: 0.70, blue: 0.92, alpha: 1.0), NSColor(red: 0.02, green: 0.50, blue: 0.75, alpha: 1.0)),
+                (NSColor(red: 0.92, green: 0.30, blue: 0.45, alpha: 1.0), NSColor(red: 0.78, green: 0.18, blue: 0.32, alpha: 1.0))
+            ]
+            let idx = abs(colorSeed ?? cleanName.hashValue) % palette.count
+            bgGradient = palette[idx]
+            
+            if let tag = tag, !tag.isEmpty, tag.count <= 3 {
+                badgeText = tag.uppercased()
+            } else {
+                let parts = cleanName.components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "()-"))).filter { !$0.isEmpty }
+                if parts.count >= 2 {
+                    let first = parts[0].prefix(1).uppercased()
+                    let second = parts[1].prefix(1).uppercased()
+                    badgeText = "\(first)\(second)"
+                } else if let single = parts.first, single.count >= 2 {
+                    badgeText = String(single.prefix(2)).uppercased()
+                } else {
+                    badgeText = String(cleanName.prefix(1)).uppercased()
+                }
+            }
+        }
         
         let rect = NSRect(origin: .zero, size: size)
-        let path = NSBezierPath(ovalIn: rect)
-        bg.setFill()
-        path.fill()
+        let circlePath = NSBezierPath(ovalIn: rect)
         
-        let initial = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1)).uppercased()
-        let font = NSFont.systemFont(ofSize: 44, weight: .semibold)
+        let gradient = NSGradient(starting: bgGradient.top, ending: bgGradient.bottom)
+        gradient?.draw(in: circlePath, angle: 300)
+        
+        // Inner specular ring for modern glass depth
+        let innerRing = NSBezierPath(ovalIn: rect.insetBy(dx: 1.5, dy: 1.5))
+        NSColor.white.withAlphaComponent(0.35).setStroke()
+        innerRing.lineWidth = 1.5
+        innerRing.stroke()
+        
+        let text = badgeText.isEmpty ? "C" : badgeText
+        let fontSize: CGFloat = text.count > 2 ? 30 : (text.count == 2 ? 36 : 42)
+        let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: NSColor.white
         ]
-        let str = NSAttributedString(string: initial.isEmpty ? "C" : initial, attributes: attrs)
+        let str = NSAttributedString(string: text, attributes: attrs)
         let strSize = str.size()
         let strRect = NSRect(
             x: (size.width - strSize.width) / 2,
