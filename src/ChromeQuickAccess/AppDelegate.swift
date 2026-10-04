@@ -698,43 +698,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let profileEngine = ChromeProfileEngine.shared
         let selectedList = profileEngine.selectedProfiles
         
-        let rawPinned = AppGroupEngine.pinnedAppItems()
-        
-        // Group items so cyclic siblings (apps sharing the same shortcut letter)
-        // are placed directly adjacent to each other for clear Gestalt proximity.
-        func groupCyclicSiblings(_ items: [AntigravityItem]) -> [AntigravityItem] {
-            var letterGroups: [Character: [AntigravityItem]] = [:]
-            var orderedLetters: [Character] = []
-            for item in items {
-                let char = Character((item.name.first(where: { $0.isLetter }) ?? "A").uppercased())
-                if letterGroups[char] == nil {
-                    orderedLetters.append(char)
-                }
-                letterGroups[char, default: []].append(item)
-            }
-            return orderedLetters.flatMap { letterGroups[$0] ?? [] }
-        }
-        
-        let allPinned = groupCyclicSiblings(rawPinned)
-        
-        // Track letter frequency to display cyclic signifiers for shared letters
-        var letterCounts: [Character: Int] = [:]
-        for item in allPinned {
-            let char = Character((item.name.first(where: { $0.isLetter }) ?? "A").uppercased())
-            letterCounts[char, default: 0] += 1
-        }
-        
         let browserChar = profileEngine.primaryShortcutChar
         let browserCharStr = String(browserChar).lowercased()
-        let hasBrowserLetterSiblings = (letterCounts[browserChar] ?? 0) > 0
-        if hasBrowserLetterSiblings {
-            letterCounts[browserChar, default: 0] += 1
-        }
         
-        var letterSeenIndices: [Character: Int] = [:]
-        if hasBrowserLetterSiblings {
-            letterSeenIndices[browserChar] = 1
+        // Track whether any pinned apps share the browser's shortcut key
+        let rawPinned = AppGroupEngine.pinnedAppItems()
+        let matchingPinned = rawPinned.filter { item in
+            Character((item.name.first(where: { $0.isLetter }) ?? "A").uppercased()) == browserChar
         }
+        let totalBrowserSharing = matchingPinned.isEmpty ? 1 : 1 + matchingPinned.count
         
         // 1. Chrome / Browser section (caps lock + browser shortcut)
         let browserName = profileEngine.activeBrowserName
@@ -761,15 +733,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             isHeader: false,
             icon: chromeIcon,
             accessibilityLabel: "\(browserName)",
-            accessibilityHelp: "Hold Caps-Lock and press \(browserChar) to switch to \(browserName)",
+            accessibilityHelp: "Hold caps lock and press \(browserChar) to switch to \(browserName)",
             action: #selector(handleActivateBrowserClick(_:)),
             target: self
         )
         
-        if let total = letterCounts[browserChar], total > 1 {
+        if totalBrowserSharing > 1 {
             let attr = NSMutableAttributedString(string: browserTitle)
             let badge = NSAttributedString(
-                string: " · 1/\(total) ↻",
+                string: " · 1/\(totalBrowserSharing) ↻",
                 attributes: [
                     .foregroundColor: NSColor.secondaryLabelColor,
                     .font: NSFont.systemFont(ofSize: 11, weight: .regular)
@@ -777,236 +749,27 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             )
             attr.append(badge)
             chromeItem.attributedTitle = attr
-            chromeItem.toolTip = "Hold Caps-Lock and press \(browserChar) to cycle (1 of \(total): \(browserName))"
+            chromeItem.toolTip = "Hold caps lock and press \(browserChar) to cycle (1 of \(totalBrowserSharing): \(browserName))"
         } else {
-            chromeItem.toolTip = "Hold Caps-Lock and press \(browserChar) to switch to \(browserName)"
+            chromeItem.toolTip = "Hold caps lock and press \(browserChar) to switch to \(browserName)"
         }
         menu.addItem(chromeItem)
         
         let activeProfileDir = profileEngine.getActiveProfileDir()
-        if !selectedList.isEmpty {
-            for p in selectedList {
-                let isActive = p.dir == activeProfileDir
-                let pItem = makeAlignedMenuItem(
-                    title: p.effectiveName,
-                    keyEquivalent: "\(p.index)",
-                    icon: p.avatarImage,
-                    accessibilityLabel: "\(p.effectiveName)",
-                    accessibilityHelp: "Hold Caps-Lock and press \(p.index) to switch to \(p.effectiveName) (Profile \(p.index) of \(selectedList.count))",
-                    action: #selector(handleProfileClick(_:)),
-                    target: self,
-                    representedObject: p.dir
-                )
-                pItem.indentationLevel = 1
-                if isActive {
-                    let attr = NSMutableAttributedString(string: p.effectiveName)
-                    let activeBadge = NSAttributedString(
-                        string: "  ✓",
-                        attributes: [
-                            .foregroundColor: NSColor.secondaryLabelColor,
-                            .font: NSFont.systemFont(ofSize: 11, weight: .semibold)
-                        ]
-                    )
-                    attr.append(activeBadge)
-                    pItem.attributedTitle = attr
-                }
-                menu.addItem(pItem)
-            }
-        } else if let firstProfile = profileEngine.profiles.first {
-            let pItem = makeAlignedMenuItem(
-                title: firstProfile.effectiveName,
-                keyEquivalent: "1",
-                icon: firstProfile.avatarImage,
-                accessibilityLabel: "\(firstProfile.effectiveName)",
-                accessibilityHelp: "Hold Caps-Lock and press 1 to switch to \(firstProfile.effectiveName)",
-                action: #selector(handleProfileClick(_:)),
-                target: self,
-                representedObject: firstProfile.dir
-            )
-            pItem.indentationLevel = 1
-            menu.addItem(pItem)
-        }
-        
-        func appendAppRow(item: AntigravityItem) {
-            let char = Character((item.name.first(where: { $0.isLetter }) ?? "A").uppercased())
-            let charStr = String(char).lowercased()
-            
-            letterSeenIndices[char, default: 0] += 1
-            let index = letterSeenIndices[char]!
-            let total = letterCounts[char] ?? 1
-            
-            let rowItem = makeAlignedMenuItem(
-                title: item.name,
-                keyEquivalent: charStr,
-                icon: item.icon,
-                accessibilityLabel: "\(item.name)",
-                accessibilityHelp: total > 1
-                    ? "Hold Caps-Lock and press \(char) to cycle (\(item.name), \(index) of \(total))"
-                    : "Hold Caps-Lock and press \(char) to switch to \(item.name)",
-                action: #selector(handleCoreAppClick(_:)),
-                target: self,
-                representedObject: item.bundleID
-            )
-            
-            if total > 1 {
-                let attr = NSMutableAttributedString(string: item.name)
-                let badge = NSAttributedString(
-                    string: " · \(index)/\(total) ↻",
-                    attributes: [
-                        .foregroundColor: NSColor.secondaryLabelColor,
-                        .font: NSFont.systemFont(ofSize: 11, weight: .regular)
-                    ]
-                )
-                attr.append(badge)
-                rowItem.attributedTitle = attr
-                rowItem.toolTip = "Hold Caps-Lock and press \(char) to cycle (\(index) of \(total): \(item.name))"
-            } else {
-                rowItem.toolTip = "Hold Caps-Lock and press \(char) to switch to \(item.name)"
-            }
-            
-            menu.addItem(rowItem)
-        }
-        
-        // Signature Mascot Divider bridging Browsers/Profiles and Quick Apps
-        menu.addItem(makeMascotSeparatorItem())
-        
-        // Section 2: Quick Apps (Caps-Lock)
-        if !allPinned.isEmpty {
-            let quickAppsHeader = NSMenuItem.sectionHeader(title: "Quick Apps (Caps-Lock)")
-            quickAppsHeader.isEnabled = false
-            menu.addItem(quickAppsHeader)
-            for item in allPinned {
-                appendAppRow(item: item)
-            }
+        let displayProfiles = !selectedList.isEmpty ? selectedList : (profileEngine.profiles.first != nil ? [profileEngine.profiles.first!] : [])
+        if !displayProfiles.isEmpty {
+            let stripItem = NSMenuItem()
+            stripItem.title = "Profiles"
+            stripItem.view = ProfileStripView(profiles: displayProfiles, activeDir: activeProfileDir)
+            menu.addItem(stripItem)
         }
         
         menu.addItem(NSMenuItem.separator())
         
-        // Zone 3: Preferences & System Controls
-        // 3.1 Manage Quick Apps submenu
-        let changeAppItem = makeAlignedMenuItem(
-            title: "Manage Quick Apps...",
-            icon: NSImage(systemSymbolName: "arrow.triangle.swap", accessibilityDescription: "Manage Quick Apps"),
-            accessibilityHelp: "Configure pinned apps, installed applications, and browser profiles",
-            action: nil,
-            target: nil
-        )
-        let changeAppSubmenu = NSMenu(title: "Manage Quick Apps")
-        
-        let transparentOffImage = NSImage(size: NSSize(width: 14, height: 14))
-        
-        // 3.0 Search & Add Application... (⌘F)
-        let searchAppItem = makeAlignedMenuItem(
-            title: "Search & Add Application...",
-            keyEquivalent: "f",
-            modifierMask: [.command],
-            icon: NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: "Search Applications"),
-            accessibilityHelp: "Search installed applications to pin to Quick Apps",
-            action: #selector(handleOpenAppSearch),
-            target: self
-        )
-        changeAppSubmenu.addItem(searchAppItem)
-        changeAppSubmenu.addItem(NSMenuItem.separator())
-        
-        // 3a. Active Browser Selection (when multiple browsers available)
-        if profileEngine.availableBrowsers.count > 1 {
-            let browserCatHeader = NSMenuItem(title: "Active Browser:", action: nil, keyEquivalent: "")
-            browserCatHeader.attributedTitle = NSAttributedString(
-                string: "Active Browser:",
-                attributes: [.font: NSFont.boldSystemFont(ofSize: 11)]
-            )
-            browserCatHeader.isEnabled = false
-            changeAppSubmenu.addItem(browserCatHeader)
-            
-            for b in profileEngine.availableBrowsers {
-                let isCurrent = profileEngine.browserBundleID == b.bundleID
-                let bItem = makeAlignedMenuItem(
-                    title: b.name,
-                    icon: NSWorkspace.shared.icon(forFile: b.appPath),
-                    action: #selector(handleSelectBrowserClick(_:)),
-                    target: self,
-                    representedObject: b.bundleID
-                )
-                bItem.state = isCurrent ? .on : .off
-                if !isCurrent {
-                    bItem.offStateImage = transparentOffImage
-                }
-                changeAppSubmenu.addItem(bItem)
-            }
-            changeAppSubmenu.addItem(NSMenuItem.separator())
-        }
-        
-        // 3b. Chrome / Browser Profiles in Change App
-        let chromeCatHeader = NSMenuItem(title: "\(profileEngine.activeBrowserName) Profiles (up to 4):", action: nil, keyEquivalent: "")
-        chromeCatHeader.attributedTitle = NSAttributedString(
-            string: "\(profileEngine.activeBrowserName) Profiles (up to 4):",
-            attributes: [.font: NSFont.boldSystemFont(ofSize: 11)]
-        )
-        chromeCatHeader.isEnabled = false
-        changeAppSubmenu.addItem(chromeCatHeader)
-        
-        for p in profileEngine.profiles {
-            let isSelected = selectedList.contains(where: { $0.dir == p.dir })
-            let slot = selectedList.first(where: { $0.dir == p.dir })?.index
-            let pItem = makeAlignedMenuItem(
-                title: p.effectiveName,
-                keyEquivalent: slot != nil ? "\(slot!)" : "",
-                icon: p.avatarImage,
-                action: #selector(handleChangeProfileClick(_:)),
-                target: self,
-                representedObject: p.dir
-            )
-            pItem.state = isSelected ? .on : .off
-            if !isSelected {
-                pItem.offStateImage = transparentOffImage
-            }
-            changeAppSubmenu.addItem(pItem)
-        }
-        
-        // 3c. Pinned Quick Apps Header
-        changeAppSubmenu.addItem(NSMenuItem.separator())
-        let submenuPinned = AppGroupEngine.pinnedAppItems()
-        let pinnedTitle = LicenseEngine.shared.isPro ? "Pinned Quick Apps (\(submenuPinned.count)):" : "Pinned Quick Apps (up to 4):"
-        let pinnedHeader = NSMenuItem(title: pinnedTitle, action: nil, keyEquivalent: "")
-        pinnedHeader.attributedTitle = NSAttributedString(
-            string: pinnedTitle,
-            attributes: [.font: NSFont.boldSystemFont(ofSize: 11)]
-        )
-        pinnedHeader.isEnabled = false
-        changeAppSubmenu.addItem(pinnedHeader)
-        
-        for item in submenuPinned {
-            let char = Character((item.name.first(where: { $0.isLetter }) ?? "A").uppercased())
-            let pItem = makeAlignedMenuItem(
-                title: "\(item.name) (\(char))",
-                keyEquivalent: String(char).lowercased(),
-                icon: item.icon,
-                action: #selector(handleUnpinAppClick(_:)),
-                target: self,
-                representedObject: item.bundleID
-            )
-            pItem.state = NSControl.StateValue.on
-            changeAppSubmenu.addItem(pItem)
-        }
-        
-        // 3d. Choose Other App...
-        changeAppSubmenu.addItem(NSMenuItem.separator())
-        let customAppItem = makeAlignedMenuItem(
-            title: "Choose Other App...",
-            keyEquivalent: "o",
-            modifierMask: [.command],
-            action: #selector(handleChooseOtherApp),
-            target: self
-        )
-        changeAppSubmenu.addItem(customAppItem)
-        
-        changeAppItem.submenu = changeAppSubmenu
-        
-        // Zone 3: Preferences & System Controls
+        // 2. Preferences & System Controls
         let isCopyEnabled = CopyOnSelectEngine.shared.isEnabled
         let copyStatusItem = makeAlignedMenuItem(
             title: "Copy on Select",
-            icon: NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Copy on Select"),
             accessibilityHelp: "Toggle automatic copying of selected text to the clipboard",
             action: #selector(handleToggleCopyOnSelect),
             target: self
@@ -1025,29 +788,16 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         copyStatusItem.attributedTitle = copyAttr
         copyStatusItem.toolTip = "Automatically copy selected text to the clipboard on drag selection (\(isCopyEnabled ? "Active" : "Disabled"))"
         menu.addItem(copyStatusItem)
-        menu.addItem(changeAppItem)
         
         let settingsItem = makeAlignedMenuItem(
             title: "Settings...",
             keyEquivalent: ",",
             modifierMask: [.command],
-            icon: NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Settings"),
             accessibilityHelp: "Configure pinned apps, shortcuts, and browser profiles",
             action: #selector(handleOpenAppSearch),
             target: self
         )
         menu.addItem(settingsItem)
-        
-        let refreshItem = makeAlignedMenuItem(
-            title: "Refresh Profiles & Apps",
-            keyEquivalent: "r",
-            modifierMask: [.command],
-            icon: NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: "Refresh Profiles & Apps"),
-            accessibilityHelp: "Reload browser profiles and installed applications",
-            action: #selector(handleRefreshProfiles),
-            target: self
-        )
-        menu.addItem(refreshItem)
         
         if !AXIsProcessTrusted() {
             let permItem = makeAlignedMenuItem(
@@ -1060,109 +810,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(permItem)
         }
         
-        let avatarSubmenu = NSMenu()
-        
-        let assistantItem = makeAlignedMenuItem(
-            title: "Open Avatar Assistant (Clipboard Snip)...",
-            icon: NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Avatar Assistant"),
-            accessibilityHelp: "Open assistant to paste profile avatars from clipboard with 0 permissions",
-            action: #selector(handleOpenAvatarCaptureAssistant(_:)),
-            target: self
-        )
-        avatarSubmenu.addItem(assistantItem)
-        avatarSubmenu.addItem(NSMenuItem.separator())
-        
-        let guideHeader = NSMenuItem(title: "Paste Avatar for Profile:", action: nil, keyEquivalent: "")
-        guideHeader.attributedTitle = NSAttributedString(
-            string: "Paste Avatar for Profile:",
-            attributes: [.font: NSFont.boldSystemFont(ofSize: 11)]
-        )
-        guideHeader.isEnabled = false
-        avatarSubmenu.addItem(guideHeader)
-        
-        for p in profileEngine.profiles {
-            let pPasteItem = makeAlignedMenuItem(
-                title: "Paste Avatar for \(p.effectiveName)...",
-                icon: p.avatarImage,
-                accessibilityHelp: "Apply image currently in clipboard as avatar for \(p.effectiveName)",
-                action: #selector(handlePasteAvatarFromClipboard(_:)),
-                target: self,
-                representedObject: p.dir
-            )
-            avatarSubmenu.addItem(pPasteItem)
-        }
-        
-        let avatarItem = makeAlignedMenuItem(
-            title: "Profile Avatars (Clipboard)...",
-            icon: NSImage(systemSymbolName: "person.crop.circle", accessibilityDescription: "Profile Avatars"),
-            accessibilityHelp: "Import profile avatars from clipboard with zero permissions",
-            action: nil,
-            target: nil
-        )
-        avatarItem.submenu = avatarSubmenu
-        avatarItem.toolTip = "Import profile avatars from clipboard with zero permissions"
-        menu.addItem(avatarItem)
-        
-        let hasLinkedBookmark = UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") != nil
-        if profileEngine.isLocalStateBlocked && !hasLinkedBookmark {
-            let linkItem = makeAlignedMenuItem(
-                title: "Link Chrome Avatars… (1-Click)",
-                icon: NSImage(systemSymbolName: "person.crop.circle.badge.plus", accessibilityDescription: "Link Chrome Avatars"),
-                accessibilityHelp: "Select Chrome folder once to load real profile avatars without Full Disk Access",
-                action: #selector(handleLinkChromeAvatars),
-                target: self
-            )
-            linkItem.toolTip = "1-click folder link to load real Google profile avatars into the menu bar and HUD"
-            menu.addItem(linkItem)
-        }
-        
         menu.addItem(NSMenuItem.separator())
         
-        // 5. License & Lifecycle
-        if LicenseEngine.shared.isPro {
-            let proItem = makeAlignedMenuItem(
-                title: "NNTS Pro · Active",
-                icon: NSImage(systemSymbolName: "checkmark.seal", accessibilityDescription: "NNTS Pro Active"),
-                accessibilityHelp: "Manage your NNTS Pro license",
-                action: #selector(handleManageLicense),
-                target: self
-            )
-            let attr = NSMutableAttributedString(string: "NNTS Pro")
-            let badge = NSAttributedString(
-                string: " · Active",
-                attributes: [
-                    .foregroundColor: NSColor.secondaryLabelColor,
-                    .font: NSFont.systemFont(ofSize: 11, weight: .regular)
-                ]
-            )
-            attr.append(badge)
-            proItem.attributedTitle = attr
-            menu.addItem(proItem)
-        } else {
-            let proItem = makeAlignedMenuItem(
-                title: "Upgrade to NNTS Pro (\(LicenseEngine.proPrice))...",
-                icon: NSImage(systemSymbolName: "star.fill", accessibilityDescription: "Upgrade to NNTS Pro"),
-                accessibilityHelp: "Upgrade to NNTS Pro for unlimited app and profile slots",
-                action: #selector(handleUpgradeToPro),
-                target: self
-            )
-            menu.addItem(proItem)
-            
-            let enterKeyItem = makeAlignedMenuItem(
-                title: "Enter License Key...",
-                icon: NSImage(systemSymbolName: "key.fill", accessibilityDescription: "Enter License Key"),
-                accessibilityHelp: "Activate your license key",
-                action: #selector(handleEnterLicenseKeyFromMenu),
-                target: self
-            )
-            menu.addItem(enterKeyItem)
-        }
-        
-        menu.addItem(NSMenuItem.separator())
-        
+        // 3. About & Diagnostics
         let aboutItem = makeAlignedMenuItem(
             title: "About NNTS...",
-            icon: NSImage(systemSymbolName: "info.circle", accessibilityDescription: "About NNTS"),
             accessibilityHelp: "View version and application information",
             action: #selector(handleAbout),
             target: self
@@ -1181,21 +833,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         
         let reportItem = makeAlignedMenuItem(
             title: "Report an Issue...",
-            icon: NSImage(systemSymbolName: "ladybug", accessibilityDescription: "Report an Issue"),
             accessibilityHelp: "Open diagnostics and report an issue",
             action: #selector(handleReportIssue),
             target: self
         )
         menu.addItem(reportItem)
-        
-        let updateItem = makeAlignedMenuItem(
-            title: "Check for Updates...",
-            icon: NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Check for Updates"),
-            accessibilityHelp: "Check for new versions of NNTS",
-            action: #selector(handleCheckForUpdates),
-            target: self
-        )
-        menu.addItem(updateItem)
         
         menu.addItem(NSMenuItem.separator())
         
@@ -1203,7 +845,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             title: "Quit NNTS",
             keyEquivalent: "q",
             modifierMask: [.command],
-            icon: NSImage(systemSymbolName: "power", accessibilityDescription: "Quit NNTS"),
             accessibilityHelp: "Quit the application",
             action: #selector(handleQuit),
             target: self
@@ -1371,7 +1012,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         updateMenu()
     }
     
-    @objc private func handleUpgradeToPro() {
+    @objc public func handleUpgradeToPro() {
         if let url = URL(string: LicenseEngine.polarCheckoutUrl) {
             NSWorkspace.shared.open(url)
         }
@@ -1381,7 +1022,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         promptEnterLicenseKey()
     }
     
-    @objc private func handleManageLicense() {
+    @objc public func handleManageLicense() {
         let alert = NSAlert()
         alert.messageText = "NNTS Pro Active"
         let keyText = LicenseEngine.shared.activeLicenseKey ?? "Activated via License"
@@ -1554,7 +1195,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    @objc private func handleRefreshProfiles() {
+    @objc public func handleRefreshProfiles() {
         if AXIsProcessTrusted() {
             if !CapsLockEngine.shared.isStarted {
                 CapsLockEngine.shared.start()

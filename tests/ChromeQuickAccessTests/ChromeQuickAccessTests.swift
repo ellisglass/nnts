@@ -1277,18 +1277,7 @@ struct ChromeQuickAccessUnitTests {
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
         
-        // Refresh Profiles & Apps and Quit NNTS use native keyEquivalent with ⌘ modifier
-        let refreshItem = menu.items.first(where: { $0.title.contains("Refresh Profiles & Apps") })
-        #expect(refreshItem != nil)
-        #expect(refreshItem?.keyEquivalent == "r")
-        #expect(refreshItem?.keyEquivalentModifierMask == [.command])
-        
-        let quitItem = menu.items.first(where: { $0.title == "Quit NNTS" })
-        #expect(quitItem != nil)
-        #expect(quitItem?.keyEquivalent == "q")
-        #expect(quitItem?.keyEquivalentModifierMask == [.command])
-        
-        // Section 1: Browsers & Profiles section header present and strictly non-clickable
+        // 1. Browsers & Profiles section header present and strictly non-clickable
         let browserSectionHeader = menu.items.first(where: { $0.title.contains("Browsers & Profiles") })
         #expect(browserSectionHeader != nil)
         #expect(browserSectionHeader?.isSectionHeader == true)
@@ -1300,122 +1289,71 @@ struct ChromeQuickAccessUnitTests {
         #expect(chromeItem?.keyEquivalent == "c")
         #expect(chromeItem?.action != nil)
         
-        // Mascot Separator present between sections
-        let mascotSeparator = menu.items.first(where: { $0.view is AppDelegate.MascotSeparatorView })
-        #expect(mascotSeparator != nil)
-        #expect(mascotSeparator?.isEnabled == false)
+        // Profile Strip View custom view present
+        let profileStripItem = menu.items.first(where: { $0.view is ProfileStripView })
+        #expect(profileStripItem != nil, "Profile strip custom view should exist for compact horizontal layout")
         
-        // Section 2: Quick Apps header present and strictly non-clickable
-        let quickAppsHeader = menu.items.first(where: { $0.title == "Quick Apps (Caps-Lock)" })
-        #expect(quickAppsHeader != nil)
-        #expect(quickAppsHeader?.isSectionHeader == true)
-        #expect(quickAppsHeader?.isEnabled == false)
-        #expect(quickAppsHeader?.action == nil)
+        // 2. Preferences: Copy on Select & Settings...
+        let copyItem = menu.items.first(where: { $0.title.hasPrefix("Copy on Select") })
+        #expect(copyItem != nil)
+        #expect(copyItem?.state == .off)
+        #expect(copyItem?.title.contains("· On") == true || copyItem?.title.contains("· Off") == true)
         
-        // Active Quick Apps items present with valid keyEquivalent
-        let termMatch = menu.items.first(where: { $0.title.contains("iTerm") || $0.title.contains("Terminal") })
-        #expect(termMatch != nil)
-        #expect(termMatch?.keyEquivalent.isEmpty == false)
+        let settingsItem = menu.items.first(where: { $0.title == "Settings..." })
+        #expect(settingsItem != nil)
+        #expect(settingsItem?.keyEquivalent == ",")
+        #expect(settingsItem?.keyEquivalentModifierMask == [.command])
+        #expect(settingsItem?.action != nil)
         
-        // Every pinned app is listed directly in the menu without being hidden in submenus
-        let antigravityItem = menu.items.first(where: { $0.title.hasPrefix("Antigravity") && !$0.title.contains("IDE") })
-        #expect(antigravityItem != nil)
-        #expect(antigravityItem?.keyEquivalent == "a")
-        #expect(antigravityItem?.submenu == nil)
+        // 3. System & Lifecycle items
+        let aboutItem = menu.items.first(where: { $0.title.contains("About NNTS") })
+        #expect(aboutItem != nil)
         
-        let ideItem = menu.items.first(where: { $0.title.contains("Antigravity IDE") })
-        #expect(ideItem != nil)
-        #expect(ideItem?.keyEquivalent == "a")
-        #expect(ideItem?.submenu == nil)
+        let reportItem = menu.items.first(where: { $0.title.contains("Report an Issue") })
+        #expect(reportItem != nil)
         
-        let notesMatch = menu.items.first(where: { $0.title.contains("Notes") })
-        #expect(notesMatch != nil)
-        #expect(notesMatch?.keyEquivalent.isEmpty == false)
+        let quitItem = menu.items.first(where: { $0.title == "Quit NNTS" })
+        #expect(quitItem != nil)
+        #expect(quitItem?.keyEquivalent == "q")
+        #expect(quitItem?.keyEquivalentModifierMask == [.command])
         
-        // Manage Quick Apps item with submenu present
+        // 4. Quick Apps are streamlined into Settings and NOT cluttering the root status menu
+        let quickAppsHeader = menu.items.first(where: { $0.title.contains("Quick Apps") })
+        #expect(quickAppsHeader == nil, "Quick Apps section header must not be in root menu")
+        
         let changeAppItem = menu.items.first(where: { $0.title == "Manage Quick Apps..." })
-        #expect(changeAppItem != nil)
-        #expect(changeAppItem?.submenu != nil)
-        
-        guard let submenu = changeAppItem?.submenu else { return }
-        let subTitles = submenu.items.map { $0.title }
-        
-        // Headers and Actions present in Change App submenu
-        #expect(subTitles.contains("Search & Add Application..."))
-        #expect(subTitles.contains(where: { $0.contains("Profiles (up to 4):") }))
-        #expect(subTitles.contains(where: { $0.contains("Pinned Quick Apps") }))
-        #expect(subTitles.contains("Choose Other App..."))
-        
-        // App shortcuts derive strictly from first letter of app name (or slot digit for Chrome)
-        for item in menu.items {
-            if item.isSeparatorItem || item.title.hasSuffix(":") || item.title.hasPrefix("Chrome") || item.title == "Quick Apps (Caps-Lock)" || item.title.contains("Browsers & Profiles") || item.title == "Manage Quick Apps..." || item.view is AppDelegate.MascotSeparatorView { continue }
-            if !item.keyEquivalent.isEmpty && item.keyEquivalentModifierMask == [] {
-                let appName = item.title.trimmingCharacters(in: .whitespaces)
-                let key = item.keyEquivalent
-                if let firstChar = key.first, firstChar.isLetter {
-                    let expectedChar = String((appName.first(where: { $0.isLetter }) ?? "A").lowercased())
-                    #expect(key == expectedChar)
-                } else if let firstChar = key.first, firstChar.isNumber {
-                    #expect("1234".contains(firstChar))
-                }
-            }
-        }
+        #expect(changeAppItem == nil, "Manage Quick Apps must not be in root menu")
     }
     
     @Test @MainActor
     func testTwoTierMenuLayoutWithMascotBetween() {
-        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
-        let mockAiAgent = [
-            AntigravityItem(name: "Antigravity", bundleID: "com.google.antigravity", path: "/Applications/Antigravity.app", icon: dummyIcon, index: 1)
-        ]
-        let mockIde = [
-            AntigravityItem(name: "Antigravity IDE", bundleID: "com.google.antigravity-ide", path: "/Applications/Antigravity IDE.app", icon: dummyIcon, index: 1)
-        ]
-        AppGroupEngine.aiAgent.customItemsOverride = mockAiAgent
-        AppGroupEngine.ide.customItemsOverride = mockIde
-        AppGroupEngine.aiAgent.refreshItems()
-        AppGroupEngine.ide.refreshItems()
-        
-        let previousSelected = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
-        defer {
-            AppGroupEngine.aiAgent.customItemsOverride = nil
-            AppGroupEngine.ide.customItemsOverride = nil
-            AppGroupEngine.aiAgent.refreshItems()
-            AppGroupEngine.ide.refreshItems()
-            if let prev = previousSelected {
-                UserDefaults.standard.set(prev, forKey: "SelectedAppBundleIDs")
-            } else {
-                UserDefaults.standard.removeObject(forKey: "SelectedAppBundleIDs")
-            }
-            AppGroupEngine.selectedBundleIDs = Set(AppGroupEngine.defaultPinnedBundleIDs)
-        }
-        
         let appDelegate = AppDelegate()
-        
-        // Mock a pinned set of applications
-        let mockPinned = [
-            "com.google.antigravity",
-            "com.google.antigravity-ide",
-            "com.apple.finder",
-            "com.apple.systempreferences"
-        ]
-        UserDefaults.standard.set(mockPinned, forKey: "SelectedAppBundleIDs")
-        AppGroupEngine.selectedBundleIDs = Set(mockPinned)
-        
         let menu = appDelegate.buildStatusMenu()
         
         let browserHeaderIdx = menu.items.firstIndex(where: { $0.title.contains("Browsers & Profiles") })
-        let mascotSeparatorIdx = menu.items.firstIndex(where: { $0.view is AppDelegate.HamsterSeparatorView })
-        let quickHeaderIdx = menu.items.firstIndex(where: { $0.title.contains("Quick Apps") })
+        let profileStripIdx = menu.items.firstIndex(where: { $0.view is ProfileStripView })
+        let copyIdx = menu.items.firstIndex(where: { $0.title.hasPrefix("Copy on Select") })
+        let settingsIdx = menu.items.firstIndex(where: { $0.title == "Settings..." })
+        let aboutIdx = menu.items.firstIndex(where: { $0.title.contains("About NNTS") })
+        let reportIdx = menu.items.firstIndex(where: { $0.title.contains("Report an Issue") })
+        let quitIdx = menu.items.firstIndex(where: { $0.title.contains("Quit NNTS") })
         
         #expect(browserHeaderIdx != nil, "Browsers & Profiles header must exist")
-        #expect(mascotSeparatorIdx != nil, "Hamster mascot separator must exist")
-        #expect(quickHeaderIdx != nil, "Quick Apps header must exist")
+        #expect(profileStripIdx != nil, "ProfileStripView must exist")
+        #expect(copyIdx != nil, "Copy on Select must exist")
+        #expect(settingsIdx != nil, "Settings... must exist")
+        #expect(aboutIdx != nil, "About NNTS must exist")
+        #expect(reportIdx != nil, "Report an Issue must exist")
+        #expect(quitIdx != nil, "Quit NNTS must exist")
         
-        if let bIdx = browserHeaderIdx, let mIdx = mascotSeparatorIdx, let qIdx = quickHeaderIdx {
-            // Mascot sits as the elegant bridge between Browsers & Profiles and Quick Apps
-            #expect(bIdx < mIdx, "Browser section must appear before mascot separator")
-            #expect(mIdx < qIdx, "Mascot separator must appear before Quick Apps section")
+        if let bIdx = browserHeaderIdx, let pIdx = profileStripIdx, let cIdx = copyIdx,
+           let sIdx = settingsIdx, let aIdx = aboutIdx, let rIdx = reportIdx, let qIdx = quitIdx {
+            #expect(bIdx < pIdx)
+            #expect(pIdx < cIdx)
+            #expect(cIdx < sIdx)
+            #expect(sIdx < aIdx)
+            #expect(aIdx < rIdx)
+            #expect(rIdx < qIdx)
         }
     }
     
@@ -2034,32 +1972,16 @@ struct ChromeQuickAccessUnitTests {
         
         UserDefaults.standard.set(["com.google.antigravity", "com.google.antigravity-ide"], forKey: "SelectedAppBundleIDs")
         let appDelegate = AppDelegate()
+        appDelegate.updateDynamicShortcuts()
         let menu = appDelegate.buildStatusMenu()
         
-        // 1. Cyclic signifiers for shared letters ('A') with single-line compactness
-        let antigravityItem = menu.items.first(where: { $0.title.hasPrefix("Antigravity") && !$0.title.contains("IDE") })
-        let ideItem = menu.items.first(where: { $0.title.contains("Antigravity IDE") })
-        #expect(antigravityItem != nil)
-        #expect(ideItem != nil)
+        // 1. Cyclic trigger registered for 'A' in CapsLockEngine
+        let aTrigger = CapsLockEngine.shared.dynamicKeyTriggers[KeyCodes.kVK_ANSI_A]
+        #expect(aTrigger != nil, "Trigger for 'A' must be registered in dynamic triggers")
         
-        #expect(antigravityItem?.toolTip?.contains("cycle") == true)
-        #expect(antigravityItem?.toolTip?.contains("1 of 2") == true)
-        #expect(ideItem?.toolTip?.contains("cycle") == true)
-        #expect(ideItem?.toolTip?.contains("2 of 2") == true)
-        
-        // Single-line compact affordance: inline in title, NO double-height subtitle expansion
-        #expect(antigravityItem?.title.contains("1/2 ↻") == true)
-        #expect(ideItem?.title.contains("2/2 ↻") == true)
-        if #available(macOS 14.4, *) {
-            #expect(antigravityItem?.subtitle == nil, "Single-line compact menu items must not use subtitle")
-            #expect(ideItem?.subtitle == nil, "Single-line compact menu items must not use subtitle")
-        }
-        
-        // 2. Profile Indentation
-        let profileItems = menu.items.filter { item in
-            item.indentationLevel == 1
-        }
-        #expect(!profileItems.isEmpty, "Profile items should have indentationLevel = 1 for Gestalt hierarchy")
+        // 2. Profile Strip View (Concept 2 + 3 horizontal strip)
+        let profileStripItem = menu.items.first(where: { $0.view is ProfileStripView })
+        #expect(profileStripItem != nil, "Profile strip custom view should exist for compact horizontal layout")
         
         // 3. Settings Menu Item with ⌘,
         let settingsItem = menu.items.first(where: { $0.title == "Settings..." })
@@ -2070,33 +1992,17 @@ struct ChromeQuickAccessUnitTests {
         
         // 4. Utility section ordering and checkmark hygiene
         let copyItem = menu.items.first(where: { $0.title.hasPrefix("Copy on Select") })
-        let refreshItem = menu.items.first(where: { $0.title.contains("Refresh Profiles & Apps") })
         let quitItem = menu.items.first(where: { $0.title.contains("Quit NNTS") })
         #expect(copyItem != nil)
         #expect(copyItem?.state == .off, "Copy on Select must not use gutter checkmark to prevent left margin collision")
         #expect(copyItem?.title.contains("· On") == true || copyItem?.title.contains("· Off") == true, "Copy on Select must display inline state badge")
-        #expect(refreshItem != nil)
         #expect(quitItem != nil)
         
         if let copyIdx = menu.items.firstIndex(where: { $0.title.hasPrefix("Copy on Select") }),
-           let manageAppIdx = menu.items.firstIndex(where: { $0.title.contains("Manage Quick Apps") || $0.title == "Change App" }),
            let settingsIdx = menu.items.firstIndex(where: { $0.title == "Settings..." }),
-           let refreshIdx = menu.items.firstIndex(where: { $0.title.contains("Refresh Profiles & Apps") }),
            let quitIdx = menu.items.firstIndex(where: { $0.title.contains("Quit NNTS") }) {
-            #expect(copyIdx < manageAppIdx)
-            #expect(manageAppIdx < settingsIdx)
-            #expect(settingsIdx < refreshIdx)
-            #expect(refreshIdx < quitIdx)
-        }
-        
-        // Ensure Pro item (when active) does not carry a conflicting trailing checkmark
-        let proItem = menu.items.first(where: { $0.title.contains("NNTS Pro") })
-        #expect(proItem != nil)
-        #expect(proItem?.title.hasSuffix("✓") == false, "NNTS Pro must not carry trailing checkmark to prevent clash with Copy on Select")
-        
-        // Ensure Manage Quick Apps is not isolated by a redundant preceding separator
-        if let changeAppIdx = menu.items.firstIndex(where: { $0.title.contains("Manage Quick Apps") || $0.title == "Change App" }), changeAppIdx > 0 {
-            #expect(!menu.items[changeAppIdx - 1].isSeparatorItem, "Manage Quick Apps must not be preceded by a separator creating a 1-item island")
+            #expect(copyIdx < settingsIdx)
+            #expect(settingsIdx < quitIdx)
         }
     }
     
@@ -2183,9 +2089,8 @@ struct ChromeQuickAccessUnitTests {
         #expect(aboutItem?.attributedTitle?.string.contains("v\(AppDelegate.appVersion)") == true)
         #expect(aboutItem?.action == #selector(AppDelegate.handleAbout))
         
-        let updateItem = menu.items.first(where: { $0.title.contains("Check for Updates") })
-        #expect(updateItem != nil, "Check for Updates menu item must exist")
-        #expect(updateItem?.action == #selector(AppDelegate.handleCheckForUpdates))
+        // Check for Updates action exists on AppDelegate
+        #expect(appDelegate.responds(to: #selector(AppDelegate.handleCheckForUpdates)))
     }
     
     // MARK: - UpdateEngine Tests
@@ -2435,10 +2340,9 @@ struct ChromeQuickAccessUnitTests {
         let chromeTitle = chromeItem?.attributedTitle?.string ?? chromeItem?.title ?? ""
         #expect(chromeTitle.contains("· 1/2 ↻"), "Chrome must display 1/2 cyclic badge when Calculator shares letter C")
         
-        let calcItem = menuWithC.items.first(where: { $0.title.contains("Calculator") || $0.attributedTitle?.string.contains("Calculator") == true })
-        #expect(calcItem != nil)
-        let calcTitle = calcItem?.attributedTitle?.string ?? calcItem?.title ?? ""
-        #expect(calcTitle.contains("· 2/2 ↻"), "Calculator must display 2/2 cyclic badge")
+        // Calculator is registered in pinned apps and shares letter C
+        let calcPinned = AppGroupEngine.pinnedAppItems().first(where: { $0.bundleID == calcBundle })
+        #expect(calcPinned != nil)
         
         // 2. Without any app sharing letter 'C'
         UserDefaults.standard.set(["com.apple.Notes", "com.apple.Terminal"], forKey: "SelectedAppBundleIDs")
@@ -3020,13 +2924,10 @@ struct ChromeQuickAccessUnitTests {
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
         
-        let sItems = menu.items.filter { $0.keyEquivalent == "s" }
-        #expect(sItems.count == 2, "Both S-apps must appear in menu with key 's'")
-        
-        let firstS = sItems[0]
-        let secondS = sItems[1]
-        #expect(firstS.attributedTitle?.string.contains("1/2 ↻") == true || firstS.title.contains("1/2 ↻") || firstS.toolTip?.contains("1 of 2") == true)
-        #expect(secondS.attributedTitle?.string.contains("2/2 ↻") == true || secondS.title.contains("2/2 ↻") || secondS.toolTip?.contains("2 of 2") == true)
+        let pinnedS = AppGroupEngine.pinnedAppItems().filter { item in
+            (item.name.first(where: { $0.isLetter }) ?? "A").uppercased() == "S"
+        }
+        #expect(pinnedS.count == 2, "Both S-apps must be pinned in AppGroupEngine")
         
         // Verify dynamic key trigger cycles through HUD
         appDelegate.updateDynamicShortcuts()
@@ -3096,9 +2997,10 @@ struct ChromeQuickAccessUnitTests {
         let sectionHeaders = menu.items.filter { $0.isSectionHeader }
         let headerTitles = sectionHeaders.map { $0.title }
         
-        // Section headers must strictly contain ONLY Browsers & Profiles and Quick Apps (Caps-Lock)
+        // Section headers must strictly contain ONLY Browsers & Profiles
         #expect(headerTitles.contains(where: { $0.contains("Browsers & Profiles") }))
-        #expect(headerTitles.contains(where: { $0 == "Quick Apps (Caps-Lock)" }))
+        #expect(!headerTitles.contains(where: { $0.contains("Quick Apps") }))
+        #expect(sectionHeaders.count == 1, "There should be exactly 1 section header in the root menu")
         
         // Strictly forbidden legacy category header titles
         let forbiddenHeaders = ["Core Toolset", "Toolkit", "Toolset Shortcuts", "Quick Shortcuts"]
@@ -3350,20 +3252,38 @@ struct ChromeQuickAccessUnitTests {
     @Test @MainActor
     func testAvatarManagementMenuItemsInAppDelegate() {
         let appDelegate = AppDelegate()
-        
-        // When bookmark is absent and local state is blocked, 1-Click item should be offered cleanly
         let menu = appDelegate.buildStatusMenu()
-        let has1ClickItem = menu.items.contains(where: { $0.title.contains("Link Chrome Avatars") })
-        #expect(has1ClickItem || !ChromeProfileEngine.shared.isLocalStateBlocked)
         
-        // Verify submenu remains uncluttered without bloated manual avatar config options
-        guard let manageItem = menu.items.first(where: { $0.title.contains("Manage Quick Apps") }),
-              let submenu = manageItem.submenu else {
-            Issue.record("Manage Quick Apps submenu not found")
+        // Profile strip view exists in menu and provides avatar context actions
+        let stripItem = menu.items.first(where: { $0.view is ProfileStripView })
+        #expect(stripItem != nil)
+        
+        guard let stripView = stripItem?.view as? ProfileStripView else {
+            Issue.record("ProfileStripView not found")
             return
         }
-        let hasBloatedSubmenuItem = submenu.items.contains(where: { $0.title.contains("Set Custom Profile Photo") })
-        #expect(!hasBloatedSubmenuItem)
+        
+        // ProfileStripView context menu has avatar paste and assistant options
+        if let firstProfile = stripView.profiles.first {
+            let rect = stripView.tileRect(for: 0)
+            let centerPoint = NSPoint(x: rect.midX, y: rect.midY)
+            let event = NSEvent.mouseEvent(
+                with: .rightMouseDown,
+                location: centerPoint,
+                modifierFlags: [],
+                timestamp: 0,
+                windowNumber: 0,
+                context: nil,
+                eventNumber: 0,
+                clickCount: 1,
+                pressure: 1
+            )!
+            let contextMenu = stripView.menu(for: event)
+            #expect(contextMenu != nil)
+            let items = contextMenu?.items.map { $0.title } ?? []
+            #expect(items.contains(where: { $0.contains("Paste Avatar for \(firstProfile.effectiveName)") }))
+            #expect(items.contains(where: { $0.contains("Open Avatar Assistant") }))
+        }
     }
     
     @Test @MainActor
@@ -3420,15 +3340,11 @@ struct ChromeQuickAccessUnitTests {
     func testClipboardAvatarAssistantAndMenuItems() async {
         let engine = ChromeProfileEngine.shared
         
-        // 1. AppDelegate menu includes Profile Avatars item and submenu actions
+        // 1. ProfileStripView exists in status menu
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
-        let avatarItem = menu.items.first(where: { $0.title.contains("Profile Avatars") })
-        #expect(avatarItem != nil)
-        #expect(avatarItem?.submenu != nil)
-        let submenuTitles = avatarItem?.submenu?.items.map { $0.title } ?? []
-        #expect(submenuTitles.contains(where: { $0.contains("Open Avatar Assistant") }))
-        #expect(submenuTitles.contains(where: { $0.contains("Paste Avatar") }))
+        let stripItem = menu.items.first(where: { $0.view is ProfileStripView })
+        #expect(stripItem != nil)
         
         // 2. Test AvatarCaptureAssistantViewModel
         let assistantVM = AvatarCaptureAssistantViewModel()

@@ -127,7 +127,7 @@ public struct AppSearchPickerRowView: View {
                 
                 // Shortcut Badge
                 let char = app.firstLetter
-                Text("Caps + \(String(char))")
+                Text("caps lock + \(String(char))")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundColor(.white.opacity(0.70))
                     .padding(.horizontal, 7)
@@ -232,33 +232,103 @@ public struct AppSearchPickerView: View {
     public let onClose: () -> Void
     public let onChooseOther: () -> Void
     public let onSlotLimitReached: (String) -> Void
+    public let onRefresh: () -> Void
+    public let onCheckUpdates: () -> Void
+    public let onManageLicense: () -> Void
+    public let onLinkAvatars: () -> Void
     
     public init(
         viewModel: AppSearchPickerViewModel,
         onClose: @escaping () -> Void,
         onChooseOther: @escaping () -> Void,
-        onSlotLimitReached: @escaping (String) -> Void
+        onSlotLimitReached: @escaping (String) -> Void,
+        onRefresh: @escaping () -> Void = {},
+        onCheckUpdates: @escaping () -> Void = {},
+        onManageLicense: @escaping () -> Void = {},
+        onLinkAvatars: @escaping () -> Void = {}
     ) {
         self.viewModel = viewModel
         self.onClose = onClose
         self.onChooseOther = onChooseOther
         self.onSlotLimitReached = onSlotLimitReached
+        self.onRefresh = onRefresh
+        self.onCheckUpdates = onCheckUpdates
+        self.onManageLicense = onManageLicense
+        self.onLinkAvatars = onLinkAvatars
     }
     
     public var body: some View {
         VStack(spacing: 0) {
             // Header Bar
-            HStack {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus.app.fill")
+            HStack(spacing: 10) {
+                HStack(spacing: 7) {
+                    Image(systemName: "gearshape.fill")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.white.opacity(0.70))
-                    Text("Add Quick Application")
+                    Text("Settings & Quick Apps")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(.white.opacity(0.88))
                 }
                 
+                // License Pill
+                Button(action: onManageLicense) {
+                    HStack(spacing: 3) {
+                        if LicenseEngine.shared.isPro {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 9, weight: .bold))
+                            Text("Pro Active")
+                                .font(.system(size: 9.5, weight: .bold))
+                        } else {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 9, weight: .bold))
+                            Text("Upgrade Pro")
+                                .font(.system(size: 9.5, weight: .bold))
+                        }
+                    }
+                    .foregroundColor(LicenseEngine.shared.isPro ? Color(red: 0.35, green: 0.85, blue: 0.50) : Color.white.opacity(0.85))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2.5)
+                    .background(
+                        Capsule()
+                            .fill(LicenseEngine.shared.isPro ? Color(red: 0.35, green: 0.85, blue: 0.50).opacity(0.18) : Color.white.opacity(0.12))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(LicenseEngine.shared.isPro ? Color(red: 0.35, green: 0.85, blue: 0.50).opacity(0.35) : Color.white.opacity(0.20), lineWidth: 0.75)
+                    )
+                }
+                .buttonStyle(.plain)
+                .help(LicenseEngine.shared.isPro ? "Manage NNTS Pro License" : "Upgrade to NNTS Pro (\(LicenseEngine.proPrice))")
+                
                 Spacer()
+                
+                // Refresh Profiles & Apps Button (⌘R)
+                Button(action: onRefresh) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.65))
+                        .padding(5)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.08))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("Refresh Profiles & Apps (⌘R)")
+                
+                // Check for Updates Button
+                Button(action: onCheckUpdates) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.65))
+                        .padding(5)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.08))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("Check for Updates...")
                 
                 // Close button
                 Button(action: onClose) {
@@ -267,6 +337,7 @@ public struct AppSearchPickerView: View {
                         .foregroundColor(.white.opacity(0.40))
                 }
                 .buttonStyle(.plain)
+                .help("Close (Esc)")
             }
             .padding(.horizontal, 16)
             .padding(.top, 14)
@@ -361,13 +432,32 @@ public struct AppSearchPickerView: View {
                 // Slot counter
                 let pinnedCount = viewModel.pinnedBundleIDs.count
                 let maxCount = AppGroupEngine.maxPinnedQuickApps
-                Text("\(pinnedCount) of \(maxCount) slots used")
+                Text(LicenseEngine.shared.isPro ? "\(pinnedCount) pinned (Pro: Unlimited)" : "\(pinnedCount) of \(maxCount) slots used")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.white.opacity(0.55))
                     .contentTransition(.numericText())
                     .animation(NNTSMotion.tactileBop, value: pinnedCount)
                 
                 Spacer()
+                
+                let hasLinkedBookmark = UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") != nil
+                if ChromeProfileEngine.shared.isLocalStateBlocked && !hasLinkedBookmark {
+                    Button(action: onLinkAvatars) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "photo.badge.plus")
+                                .font(.system(size: 11))
+                            Text("Link Chrome Folder...")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(Color.orange.opacity(0.90))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Select Chrome folder once to load real Google profile photos")
+                    
+                    Text("•")
+                        .foregroundColor(.white.opacity(0.25))
+                        .font(.system(size: 10))
+                }
                 
                 // Browse in Finder button
                 Button(action: onChooseOther) {
@@ -388,6 +478,8 @@ public struct AppSearchPickerView: View {
             HStack(spacing: 12) {
                 Text("[↑/↓] Navigate")
                 Text("[↵] Pin / Unpin")
+                Text("[⌘R] Refresh")
+                Text("[⌘O] Browse")
                 Text("[Esc] Close")
             }
             .font(.system(size: 9.5, weight: .regular, design: .monospaced))
@@ -438,6 +530,26 @@ public final class AppSearchPickerWindow: NSPanel {
             onSlotLimitReached: { [weak self] bundleID in
                 self?.hideImmediate()
                 AppDelegate.shared?.promptAppReplacement(newBundleID: bundleID)
+            },
+            onRefresh: { [weak self] in
+                AppDelegate.shared?.handleRefreshProfiles()
+                self?.viewModel.refresh()
+            },
+            onCheckUpdates: { [weak self] in
+                self?.hideImmediate()
+                AppDelegate.shared?.handleCheckForUpdates()
+            },
+            onManageLicense: { [weak self] in
+                self?.hideImmediate()
+                if LicenseEngine.shared.isPro {
+                    AppDelegate.shared?.handleManageLicense()
+                } else {
+                    AppDelegate.shared?.handleUpgradeToPro()
+                }
+            },
+            onLinkAvatars: { [weak self] in
+                self?.hideImmediate()
+                AppDelegate.shared?.handleLinkChromeAvatars()
             }
         )
         
@@ -454,6 +566,19 @@ public final class AppSearchPickerWindow: NSPanel {
         if event.keyCode == KeyCodes.kVK_Escape {
             hideImmediate()
             return
+        }
+        if event.modifierFlags.contains(.command) {
+            let chars = event.charactersIgnoringModifiers?.lowercased()
+            if chars == "r" {
+                AppDelegate.shared?.handleRefreshProfiles()
+                viewModel.refresh()
+                return
+            }
+            if chars == "o" {
+                hideImmediate()
+                AppDelegate.shared?.handleChooseOtherAppFromExternal()
+                return
+            }
         }
         if event.keyCode == KeyCodes.kVK_DownArrow {
             viewModel.selectNext()
