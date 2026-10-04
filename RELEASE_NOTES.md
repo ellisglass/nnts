@@ -1,14 +1,14 @@
-## What's Changed in v2.0.1
+## What's Changed in v2.0.3
 
-### 🎨 Branding
-* **3D Orbital App Motion:** Added continuous 135° diagonal 3D orbital cycling animation for Card 3 in promotional bento grids and website assets.
-* **4K Master Bento Grid:** Generated tack-sharp 3840×2160 Retina master graphics and synced video/GIF loops across assets and docs.
-* **Refreshed Profile Avatars v2:** Replaced generic avatars with tasteful cyberpunk personas for Personal, Work, Client, and Side Project profiles.
-* **Canonical Brand Typography:** Integrated Space Grotesk Bold and Syne ExtraBold display fonts with custom glyph and showcase generation utilities.
+### Features
+* **Zero-Permission Avatar Assistant:** Restored and enhanced the dedicated profile avatar capture assistant (`⌘⌃⇧4` snip, instant preview, zero screen recording permissions).
+* **Interactive Profile Strip Context Menu:** Added right-click and Control-click interactions on profile cards in the status bar to jump straight into avatar customization.
+* **Direct Status Menu Access:** Added "Avatar Assistant (⌘⌃⇧4)..." to the native menu bar and Quick Apps settings footer for instant 1-click access.
 
-### 🚀 Improvements
-* **Strict Copy Normalization:** Standardized all UI copy, README, and documentation to enforce strict lowercase `caps lock` and 100% English descriptions.
-* **Icon & Asset Alignment:** Updated high-resolution system app icons (Freeform, News, Photos, Preview, Spotify, Notes, Settings, Telegram, Terminal).
+### Improvements
+* **Liquid Glass Contrast Overhaul:** Engineered an 88% dark obsidian smoke base tint in `MacNativeLiquidGlassBackground` to eliminate milky-white glare and prevent underlying window text bleed-through.
+* **Harmonized Subwindow Design Language:** Unified layout geometry, cards, headers, keycap badges, and monospaced shortcut hint bars across Settings, Avatar Assistant, and Feedback windows.
+* **High-Contrast Typography:** Raised font opacity and added tactile dark keycap backing so all labels, hints, and keys pop crisply over both light and dark backgrounds.
 
-### 🛠️ Fixes
-* **Landing Page Rack Alignment:** Updated profile rack items in `index.html` to mirror the redesigned Card 1 bento showcase.
+### Fixes
+* **Menu Tracking Context Menu Routing:** Fixed AppKit `NSMenu` swallowing secondary click events on custom menu item views via direct `rightMouseDown` and modifier routing.
