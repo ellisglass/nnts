@@ -675,9 +675,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 small.isTemplate = true
             }
             item.image = small
-            if #available(macOS 27.0, *) {
-                item.preferredImageVisibility = .visible
-            }
+            item.ensureImageVisibleOnMacOS27()
         }
         
         if let aLabel = accessibilityLabel {
@@ -886,9 +884,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             if let avatar = p.avatarImage?.copy() as? NSImage {
                 avatar.size = NSSize(width: 16, height: 16)
                 popUp.lastItem?.image = avatar
-                if #available(macOS 27.0, *) {
-                    popUp.lastItem?.preferredImageVisibility = .visible
-                }
+                popUp.lastItem?.ensureImageVisibleOnMacOS27()
             }
         }
         alert.accessoryView = popUp
@@ -1128,9 +1124,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             if let icon = item.icon.copy() as? NSImage {
                 icon.size = NSSize(width: 16, height: 16)
                 popUp.lastItem?.image = icon
-                if #available(macOS 27.0, *) {
-                    popUp.lastItem?.preferredImageVisibility = .visible
-                }
+                popUp.lastItem?.ensureImageVisibleOnMacOS27()
             }
         }
         alert.accessoryView = popUp
@@ -1487,3 +1481,17 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 }
+
+// MARK: - NSMenuItem macOS 27 Compatibility Extension
+
+extension NSMenuItem {
+    /// Ensures item image remains visible on macOS 27+ without introducing compile-time SDK coupling for older Xcode runners.
+    @MainActor
+    public func ensureImageVisibleOnMacOS27() {
+        let selector = NSSelectorFromString("setPreferredImageVisibility:")
+        if self.responds(to: selector) {
+            self.setValue(1, forKey: "preferredImageVisibility")
+        }
+    }
+}
+

@@ -3121,12 +3121,11 @@ struct ChromeQuickAccessUnitTests {
         // Ensure menu contains items
         #expect(!menu.items.isEmpty)
         
-        if #available(macOS 27.0, *) {
-            // All items that have an image must have preferredImageVisibility set to .visible
-            for item in menu.items {
-                if item.image != nil {
-                    #expect(item.preferredImageVisibility == .visible)
-                }
+        let selector = NSSelectorFromString("preferredImageVisibility")
+        for item in menu.items {
+            if item.image != nil && item.responds(to: selector) {
+                let val = item.value(forKey: "preferredImageVisibility") as? Int
+                #expect(val == 1)
             }
         }
     }
