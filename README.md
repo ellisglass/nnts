@@ -1,15 +1,15 @@
 # NNTS
 
-[![Version](https://img.shields.io/badge/version-2.0.1-007AFF.svg?style=flat-square)](https://github.com/unacau/nnts/releases/latest)
-[![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-black.svg?style=flat-square)](https://github.com/unacau/nnts)
+[![Version](https://img.shields.io/badge/version-2.0.1-007AFF.svg?style=flat-square)](https://github.com/ellisglass/nnts/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-black.svg?style=flat-square)](https://github.com/ellisglass/nnts)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
 Instantly jump to specific Chrome or Brave profiles with <kbd>caps lock</kbd> + <kbd>C</kbd>/<kbd>B</kbd> + <kbd>1..4</kbd>, switch to favorite apps by their first letter while holding <kbd>caps lock</kbd>, and eliminate repetitive <kbd>Cmd</kbd>+<kbd>C</kbd> keystrokes with automatic copy-on-select.
 
 ```bash
-brew install unacau/tap/nnts
+brew install ellisglass/tap/nnts
 ```
-*Or download **[NNTS.dmg](https://github.com/unacau/nnts/releases/latest/download/NNTS.dmg)**.*
+*Or download **[NNTS.dmg](https://github.com/ellisglass/nnts/releases/latest/download/NNTS.dmg)**.*
 
 ---
 
@@ -63,4 +63,4 @@ brew uninstall nnts   # or remove /Applications/NNTS.app
 
 ## License
 
-MIT © [Igor Ekishev](https://github.com/unacau)
+MIT © [Igor Ekishev](https://github.com/ellisglass)

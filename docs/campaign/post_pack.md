@@ -41,7 +41,7 @@
 * **Searchable Description:**
   > Xomsky — утилита для быстрого доступа к окнам конкретного профиля Chrome/Brave через Caps Lock + C/B + 1-4, быстрого вызова приложений по первой букве и копирования текста при выделении (Copy-on-Select).
   >
-  > Download the DMG: https://github.com/unacau/xomsky
+  > Download the DMG: https://github.com/ellisglass/nnts
   >
   > #Shorts #macOS #Programming #Developer #Productivity #Xomsky
 * **Tags:**

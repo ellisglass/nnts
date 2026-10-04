@@ -40,7 +40,7 @@
 * **Description:**
   > Xomsky решает главную боль macOS: быстрый доступ к окнам конкретного профиля Chrome или Brave через Caps Lock + C/B + 1..4, быстрый вызов приложений по первой букве и автоматическое копирование текста при выделении.
   > 
-  > Download free DMG: https://github.com/unacau/xomsky
+  > Download free DMG: https://github.com/ellisglass/nnts
 * **Tags:** `macOS, developer, productivity, chrome profiles, brave browser, swift 6, xomsky, keyboard shortcuts`
 
 ---
@@ -76,7 +76,7 @@
 * **Description:**
   > Утилита Xomsky для Mac: автоматическое копирование текста при выделении мышью (Copy-on-Select), быстрый доступ к приложениям по первой букве через Caps Lock и прямой переход к окнам нужного профиля Chrome/Brave.
   > 
-  > Get Xomsky: https://github.com/unacau/xomsky
+  > Get Xomsky: https://github.com/ellisglass/nnts
 * **Tags:** `macOS app, developer tools, productivity, copy on select, Caps Lock remapping, Swift, Xomsky, Chrome profiles`
 
 ---
@@ -113,5 +113,5 @@
 * **Description:**
   > История создания Xomsky: как решить три главные боли переключения окон в macOS — прямой доступ к окнам профилей Chrome/Brave через Caps Lock + C/B + 1..4, запуск приложений по первой букве и автоматическое копирование текста при выделении мышью.
   > 
-  > GitHub: https://github.com/unacau/xomsky
+  > GitHub: https://github.com/ellisglass/nnts
 * **Tags:** `macOS productivity, developer flow, caps lock, copy on select, chrome profiles, swift 6, open source, xomsky`

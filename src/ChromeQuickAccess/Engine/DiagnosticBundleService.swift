@@ -138,7 +138,7 @@ public enum DiagnosticBundleService {
         *(Please attach `nnts-diagnostic.zip` by dragging it into this issue box)*
         """
 
-        var components = URLComponents(string: "https://github.com/unacau/nnts/issues/new")
+        var components = URLComponents(string: "https://github.com/ellisglass/nnts/issues/new")
         components?.queryItems = [
             URLQueryItem(name: "title", value: "[Bug Report] "),
             URLQueryItem(name: "body", value: body)

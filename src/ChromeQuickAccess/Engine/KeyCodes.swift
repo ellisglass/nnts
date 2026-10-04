@@ -41,6 +41,7 @@ public enum KeyCodes {
     public static let kVK_ANSI_M: UInt32 = 0x2E
     public static let kVK_Escape: UInt32 = 0x35
     public static let kVK_Return: UInt32 = 0x24
+    public static let kVK_Space: UInt32 = 0x31
     public static let kVK_F18: UInt32 = 0x4F // 79
     public static let kVK_CapsLock: UInt32 = 0x39 // 57
     public static let kVK_Tab: UInt32 = 0x30

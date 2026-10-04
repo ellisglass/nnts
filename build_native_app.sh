@@ -58,6 +58,7 @@ SOURCES=(
     "src/ChromeQuickAccess/Views/MinimalHUDWindow.swift"
     "src/ChromeQuickAccess/Views/AppSearchPickerWindow.swift"
     "src/ChromeQuickAccess/Views/FeedbackWindow.swift"
+    "src/ChromeQuickAccess/Views/AvatarCaptureAssistantWindow.swift"
     "src/ChromeQuickAccess/AppDelegate.swift"
     "src/ChromeQuickAccess/main.swift"
 )

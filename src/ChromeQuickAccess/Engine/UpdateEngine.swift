@@ -10,7 +10,7 @@ public enum InstallationSource: String, Sendable, Equatable {
 public final class UpdateEngine: Sendable {
     private static let logger = Logger(subsystem: "com.almosteleven.nnts", category: "update-engine")
     
-    public static let directDmgDownloadUrl = URL(string: "https://github.com/unacau/nnts/releases/latest/download/NNTS.dmg")!
+    public static let directDmgDownloadUrl = URL(string: "https://github.com/ellisglass/nnts/releases/latest/download/NNTS.dmg")!
     
     public static let homebrewUpgradeCommand = "brew update && brew upgrade --cask nnts"
     

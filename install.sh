@@ -12,7 +12,7 @@ APP_NAME="NNTS"
 APP_BUNDLE="${APP_NAME}.app"
 TARGET_DIR="/Applications"
 TARGET_APP="${TARGET_DIR}/${APP_BUNDLE}"
-GITHUB_REPO="unacau/nnts"
+GITHUB_REPO="ellisglass/nnts"
 DMG_NAME="${APP_NAME}.dmg"
 
 NO_BUILD=false

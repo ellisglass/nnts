@@ -5,7 +5,7 @@ import ApplicationServices
 import os
 
 // MARK: - Chrome Profile Model
-public struct ChromeProfile: Identifiable, Equatable {
+public struct ChromeProfile: Identifiable, Equatable, @unchecked Sendable {
     public var id: String { dir }
     public let index: Int
     public let dir: String
@@ -762,7 +762,127 @@ public final class ChromeProfileEngine: ObservableObject {
         }
     }
     
+    // MARK: - User-Assisted & Clipboard Avatar Capture
+    private var pasteboardWatcherTimer: Timer?
+    
+    @discardableResult
+    @MainActor
+    public func saveCapturedAvatar(image: NSImage, forProfileDir dirKey: String, name: String) -> Bool {
+        let circular = makeCircularImage(image: image)
+        guard let tiff = circular.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let pngData = rep.representation(using: .png, properties: [:]) else {
+            return false
+        }
+        let dest1 = Self.localAvatarStorageURL.appendingPathComponent("\(dirKey).png")
+        let safeName = name.replacingOccurrences(of: "/", with: "-")
+        let dest2 = Self.localAvatarStorageURL.appendingPathComponent("\(safeName).png")
+        do {
+            try pngData.write(to: dest1)
+            if safeName != dirKey {
+                try pngData.write(to: dest2)
+            }
+            cachedAvatars[dirKey] = circular
+            cachedAvatars[name] = circular
+            if safeName != name {
+                cachedAvatars[safeName] = circular
+            }
+            refreshProfiles()
+            logger.info("Saved user-captured avatar for profile '\(name)' (\(dirKey)).")
+            return true
+        } catch {
+            logger.error("Failed to save captured avatar: \(error.localizedDescription)")
+            return false
+        }
+    }
+    
+    @discardableResult
+    @MainActor
+    public func saveCapturedAvatarFromPasteboard(forProfileDir dirKey: String, name: String) -> Bool {
+        guard let img = NSImage(pasteboard: NSPasteboard.general) else { return false }
+        return saveCapturedAvatar(image: img, forProfileDir: dirKey, name: name)
+    }
+    
+    @MainActor
+    public func launchInteractiveScreenCapture(onExit: (() -> Void)? = nil) {
+        if Self.bypassLaunchInTests || AppGroupEngine.bypassLaunchInTests { return }
+        let task = Process()
+        task.launchPath = "/usr/sbin/screencapture"
+        task.arguments = ["-i", "-c"]
+        if let onExit = onExit {
+            task.terminationHandler = { _ in
+                DispatchQueue.main.async {
+                    onExit()
+                }
+            }
+        }
+        try? task.run()
+    }
+    
+    @MainActor
+    public func startPasteboardAvatarWatcher(
+        forProfileDir dirKey: String,
+        name: String,
+        timeoutSeconds: TimeInterval = 45.0,
+        onCapture: @escaping (Bool) -> Void
+    ) {
+        pasteboardWatcherTimer?.invalidate()
+        let startChangeCount = NSPasteboard.general.changeCount
+        let startTime = Date()
+        
+        pasteboardWatcherTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] timer in
+            Task { @MainActor [weak self] in
+                guard let self = self else {
+                    timer.invalidate()
+                    return
+                }
+                
+                if NSPasteboard.general.changeCount != startChangeCount {
+                    if let img = NSImage(pasteboard: NSPasteboard.general) {
+                        timer.invalidate()
+                        self.pasteboardWatcherTimer = nil
+                        let success = self.saveCapturedAvatar(image: img, forProfileDir: dirKey, name: name)
+                        onCapture(success)
+                        return
+                    }
+                }
+                
+                if Date().timeIntervalSince(startTime) >= timeoutSeconds {
+                    timer.invalidate()
+                    self.pasteboardWatcherTimer = nil
+                    onCapture(false)
+                }
+            }
+        }
+    }
+    
+    @MainActor
+    public func cancelPasteboardAvatarWatcher() {
+        pasteboardWatcherTimer?.invalidate()
+        pasteboardWatcherTimer = nil
+    }
+    
+    @MainActor
+    public func startGuidedAvatarCapture(forProfileDir dirKey: String, name: String, onComplete: ((Bool) -> Void)? = nil) {
+        focusProfile(dir: dirKey)
+        
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            
+            self.startPasteboardAvatarWatcher(forProfileDir: dirKey, name: name, timeoutSeconds: 45.0) { success in
+                onComplete?(success)
+            }
+            self.launchInteractiveScreenCapture()
+        }
+    }
+    
     // MARK: - Smart Snap (Vision / Zero-Disk-Access Profile Snapper)
+    public static var hasScreenRecordingPermission: Bool {
+        if bypassLaunchInTests { return true }
+        return CGPreflightScreenCaptureAccess()
+    }
+    
     @discardableResult
     @MainActor
     public func snapActiveBrowserAvatars() async -> Int {
@@ -784,6 +904,7 @@ public final class ChromeProfileEngine: ObservableObject {
         
         let cgWindows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? []
         let appWindows = cgWindows.filter { ($0[kCGWindowOwnerPID as String] as? pid_t) == runningApp.processIdentifier }
+        logger.info("Smart Snap: Scanning \(bundleID). axWindows: \(axWindows.count), appWindows: \(appWindows.count)")
         
         var snappedCount = 0
         
@@ -863,17 +984,25 @@ public final class ChromeProfileEngine: ObservableObject {
                 continue
             }
             
-            let tempSnapshotPath = NSTemporaryDirectory().appending("nnts_snap_\(winID).png")
+            let tempSnapshotPath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("nnts_snap_\(winID).png").path
             defer { try? FileManager.default.removeItem(atPath: tempSnapshotPath) }
             
+            logger.info("Smart Snap: Executing screencapture for winID \(winID) (profile: '\(profName)')...")
             let proc = Process()
             proc.launchPath = "/usr/sbin/screencapture"
+            let errPipe = Pipe()
+            proc.standardError = errPipe
             proc.arguments = ["-x", "-o", "-l\(winID)", tempSnapshotPath]
             try? proc.run()
             proc.waitUntilExit()
+            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+            let errStr = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            try? errStr.write(toFile: "/tmp/nnts_snap_err.txt", atomically: true, encoding: .utf8)
+            logger.info("Smart Snap: screencapture exit code: \(proc.terminationStatus), stderr: '\(errStr, privacy: .public)', fileExists: \(FileManager.default.fileExists(atPath: tempSnapshotPath))")
             
             guard let windowImg = NSImage(contentsOfFile: tempSnapshotPath),
                   let cgImg = windowImg.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                logger.warning("Smart Snap: Unable to load window image from \(tempSnapshotPath).")
                 continue
             }
             

@@ -2219,7 +2219,7 @@ struct ChromeQuickAccessUnitTests {
 
     @Test
     func testUpdateEngineDownloadUrlAndCommand() {
-        #expect(UpdateEngine.directDmgDownloadUrl.absoluteString == "https://github.com/unacau/nnts/releases/latest/download/NNTS.dmg")
+        #expect(UpdateEngine.directDmgDownloadUrl.absoluteString == "https://github.com/ellisglass/nnts/releases/latest/download/NNTS.dmg")
         #expect(UpdateEngine.homebrewUpgradeCommand == "brew update && brew upgrade --cask nnts")
     }
 
@@ -2252,7 +2252,7 @@ struct ChromeQuickAccessUnitTests {
         
         --------
         
-        Full Changelog: https://github.com/unacau/nnts/compare/v2.0.0...v2.0.1
+        Full Changelog: https://github.com/ellisglass/nnts/compare/v2.0.0...v2.0.1
         """
         
         let highlights = UpdateEngine.parseReleaseHighlights(from: sampleMarkdown, maxBullets: 4)
@@ -2311,7 +2311,7 @@ struct ChromeQuickAccessUnitTests {
         let ghURL = DiagnosticBundleService.makeGitHubIssueURL(description: "Test issue")
         #expect(ghURL != nil)
         #expect(ghURL?.host == "github.com")
-        #expect(ghURL?.path.contains("unacau/nnts/issues/new") == true)
+        #expect(ghURL?.path.contains("ellisglass/nnts/issues/new") == true)
         #expect(ghURL?.absoluteString.contains("%5BBug%20Report%5D") == true || ghURL?.absoluteString.contains("[Bug") == true)
     }
 
@@ -3424,11 +3424,40 @@ struct ChromeQuickAccessUnitTests {
         let snapped = await engine.snapActiveBrowserAvatars()
         #expect(snapped >= 0)
         
-        // 2. AppDelegate menu includes Smart Snap item
+        // 2. AppDelegate menu includes Smart Snap item and submenu actions
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
-        let hasSnapItem = menu.items.contains(where: { $0.title.contains("Smart Snap Avatars") })
-        #expect(hasSnapItem)
+        let snapItem = menu.items.first(where: { $0.title.contains("Smart Snap Avatars") })
+        #expect(snapItem != nil)
+        #expect(snapItem?.submenu != nil)
+        let submenuTitles = snapItem?.submenu?.items.map { $0.title } ?? []
+        #expect(submenuTitles.contains(where: { $0.contains("Open Avatar Assistant") }))
+        #expect(submenuTitles.contains(where: { $0.contains("Paste Avatar from Clipboard") }))
+        #expect(submenuTitles.contains(where: { $0.contains("Auto-Snap") }))
+        
+        // 3. Test AvatarCaptureAssistantViewModel
+        let assistantVM = AvatarCaptureAssistantViewModel()
+        assistantVM.refreshProfiles()
+        if let firstDir = assistantVM.profiles.first?.dir {
+            assistantVM.selectProfile(dir: firstDir)
+            #expect(assistantVM.selectedProfileDir == firstDir)
+        }
+        
+        // 4. Test saving captured avatar to storage and retrieving it
+        let testImage = NSImage(size: NSSize(width: 48, height: 48))
+        testImage.lockFocus()
+        NSColor.systemBlue.setFill()
+        NSBezierPath(ovalIn: NSRect(x: 0, y: 0, width: 48, height: 48)).fill()
+        testImage.unlockFocus()
+        
+        let saved = engine.saveCapturedAvatar(image: testImage, forProfileDir: "TestSnapDir", name: "Snap Test")
+        #expect(saved == true)
+        let loadedAvatar = ChromeProfileEngine.loadStoredAvatar(dirKey: "TestSnapDir", name: "Snap Test")
+        #expect(loadedAvatar != nil)
+        
+        // Clean up test avatar file
+        let fileURL = ChromeProfileEngine.localAvatarStorageURL.appendingPathComponent("TestSnapDir.png")
+        try? FileManager.default.removeItem(at: fileURL)
     }
 }
 

@@ -1070,14 +1070,68 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(permItem)
         }
         
-        let snapItem = makeAlignedMenuItem(
-            title: "Smart Snap Avatars (Zero Disk)",
-            icon: NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Smart Snap Avatars"),
-            accessibilityHelp: "Extract profile avatars visually from running browser windows with Zero Disk Access",
+        let snapSubmenu = NSMenu()
+        
+        let assistantItem = makeAlignedMenuItem(
+            title: "Open Avatar Assistant...",
+            icon: NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Avatar Assistant"),
+            accessibilityHelp: "Open floating assistant with 3s timer and profile switcher",
+            action: #selector(handleOpenAvatarCaptureAssistant(_:)),
+            target: self
+        )
+        snapSubmenu.addItem(assistantItem)
+        snapSubmenu.addItem(NSMenuItem.separator())
+        
+        let guideHeader = NSMenuItem(title: "Select Profile to Snap:", action: nil, keyEquivalent: "")
+        guideHeader.attributedTitle = NSAttributedString(
+            string: "Select Profile to Snap:",
+            attributes: [.font: NSFont.boldSystemFont(ofSize: 11)]
+        )
+        guideHeader.isEnabled = false
+        snapSubmenu.addItem(guideHeader)
+        
+        for p in profileEngine.profiles {
+            let pSnapItem = makeAlignedMenuItem(
+                title: "Snap Avatar for \(p.effectiveName)...",
+                icon: p.avatarImage,
+                accessibilityHelp: "Focus \(p.effectiveName) in Chrome and select avatar with crosshair",
+                action: #selector(handleGuidedSnapAvatar(_:)),
+                target: self,
+                representedObject: p.dir
+            )
+            snapSubmenu.addItem(pSnapItem)
+        }
+        
+        snapSubmenu.addItem(NSMenuItem.separator())
+        
+        let pasteItem = makeAlignedMenuItem(
+            title: "Paste Avatar from Clipboard...",
+            icon: NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Paste Avatar"),
+            accessibilityHelp: "Apply image currently in clipboard as avatar for the active profile",
+            action: #selector(handlePasteAvatarFromClipboard(_:)),
+            target: self,
+            representedObject: profileEngine.getActiveProfileDir() ?? profileEngine.profiles.first?.dir
+        )
+        snapSubmenu.addItem(pasteItem)
+        
+        let autoSnapItem = makeAlignedMenuItem(
+            title: "Auto-Snap All Windows (Needs Screen Recording)...",
+            icon: NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Auto-Snap All Windows"),
+            accessibilityHelp: "Attempt automatic background capture of open windows (requires macOS Screen Recording permission)",
             action: #selector(handleSmartSnapAvatars),
             target: self
         )
-        snapItem.toolTip = "Visually capture profile avatars directly from running browser windows with zero disk permissions"
+        snapSubmenu.addItem(autoSnapItem)
+        
+        let snapItem = makeAlignedMenuItem(
+            title: "Smart Snap Avatars (User-Assisted)...",
+            icon: NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Smart Snap Avatars"),
+            accessibilityHelp: "Interactively capture profile avatars with 0 permissions",
+            action: nil,
+            target: nil
+        )
+        snapItem.submenu = snapSubmenu
+        snapItem.toolTip = "Interactively capture profile avatars with zero disk permissions"
         menu.addItem(snapItem)
         
         let hasLinkedBookmark = UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") != nil
@@ -1615,6 +1669,32 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc public func handleSmartSnapAvatars(_ sender: Any? = nil) {
         logger.info("Manual Smart Snap triggered from menu.")
+        if !ChromeProfileEngine.hasScreenRecordingPermission {
+            let alert = NSAlert()
+            alert.messageText = "Screen Recording Permission Required"
+            alert.informativeText = "Automatic background window capture requires the macOS 'Screen & System Audio Recording' permission in System Settings.\n\nAlternatively, you can use the User-Assisted Snap below to capture avatars interactively with 0 system permissions!"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "Use Interactive Snap (0 Permissions)")
+            alert.addButton(withTitle: "Open System Settings")
+            alert.addButton(withTitle: "Cancel")
+            NSApp.activate(ignoringOtherApps: true)
+            alert.window.level = .floating
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                let profileEngine = ChromeProfileEngine.shared
+                let activeDir = profileEngine.getActiveProfileDir() ?? profileEngine.profiles.first?.dir ?? "Default"
+                let dummyItem = NSMenuItem()
+                dummyItem.representedObject = activeDir
+                handleGuidedSnapAvatar(dummyItem)
+            } else if response == .alertSecondButtonReturn {
+                CGRequestScreenCaptureAccess()
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            return
+        }
+        
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             let count = await ChromeProfileEngine.shared.snapActiveBrowserAvatars()
@@ -1624,13 +1704,56 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             let alert = NSAlert()
             if count > 0 {
                 alert.messageText = "Avatars Snapped Successfully!"
-                alert.informativeText = "Smart Snap captured \(count) profile avatars directly from open browser windows with Zero Disk Access."
+                alert.informativeText = "Smart Snap captured \(count) profile avatars directly from open browser windows."
                 alert.alertStyle = .informational
             } else {
-                alert.messageText = "Smart Snap (Zero Disk Access)"
-                alert.informativeText = "No new profile windows were available to snap. Keep your browser open with the desired profile window active, and NNTS will snap its avatar automatically!"
+                alert.messageText = "No Windows Snapped"
+                alert.informativeText = "Could not capture profile avatars from the currently open windows. Please verify that Chrome is visible on screen, or use the interactive Snap option."
                 alert.alertStyle = .informational
             }
+            alert.addButton(withTitle: "OK")
+            NSApp.activate(ignoringOtherApps: true)
+            alert.window.level = .floating
+            alert.runModal()
+        }
+    }
+    
+    @objc public func handleOpenAvatarCaptureAssistant(_ sender: Any? = nil) {
+        AvatarCaptureAssistantWindow.shared.show()
+    }
+    
+    @objc public func handleGuidedSnapAvatar(_ sender: NSMenuItem) {
+        let dirKey = sender.representedObject as? String
+        AvatarCaptureAssistantWindow.shared.show(profileDir: dirKey)
+    }
+    
+    @objc public func handlePasteAvatarFromClipboard(_ sender: NSMenuItem) {
+        let profileEngine = ChromeProfileEngine.shared
+        let targetDir = (sender.representedObject as? String) ?? profileEngine.getActiveProfileDir() ?? profileEngine.profiles.first?.dir ?? "Default"
+        let targetProfile = profileEngine.profiles.first(where: { $0.dir == targetDir }) ?? profileEngine.profiles.first
+        let name = targetProfile?.name ?? "Profile"
+        
+        let success = profileEngine.saveCapturedAvatarFromPasteboard(forProfileDir: targetDir, name: name)
+        if success {
+            if NSSound(named: "Hero")?.play() != true {
+                NSSound.beep()
+            }
+            self.updateDynamicShortcuts()
+            self.updateMenu()
+            
+            let alert = NSAlert()
+            alert.messageText = "Avatar Applied from Clipboard!"
+            alert.informativeText = "Photo for '\(targetProfile?.effectiveName ?? name)' was successfully updated from your clipboard."
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "OK")
+            NSApp.activate(ignoringOtherApps: true)
+            alert.window.level = .floating
+            alert.runModal()
+        } else {
+            let alert = NSAlert()
+            alert.messageText = "No Image in Clipboard"
+            alert.informativeText = "First copy an image to your clipboard (or take a screenshot with Cmd+Ctrl+Shift+4), then click here to apply it to '\(targetProfile?.effectiveName ?? name)'."
+            alert.alertStyle = .warning
             alert.addButton(withTitle: "OK")
             NSApp.activate(ignoringOtherApps: true)
             alert.window.level = .floating
@@ -1663,11 +1786,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         
         let response = alert.runModal()
         if response == .alertSecondButtonReturn {
-            if let url = URL(string: "https://github.com/unacau/nnts") {
+            if let url = URL(string: "https://github.com/ellisglass/nnts") {
                 NSWorkspace.shared.open(url)
             }
         } else if response == .alertThirdButtonReturn {
-            if let url = URL(string: "https://unacau.github.io/nnts") {
+            if let url = URL(string: "https://ellisglass.github.io/nnts") {
                 NSWorkspace.shared.open(url)
             }
         }
@@ -1681,7 +1804,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     public func checkForUpdates() async {
-        guard let url = URL(string: "https://api.github.com/repos/unacau/nnts/releases/latest") else { return }
+        guard let url = URL(string: "https://api.github.com/repos/ellisglass/nnts/releases/latest") else { return }
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("NNTS-App", forHTTPHeaderField: "User-Agent")

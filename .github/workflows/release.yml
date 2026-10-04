@@ -92,7 +92,7 @@ jobs:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           if [ -n "$TAP_TOKEN" ]; then
-            echo "🚀 Updating Homebrew tap formula in unacau/homebrew-tap..."
+            echo "🚀 Updating Homebrew tap formula in ellisglass/homebrew-tap..."
             VERSION="${GITHUB_REF_NAME#v}"
             SHA=$(shasum -a 256 dist/NNTS.dmg | awk '{print $1}')
 
@@ -102,7 +102,7 @@ jobs:
             fi
 
             FILE_SHA=$(curl -s -H "Authorization: Bearer $TAP_TOKEN" \
-              "https://api.github.com/repos/unacau/homebrew-tap/contents/Casks/nnts.rb" | jq -r .sha)
+              "https://api.github.com/repos/ellisglass/homebrew-tap/contents/Casks/nnts.rb" | jq -r .sha)
 
             if [ -f "Casks/nnts.rb" ]; then
               CONTENT=$(cat Casks/nnts.rb | base64 | tr -d '\n')
@@ -114,7 +114,7 @@ jobs:
               curl -s -X PUT \
                 -H "Authorization: Bearer $TAP_TOKEN" \
                 -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/unacau/homebrew-tap/contents/Casks/nnts.rb" \
+                "https://api.github.com/repos/ellisglass/homebrew-tap/contents/Casks/nnts.rb" \
                 -d "{\"message\":\"chore(cask): update nnts to v${VERSION}\",\"content\":\"${CONTENT}\",\"sha\":\"${FILE_SHA}\"}"
               echo "✅ Homebrew tap formula updated to v${VERSION} (${SHA})"
             fi

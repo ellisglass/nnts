@@ -11,7 +11,7 @@ BUILD=$(cat BUILD.txt | tr -d '[:space:]')
 APP_NAME="NNTS"
 DMG_FILE="dist/NNTS.dmg"
 CHECKSUM_FILE="dist/checksums.txt"
-REPO="unacau/nnts"
+REPO="ellisglass/nnts"
 TAG="v$VERSION"
 
 MODE="cloud"
@@ -25,7 +25,7 @@ Options:
   --push           Create git tag '$TAG' and push to origin (triggers GitHub Actions release).
   --tag-only       Create git tag '$TAG' locally without pushing.
   --local          Build locally, generate checksums, and publish via local 'gh' CLI.
-  --sync-tap       Synchronize unacau/homebrew-tap with the current version and release DMG.
+  --sync-tap       Synchronize ellisglass/homebrew-tap with the current version and release DMG.
   --dry-run        Perform pre-flight verification without creating tags or publishing.
   -h, --help       Show this help message.
 
@@ -59,9 +59,9 @@ sync_homebrew_tap() {
     fi
 
     if command -v gh >/dev/null 2>&1; then
-        echo "🚀 Updating remote tap unacau/homebrew-tap via gh API..."
+        echo "🚀 Updating remote tap ellisglass/homebrew-tap via gh API..."
         local file_sha
-        file_sha=$(gh api repos/unacau/homebrew-tap/contents/Casks/nnts.rb --jq .sha 2>/dev/null || echo "")
+        file_sha=$(gh api repos/ellisglass/homebrew-tap/contents/Casks/nnts.rb --jq .sha 2>/dev/null || echo "")
         local content
         if [ -f "Casks/nnts.rb" ]; then
             content=$(cat Casks/nnts.rb | base64)
@@ -70,16 +70,16 @@ sync_homebrew_tap() {
         fi
 
         if [ -n "$file_sha" ] && [ -n "$content" ]; then
-            gh api -X PUT repos/unacau/homebrew-tap/contents/Casks/nnts.rb \
+            gh api -X PUT repos/ellisglass/homebrew-tap/contents/Casks/nnts.rb \
                 -F message="chore(cask): update nnts to v${version}" \
                 -F content="$content" \
                 -F sha="$file_sha" >/dev/null
-            echo "✅ unacau/homebrew-tap updated successfully to v${version}!"
+            echo "✅ ellisglass/homebrew-tap updated successfully to v${version}!"
         else
-            echo "⚠️ Could not read Casks/nnts.rb from unacau/homebrew-tap via gh API."
+            echo "⚠️ Could not read Casks/nnts.rb from ellisglass/homebrew-tap via gh API."
         fi
     else
-        echo "⚠️ gh CLI not found; unable to update unacau/homebrew-tap."
+        echo "⚠️ gh CLI not found; unable to update ellisglass/homebrew-tap."
     fi
 }
 

@@ -80,7 +80,7 @@ The GitHub Actions CI pipeline (`.github/workflows/ci.yml`) runs on every pull r
 
 ## 2. Observability & Telemetry Instrumentation
 
-The suite emits structured logs directly to the macOS Unified Logging System (`os_log`) under subsystem `com.unacau.chromequickaccess`.
+The suite emits structured logs directly to the macOS Unified Logging System (`os_log`) under subsystem `com.almosteleven.nnts`.
 
 ### Architecture Subsystems:
 - `app`: Application lifecycle, menu setup, and general state.
