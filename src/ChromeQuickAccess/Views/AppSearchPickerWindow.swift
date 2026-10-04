@@ -119,7 +119,7 @@ public struct AppSearchPickerRowView: View {
                     
                     Text(app.bundleID)
                         .font(.system(size: 10, weight: .regular))
-                        .foregroundColor(.white.opacity(0.45))
+                        .foregroundColor(.white.opacity(0.65))
                         .lineLimit(1)
                 }
                 
@@ -129,12 +129,16 @@ public struct AppSearchPickerRowView: View {
                 let char = app.firstLetter
                 Text("caps lock + \(String(char))")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.70))
+                    .foregroundColor(.white.opacity(0.85))
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
                     .background(
                         Capsule()
-                            .fill(Color.white.opacity(0.10))
+                            .fill(Color.white.opacity(0.14))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.20), lineWidth: 0.5)
                     )
                 
                 // Pin Status Badge with tactile bounce
@@ -236,6 +240,7 @@ public struct AppSearchPickerView: View {
     public let onCheckUpdates: () -> Void
     public let onManageLicense: () -> Void
     public let onLinkAvatars: () -> Void
+    public let onOpenAvatarAssistant: () -> Void
     
     public init(
         viewModel: AppSearchPickerViewModel,
@@ -245,7 +250,8 @@ public struct AppSearchPickerView: View {
         onRefresh: @escaping () -> Void = {},
         onCheckUpdates: @escaping () -> Void = {},
         onManageLicense: @escaping () -> Void = {},
-        onLinkAvatars: @escaping () -> Void = {}
+        onLinkAvatars: @escaping () -> Void = {},
+        onOpenAvatarAssistant: @escaping () -> Void = {}
     ) {
         self.viewModel = viewModel
         self.onClose = onClose
@@ -255,6 +261,7 @@ public struct AppSearchPickerView: View {
         self.onCheckUpdates = onCheckUpdates
         self.onManageLicense = onManageLicense
         self.onLinkAvatars = onLinkAvatars
+        self.onOpenAvatarAssistant = onOpenAvatarAssistant
     }
     
     public var body: some View {
@@ -434,7 +441,7 @@ public struct AppSearchPickerView: View {
                 let maxCount = AppGroupEngine.maxPinnedQuickApps
                 Text(LicenseEngine.shared.isPro ? "\(pinnedCount) pinned (Pro: Unlimited)" : "\(pinnedCount) of \(maxCount) slots used")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.55))
+                    .foregroundColor(.white.opacity(0.75))
                     .contentTransition(.numericText())
                     .animation(NNTSMotion.tactileBop, value: pinnedCount)
                 
@@ -459,6 +466,23 @@ public struct AppSearchPickerView: View {
                         .font(.system(size: 10))
                 }
                 
+                // Avatar Assistant button
+                Button(action: onOpenAvatarAssistant) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "camera.viewfinder")
+                            .font(.system(size: 11))
+                        Text("Avatar Assistant...")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundColor(Color(red: 0.35, green: 0.75, blue: 1.0))
+                }
+                .buttonStyle(.plain)
+                .help("Open interactive assistant to snip and assign profile photos (⌘⌃⇧4)")
+                
+                Text("•")
+                    .foregroundColor(.white.opacity(0.25))
+                    .font(.system(size: 10))
+
                 // Browse in Finder button
                 Button(action: onChooseOther) {
                     HStack(spacing: 4) {
@@ -482,8 +506,8 @@ public struct AppSearchPickerView: View {
                 Text("[⌘O] Browse")
                 Text("[Esc] Close")
             }
-            .font(.system(size: 9.5, weight: .regular, design: .monospaced))
-            .foregroundColor(.white.opacity(0.35))
+            .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+            .foregroundColor(.white.opacity(0.60))
             .padding(.bottom, 8)
         }
         .frame(width: 440)
@@ -550,6 +574,10 @@ public final class AppSearchPickerWindow: NSPanel {
             onLinkAvatars: { [weak self] in
                 self?.hideImmediate()
                 AppDelegate.shared?.handleLinkChromeAvatars()
+            },
+            onOpenAvatarAssistant: { [weak self] in
+                self?.hideImmediate()
+                AppDelegate.shared?.handleOpenAvatarCaptureAssistant()
             }
         )
         

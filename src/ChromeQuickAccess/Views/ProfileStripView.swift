@@ -78,7 +78,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
     public func view(_ view: NSView, stringForToolTip tag: NSView.ToolTipTag, point: NSPoint, userData data: UnsafeMutableRawPointer?) -> String {
         for (i, p) in profiles.enumerated() {
             if tileRect(for: i).contains(point) {
-                return "caps lock + \(p.index): switch to \(p.effectiveName)"
+                return "caps lock + \(p.index): switch to \(p.effectiveName)\nClick to focus · Right-click for Avatar Assistant"
             }
         }
         return ""
@@ -121,11 +121,27 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
                 if let menu = enclosingMenuItem?.menu {
                     menu.cancelTracking()
                 }
-                if event.modifierFlags.contains(.option) {
+                if event.modifierFlags.contains(.control) {
+                    AvatarCaptureAssistantWindow.shared.show(profileDir: p.dir)
+                } else if event.modifierFlags.contains(.option) {
                     ChromeProfileEngine.shared.toggleProfileSelection(dir: p.dir)
                 } else {
                     ChromeProfileEngine.shared.focusProfile(dir: p.dir)
                 }
+                return
+            }
+        }
+    }
+    
+    public override func rightMouseDown(with event: NSEvent) {
+        let loc = convert(event.locationInWindow, from: nil)
+        for (i, p) in profiles.enumerated() {
+            let rect = tileRect(for: i)
+            if rect.contains(loc) {
+                if let menu = enclosingMenuItem?.menu {
+                    menu.cancelTracking()
+                }
+                AvatarCaptureAssistantWindow.shared.show(profileDir: p.dir)
                 return
             }
         }

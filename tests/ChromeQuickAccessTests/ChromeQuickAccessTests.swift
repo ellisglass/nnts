@@ -3257,6 +3257,10 @@ struct ChromeQuickAccessUnitTests {
         let stripItem = menu.items.first(where: { $0.view is ProfileStripView })
         #expect(stripItem != nil)
         
+        // Explicit Avatar Assistant menu item is directly available
+        let directAssistantItem = menu.items.first(where: { $0.title.contains("Avatar Assistant") })
+        #expect(directAssistantItem != nil)
+        
         guard let stripView = stripItem?.view as? ProfileStripView else {
             Issue.record("ProfileStripView not found")
             return

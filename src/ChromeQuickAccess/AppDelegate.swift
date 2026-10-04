@@ -760,6 +760,16 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             stripItem.title = "Profiles"
             stripItem.view = ProfileStripView(profiles: displayProfiles, activeDir: activeProfileDir)
             menu.addItem(stripItem)
+            
+            let assistantItem = makeAlignedMenuItem(
+                title: "Avatar Assistant (⌘⌃⇧4)...",
+                icon: NSImage(systemSymbolName: "person.crop.circle.badge.plus", accessibilityDescription: "Avatar Assistant"),
+                accessibilityHelp: "Open interactive assistant to snip and assign profile avatars with zero permissions",
+                action: #selector(handleOpenAvatarCaptureAssistant(_:)),
+                target: self
+            )
+            assistantItem.toolTip = "Interactive assistant: snip any profile photo with ⌘⌃⇧4 and NNTS applies it automatically"
+            menu.addItem(assistantItem)
         }
         
         menu.addItem(NSMenuItem.separator())
@@ -1465,13 +1475,18 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let hostingView = NSHostingView(rootView: FeedbackWindowView())
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 460, height: 340),
-            styleMask: [.titled, .closable, .miniaturizable],
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 380),
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.center()
-        window.title = "Report an Issue — NNTS"
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isMovableByWindowBackground = true
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = true
         window.contentView = hostingView
         window.isReleasedWhenClosed = false
         window.level = .floating

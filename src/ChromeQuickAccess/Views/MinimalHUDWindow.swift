@@ -720,18 +720,23 @@ public struct MacNativeLiquidGlassBackground: View {
     
     public var body: some View {
         ZStack {
+            // 0. Dark Smoke Base Tint (anchors deep obsidian tone, stops background text bleed-through)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color(red: 0.11, green: 0.12, blue: 0.15).opacity(0.88))
+            
             // 1. Native macOS Behind-Window Visual Effect (dynamic desktop/window sampling blur)
             VisualEffectBlur(material: material, blendingMode: .behindWindow, state: .active, cornerRadius: cornerRadius)
+                .opacity(0.65)
             
-            // 2. Liquid Glass Translucent Luminous Sheen (crystal clarity, light passing through, NEVER black!)
+            // 2. Liquid Glass Translucent Luminous Sheen (subtle top specular highlight)
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(
                     LinearGradient(
                         stops: [
-                            .init(color: Color.white.opacity(0.36), location: 0.0),
-                            .init(color: Color.white.opacity(0.14), location: 0.28),
-                            .init(color: Color.white.opacity(0.04), location: 0.60),
-                            .init(color: Color.white.opacity(0.20), location: 1.0)
+                            .init(color: Color.white.opacity(0.12), location: 0.0),
+                            .init(color: Color.white.opacity(0.04), location: 0.28),
+                            .init(color: Color.clear, location: 0.60),
+                            .init(color: Color.white.opacity(0.05), location: 1.0)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -743,9 +748,9 @@ public struct MacNativeLiquidGlassBackground: View {
                 .fill(
                     LinearGradient(
                         stops: [
-                            .init(color: Color.white.opacity(0.48), location: 0.0),
-                            .init(color: Color.white.opacity(0.18), location: 0.22),
-                            .init(color: Color.clear, location: 0.52)
+                            .init(color: Color.white.opacity(0.14), location: 0.0),
+                            .init(color: Color.white.opacity(0.04), location: 0.20),
+                            .init(color: Color.clear, location: 0.45)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -758,8 +763,8 @@ public struct MacNativeLiquidGlassBackground: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color.white.opacity(0.36),
                                 Color.white.opacity(0.10),
+                                Color.white.opacity(0.02),
                                 Color.clear
                             ],
                             center: .top,
@@ -777,10 +782,10 @@ public struct MacNativeLiquidGlassBackground: View {
                 .strokeBorder(
                     LinearGradient(
                         stops: [
-                            .init(color: Color.white.opacity(0.92), location: 0.0),
-                            .init(color: Color.white.opacity(0.45), location: 0.25),
-                            .init(color: Color.white.opacity(0.15), location: 0.60),
-                            .init(color: Color.white.opacity(0.50), location: 1.0)
+                            .init(color: Color.white.opacity(0.40), location: 0.0),
+                            .init(color: Color.white.opacity(0.18), location: 0.25),
+                            .init(color: Color.white.opacity(0.06), location: 0.60),
+                            .init(color: Color.white.opacity(0.20), location: 1.0)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -794,10 +799,10 @@ public struct MacNativeLiquidGlassBackground: View {
                 .strokeBorder(
                     LinearGradient(
                         stops: [
-                            .init(color: Color(red: 0.70, green: 0.88, blue: 1.0).opacity(0.80), location: 0.0),
-                            .init(color: Color.white.opacity(0.80), location: 0.18),
-                            .init(color: Color.white.opacity(0.25), location: 0.50),
-                            .init(color: Color(red: 0.88, green: 0.72, blue: 1.0).opacity(0.55), location: 1.0)
+                            .init(color: Color(red: 0.70, green: 0.88, blue: 1.0).opacity(0.45), location: 0.0),
+                            .init(color: Color.white.opacity(0.35), location: 0.18),
+                            .init(color: Color.white.opacity(0.12), location: 0.50),
+                            .init(color: Color(red: 0.88, green: 0.72, blue: 1.0).opacity(0.30), location: 1.0)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -806,9 +811,8 @@ public struct MacNativeLiquidGlassBackground: View {
                 )
         )
         // 7. Multi-layered Floating Glass Elevation Shadow
-        .shadow(color: Color.black.opacity(0.22), radius: 32, x: 0, y: 16)
-        .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 3)
-        .shadow(color: Color.white.opacity(0.30), radius: 1, x: 0, y: -0.5)
+        .shadow(color: Color.black.opacity(0.35), radius: 32, x: 0, y: 16)
+        .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 3)
     }
 }
 

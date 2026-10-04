@@ -18,129 +18,221 @@ public struct FeedbackWindowView: View {
     public init() {}
 
     public var body: some View {
-        VStack(spacing: 20) {
-            // Header
-            HStack(spacing: 12) {
-                Image(systemName: "ladybug.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 32, height: 32)
-                    .foregroundColor(.accentColor)
-
-                VStack(alignment: .leading, spacing: 2) {
+        VStack(spacing: 0) {
+            // 1. Header Bar (Identical to Settings & Avatar Assistant)
+            HStack(spacing: 10) {
+                HStack(spacing: 7) {
+                    Image(systemName: "ladybug.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.70))
                     Text("Report an Issue")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    Text("Zero-telemetry diagnostics. Inspect or share on your terms.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.88))
                 }
+                
+                // Zero Telemetry Pill
+                HStack(spacing: 3) {
+                    Image(systemName: "shield.checkerboard")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("Zero Telemetry")
+                        .font(.system(size: 9.5, weight: .bold))
+                }
+                .foregroundColor(Color(red: 0.35, green: 0.85, blue: 0.50))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2.5)
+                .background(
+                    Capsule().fill(Color(red: 0.35, green: 0.85, blue: 0.50).opacity(0.18))
+                )
+                .overlay(
+                    Capsule().stroke(Color(red: 0.35, green: 0.85, blue: 0.50).opacity(0.35), lineWidth: 0.75)
+                )
+                
                 Spacer()
-            }
-
-            Divider()
-
-            // Diagnostic File Card with Drag and Drop
-            VStack(spacing: 12) {
-                if viewModel.isPreparingArchive {
-                    ProgressView("Packaging diagnostics...")
-                        .frame(height: 90)
-                } else if let zipURL = viewModel.zipURL {
-                    VStack(spacing: 8) {
-                        Image(systemName: "doc.zipper")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 44, height: 44)
-                            .foregroundColor(.orange)
-
-                        Text("nnts-diagnostic.zip")
-                            .font(.system(size: 13, weight: .medium, design: .monospaced))
-
-                        Text("Drag & drop this file directly into Telegram, WhatsApp, or Finder")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color(NSColor.controlBackgroundColor)))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .strokeBorder(Color.secondary.opacity(0.2), lineWidth: 1)
-                    )
-                    .onDrag {
-                        let provider = NSItemProvider(object: zipURL as NSURL)
-                        provider.suggestedName = "nnts-diagnostic.zip"
-                        return provider
-                    }
-                } else if let error = viewModel.errorMessage {
-                    VStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.red)
-                        Text(error)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(height: 90)
+                
+                // Close button
+                Button(action: {
+                    NSApp.keyWindow?.close()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.40))
                 }
+                .buttonStyle(.plain)
+                .help("Close (Esc)")
             }
-
-            // Action Buttons
-            VStack(spacing: 10) {
-                HStack(spacing: 12) {
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 12)
+            
+            Divider()
+                .opacity(0.4)
+            
+            // 2. Body Content
+            VStack(spacing: 12) {
+                // Diagnostic File Card with Drag and Drop
+                VStack(spacing: 10) {
+                    if viewModel.isPreparingArchive {
+                        ProgressView("Packaging diagnostics...")
+                            .frame(height: 80)
+                    } else if let zipURL = viewModel.zipURL {
+                        VStack(spacing: 6) {
+                            Image(systemName: "doc.zipper")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 36, height: 36)
+                                .foregroundColor(.orange)
+                            
+                            Text("nnts-diagnostic.zip")
+                                .font(.system(size: 12.5, weight: .semibold, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.90))
+                            
+                            Text("Drag & drop this file directly into Telegram, WhatsApp, or Finder")
+                                .font(.system(size: 10.5))
+                                .foregroundColor(.white.opacity(0.75))
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.black.opacity(0.25))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.75)
+                                )
+                        )
+                        .onDrag {
+                            let provider = NSItemProvider(object: zipURL as NSURL)
+                            provider.suggestedName = "nnts-diagnostic.zip"
+                            return provider
+                        }
+                    } else if let error = viewModel.errorMessage {
+                        VStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.red)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(height: 80)
+                    }
+                }
+                
+                // Action Buttons
+                HStack(spacing: 10) {
                     Button(action: openTelegram) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             Image(nsImage: Self.telegramIcon)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 20, height: 20)
+                                .frame(width: 16, height: 16)
                             Text("Telegram Chat")
-                                .fontWeight(.medium)
+                                .font(.system(size: 12, weight: .semibold))
                         }
                         .frame(maxWidth: .infinity)
+                        .frame(height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(red: 0.16, green: 0.52, blue: 0.90).opacity(0.25))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .strokeBorder(Color(red: 0.16, green: 0.52, blue: 0.90).opacity(0.5), lineWidth: 0.75)
+                                )
+                        )
+                        .foregroundColor(.white)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-
+                    .buttonStyle(.plain)
+                    
                     Button(action: openGitHub) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             Image(nsImage: Self.gitHubIcon)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 20, height: 20)
+                                .frame(width: 16, height: 16)
                             Text("GitHub Issue")
-                                .fontWeight(.medium)
+                                .font(.system(size: 12, weight: .semibold))
                         }
                         .frame(maxWidth: .infinity)
+                        .frame(height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.75)
+                                )
+                        )
+                        .foregroundColor(.white)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
+                    .buttonStyle(.plain)
                 }
-
-                HStack(spacing: 12) {
+                
+                HStack(spacing: 10) {
                     Button(action: revealInFinder) {
-                        HStack(spacing: 6) {
+                        HStack(spacing: 5) {
                             Image(nsImage: Self.finderIcon)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 16, height: 16)
+                                .frame(width: 14, height: 14)
                             Text("Show in Finder")
+                                .font(.system(size: 11, weight: .medium))
                         }
-                        .frame(maxWidth: .infinity)
+                        .foregroundColor(Color(red: 0.40, green: 0.70, blue: 1.0))
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.plain)
                     .disabled(viewModel.zipURL == nil)
-
+                    
+                    Spacer()
+                    
                     Button(action: copyDiagnosticsToClipboard) {
-                        Label(viewModel.copiedNotice ? "Copied! ✅" : "Copy Raw Log", systemImage: "doc.on.doc")
-                            .frame(maxWidth: .infinity)
+                        HStack(spacing: 5) {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 11))
+                            Text(viewModel.copiedNotice ? "Copied! ✅" : "Copy Raw Log")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(.white.opacity(0.70))
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 4)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            
+            Divider()
+                .opacity(0.4)
+            
+            // 3. Footer Bar
+            HStack {
+                HStack(spacing: 5) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(red: 0.35, green: 0.85, blue: 0.50).opacity(0.85))
+                    Text("100% offline & local diagnostic archive")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.white.opacity(0.70))
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            
+            // 4. Key Hints Bar
+            HStack(spacing: 12) {
+                Text("[⌘C] Copy Log")
+                Text("[⌘O] Finder")
+                Text("[Esc] Close")
+            }
+            .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+            .foregroundColor(.white.opacity(0.60))
+            .padding(.bottom, 8)
         }
-        .padding(22)
-        .frame(width: 460)
+        .frame(width: 440)
+        .background(
+            MacNativeLiquidGlassBackground(cornerRadius: 18, material: .popover)
+        )
+        .preferredColorScheme(.dark)
         .onAppear {
             generateArchive()
         }
