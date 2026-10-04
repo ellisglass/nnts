@@ -796,10 +796,30 @@ public final class ChromeProfileEngine: ObservableObject {
         }
     }
     
+    public static func getImageFromPasteboard(_ pboard: NSPasteboard = .general) -> NSImage? {
+        if let img = NSImage(pasteboard: pboard) {
+            return img
+        }
+        if let objects = pboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage], let first = objects.first {
+            return first
+        }
+        if let urls = pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let first = urls.first {
+            if let img = NSImage(contentsOf: first) {
+                return img
+            }
+        }
+        for type in [NSPasteboard.PasteboardType.png, .tiff] {
+            if let data = pboard.data(forType: type), let img = NSImage(data: data) {
+                return img
+            }
+        }
+        return nil
+    }
+    
     @discardableResult
     @MainActor
     public func saveCapturedAvatarFromPasteboard(forProfileDir dirKey: String, name: String) -> Bool {
-        guard let img = NSImage(pasteboard: NSPasteboard.general) else { return false }
+        guard let img = Self.getImageFromPasteboard() else { return false }
         return saveCapturedAvatar(image: img, forProfileDir: dirKey, name: name)
     }
     
@@ -863,17 +883,68 @@ public final class ChromeProfileEngine: ObservableObject {
     }
     
     @MainActor
+    public func launchInteractiveScreenCaptureToFile(
+        targetPath: String,
+        completion: @escaping (Bool) -> Void
+    ) {
+        if Self.bypassLaunchInTests || AppGroupEngine.bypassLaunchInTests {
+            completion(false)
+            return
+        }
+        
+        CopyOnSelectEngine.shared.isTemporarilySuppressed = true
+        
+        let task = Process()
+        task.launchPath = "/usr/sbin/screencapture"
+        let errPipe = Pipe()
+        task.standardError = errPipe
+        task.arguments = ["-i", targetPath]
+        
+        task.terminationHandler = { [weak self] proc in
+            DispatchQueue.main.async {
+                CopyOnSelectEngine.shared.isTemporarilySuppressed = false
+                let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+                let errStr = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let exists = FileManager.default.fileExists(atPath: targetPath)
+                var size: Int64 = 0
+                if exists {
+                    size = (try? FileManager.default.attributesOfItem(atPath: targetPath)[.size] as? Int64) ?? 0
+                }
+                self?.logger.info("Interactive screencapture exit code: \(proc.terminationStatus), stderr: '\(errStr, privacy: .public)', fileExists: \(exists), size: \(size)")
+                completion(exists && size > 0)
+            }
+        }
+        
+        do {
+            try task.run()
+        } catch {
+            CopyOnSelectEngine.shared.isTemporarilySuppressed = false
+            logger.error("Failed to run interactive screencapture: \(error.localizedDescription)")
+            completion(false)
+        }
+    }
+    
+    @MainActor
     public func startGuidedAvatarCapture(forProfileDir dirKey: String, name: String, onComplete: ((Bool) -> Void)? = nil) {
         focusProfile(dir: dirKey)
         
-        Task { @MainActor [weak self] in
-            guard let self = self else { return }
-            try? await Task.sleep(nanoseconds: 400_000_000)
-            
-            self.startPasteboardAvatarWatcher(forProfileDir: dirKey, name: name, timeoutSeconds: 45.0) { success in
-                onComplete?(success)
+        let tempPath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("nnts_guided_\(UUID().uuidString).png").path
+        
+        launchInteractiveScreenCaptureToFile(targetPath: tempPath) { [weak self] success in
+            guard let self = self else {
+                try? FileManager.default.removeItem(atPath: tempPath)
+                onComplete?(false)
+                return
             }
-            self.launchInteractiveScreenCapture()
+            
+            if success, let img = NSImage(contentsOfFile: tempPath) {
+                let saved = self.saveCapturedAvatar(image: img, forProfileDir: dirKey, name: name)
+                try? FileManager.default.removeItem(atPath: tempPath)
+                onComplete?(saved)
+            } else {
+                try? FileManager.default.removeItem(atPath: tempPath)
+                onComplete?(false)
+            }
         }
     }
     
@@ -883,10 +954,20 @@ public final class ChromeProfileEngine: ObservableObject {
         return CGPreflightScreenCaptureAccess()
     }
     
+    public static func openScreenRecordingSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
     @discardableResult
     @MainActor
     public func snapActiveBrowserAvatars() async -> Int {
         guard !Self.bypassLaunchInTests else { return 0 }
+        guard Self.hasScreenRecordingPermission else {
+            logger.info("Smart Snap: Screen Recording permission not granted. Skipping batch scan.")
+            return 0
+        }
         let bundleID = self.browserBundleID
         guard let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleID }) else {
             logger.info("Smart Snap: Browser \(bundleID) is not currently running.")
@@ -1177,10 +1258,6 @@ public final class ChromeProfileEngine: ObservableObject {
             AXUIElementSetAttributeValue(targetWindow, kAXMainAttribute as CFString, true as CFTypeRef)
             chromeApp.activate()
             logger.info("Focused existing open window for profile '\(profile.name)'.")
-            Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: 350_000_000)
-                await self?.snapActiveBrowserAvatars()
-            }
             return
         }
         
@@ -1194,10 +1271,6 @@ public final class ChromeProfileEngine: ObservableObject {
             if res == .success {
                 chromeApp.activate()
                 self.logger.info("Switched to profile '\(profile.name)' via Accessibility menu.")
-                Task { @MainActor [weak self] in
-                    try? await Task.sleep(nanoseconds: 600_000_000)
-                    await self?.snapActiveBrowserAvatars()
-                }
                 
                 // 3. Post-Menu Cleanup: Chrome natively unminimizes a profile's minimized window when selected from the menu,
                 // even if an open window existed on another Space. We revert this to respect the user's explicit preference.

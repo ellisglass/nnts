@@ -90,6 +90,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
     public static var mockNonTextControlDetected: Bool? = nil
     
     public var isEnabled: Bool = true
+    public var isTemporarilySuppressed: Bool = false
     
     // 10.0pt threshold prevents false positive copies during micro-jitters or single clicks
     public var dragThreshold: CGFloat = 10.0
@@ -208,7 +209,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         guard globalMouseDownMonitor == nil else { return }
         globalMouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] _ in
             Task { @MainActor [weak self] in
-                guard let engine = self, engine.isEnabled else { return }
+                guard let engine = self, engine.isEnabled, !engine.isTemporarilySuppressed else { return }
                 guard !engine.isInteractingWithNNTSWindow else {
                     engine.mouseDownLocation = nil
                     return
@@ -224,7 +225,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
         }
         globalMouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] event in
             Task { @MainActor [weak self] in
-                guard let engine = self, engine.isEnabled else { return }
+                guard let engine = self, engine.isEnabled, !engine.isTemporarilySuppressed else { return }
                 guard !engine.isInteractingWithNNTSWindow else {
                     engine.mouseDownLocation = nil
                     return
@@ -261,7 +262,7 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
             return
         }
         
-        guard isEnabled else { return }
+        guard isEnabled, !isTemporarilySuppressed else { return }
         
         if isInteractingWithNNTSWindow {
             cancelPendingCopy()

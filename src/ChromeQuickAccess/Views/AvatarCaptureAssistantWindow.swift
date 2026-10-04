@@ -58,16 +58,118 @@ public final class AvatarCaptureAssistantViewModel: ObservableObject {
         self.capturedAvatar = ChromeProfileEngine.loadStoredAvatar(dirKey: p.dir, name: p.name)
     }
     
+    public var isScreenRecordingAuthorized: Bool {
+        ChromeProfileEngine.hasScreenRecordingPermission
+    }
+    
+    public func requestScreenRecordingPermission() {
+        CGRequestScreenCaptureAccess()
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
+    private var pasteboardWatcherTimer: Timer?
+    private var lastPasteboardChangeCount: Int = 0
+    
+    public func startPasteboardWatcher() {
+        stopPasteboardWatcher()
+        lastPasteboardChangeCount = NSPasteboard.general.changeCount
+        pasteboardWatcherTimer = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                let currentCount = NSPasteboard.general.changeCount
+                if currentCount != self.lastPasteboardChangeCount {
+                    self.lastPasteboardChangeCount = currentCount
+                    if let img = ChromeProfileEngine.getImageFromPasteboard(), let profile = self.selectedProfile {
+                        let saved = ChromeProfileEngine.shared.saveCapturedAvatar(image: img, forProfileDir: profile.dir, name: profile.name)
+                        if saved {
+                            if NSSound(named: "Hero")?.play() != true {
+                                NSSound.beep()
+                            }
+                            self.isSuccess = true
+                            self.statusMessage = "Auto-saved avatar from clipboard for '\(profile.effectiveName)'!"
+                            self.capturedAvatar = ChromeProfileEngine.loadStoredAvatar(dirKey: profile.dir, name: profile.name)
+                            AppDelegate.shared?.updateDynamicShortcuts()
+                            AppDelegate.shared?.updateMenu()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    public func stopPasteboardWatcher() {
+        pasteboardWatcherTimer?.invalidate()
+        pasteboardWatcherTimer = nil
+    }
+
     public func nextProfile() {
         guard !profiles.isEmpty, let currentIndex = profiles.firstIndex(where: { $0.dir == selectedProfileDir }) else { return }
         let nextIndex = (currentIndex + 1) % profiles.count
         selectProfile(dir: profiles[nextIndex].dir)
     }
     
+    public func syncAllProfiles() {
+        guard isScreenRecordingAuthorized else {
+            let alert = NSAlert()
+            alert.messageText = "1-Click Auto-Sync: Permissions Guide"
+            alert.informativeText = """
+Why this exists:
+Profile photos give you intuitive visual recognition in the HUD during quick switching.
+
+What happens next (macOS Permissions):
+1. Clicking 'Open Settings' takes you to macOS System Settings.
+2. Toggle the switch for NNTS.
+3. macOS will prompt: "NNTS will not be able to record the screen until it is quit." Click [Quit & Reopen].
+4. After reopen, 1-Click Auto-Sync will scan open windows in 2 seconds and cache avatars locally.
+5. Once cached, you can immediately turn off Screen Recording in System Settings!
+
+Prefer 0 permissions?
+Just press ⌘⌃⇧4 and snip your profile avatar in Chrome — NNTS catches it from the clipboard automatically!
+"""
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "Open System Settings")
+            alert.addButton(withTitle: "Use Clipboard Snip (0 Permissions)")
+            alert.addButton(withTitle: "Cancel")
+            NSApp.activate(ignoringOtherApps: true)
+            alert.window.level = .floating
+            let resp = alert.runModal()
+            if resp == .alertFirstButtonReturn {
+                requestScreenRecordingPermission()
+            }
+            return
+        }
+        isSuccess = false
+        statusMessage = "Scanning open browser windows..."
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let count = await ChromeProfileEngine.shared.snapActiveBrowserAvatars()
+            self.refreshProfiles()
+            self.updatePreview()
+            if count > 0 {
+                if NSSound(named: "Hero")?.play() != true {
+                    NSSound.beep()
+                }
+                self.isSuccess = true
+                self.statusMessage = "Synced \(count) profile avatars! Cached locally on your Mac."
+                AppDelegate.shared?.updateDynamicShortcuts()
+                AppDelegate.shared?.updateMenu()
+            } else {
+                self.statusMessage = "No open browser windows found to snap. Open Chrome and try again."
+            }
+        }
+    }
+    
     public func startCrosshair(delayed: Bool = false) {
         guard let profile = selectedProfile else { return }
         self.isSuccess = false
         self.statusMessage = nil
+        
+        if !ChromeProfileEngine.hasScreenRecordingPermission {
+            CGRequestScreenCaptureAccess()
+            self.statusMessage = "Screen Recording permission needed for crosshair. Enable in Settings or use ⌘⌃⇧4."
+        }
         
         // Focus the browser window for this profile
         ChromeProfileEngine.shared.focusProfile(dir: profile.dir)
@@ -106,35 +208,44 @@ public final class AvatarCaptureAssistantViewModel: ObservableObject {
         AvatarCaptureAssistantWindow.shared.orderOut(nil)
         
         let profileEngine = ChromeProfileEngine.shared
+        let tempPath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("nnts_avatar_\(UUID().uuidString).png").path
         
-        profileEngine.startPasteboardAvatarWatcher(forProfileDir: profile.dir, name: profile.name, timeoutSeconds: 30.0) { [weak self] success in
+        profileEngine.launchInteractiveScreenCaptureToFile(targetPath: tempPath) { [weak self] success in
             Task { @MainActor [weak self] in
-                guard let self = self else { return }
+                guard let self = self else {
+                    try? FileManager.default.removeItem(atPath: tempPath)
+                    return
+                }
                 self.isCrosshairActive = false
-                if success {
-                    if NSSound(named: "Hero")?.play() != true {
-                        NSSound.beep()
+                
+                if success, let img = NSImage(contentsOfFile: tempPath) {
+                    let saved = profileEngine.saveCapturedAvatar(image: img, forProfileDir: profile.dir, name: profile.name)
+                    try? FileManager.default.removeItem(atPath: tempPath)
+                    
+                    if saved {
+                        if NSSound(named: "Hero")?.play() != true {
+                            NSSound.beep()
+                        }
+                        self.isSuccess = true
+                        self.statusMessage = "Avatar saved for '\(profile.effectiveName)'!"
+                        self.capturedAvatar = ChromeProfileEngine.loadStoredAvatar(dirKey: profile.dir, name: profile.name)
+                        AppDelegate.shared?.updateDynamicShortcuts()
+                        AppDelegate.shared?.updateMenu()
+                    } else {
+                        self.isSuccess = false
+                        self.statusMessage = "Failed to process image."
                     }
-                    self.isSuccess = true
-                    self.statusMessage = "Avatar saved for '\(profile.effectiveName)'!"
-                    self.capturedAvatar = ChromeProfileEngine.loadStoredAvatar(dirKey: profile.dir, name: profile.name)
-                    AppDelegate.shared?.updateDynamicShortcuts()
-                    AppDelegate.shared?.updateMenu()
+                } else {
+                    try? FileManager.default.removeItem(atPath: tempPath)
+                    self.isSuccess = false
+                    if !ChromeProfileEngine.hasScreenRecordingPermission {
+                        self.statusMessage = "Screen Recording permission required for crosshairs. Click Open Settings or press ⌘⌃⇧4."
+                    } else {
+                        self.statusMessage = "Capture cancelled. Click Start Crosshair to try again."
+                    }
                 }
-                AvatarCaptureAssistantWindow.shared.show(profileDir: profile.dir)
-            }
-        }
-        
-        profileEngine.launchInteractiveScreenCapture { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                // If user pressed Escape in screencapture, restore window if still hidden
-                try? await Task.sleep(nanoseconds: 300_000_000)
-                if self.isCrosshairActive && !AvatarCaptureAssistantWindow.shared.isVisible {
-                    self.isCrosshairActive = false
-                    profileEngine.cancelPasteboardAvatarWatcher()
-                    AvatarCaptureAssistantWindow.shared.show(profileDir: profile.dir)
-                }
+                
+                AvatarCaptureAssistantWindow.shared.show(profileDir: profile.dir, preservingState: true)
             }
         }
     }
@@ -269,8 +380,61 @@ public struct AvatarCaptureAssistantView: View {
                     )
             )
             
+            // Permission Warning Banner (if Screen Recording is not yet granted)
+            if !viewModel.isScreenRecordingAuthorized {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                        .font(.system(size: 11))
+                    Text("Screen Recording needed for Auto-Sync & Crosshairs")
+                        .font(.system(size: 10.5, weight: .medium))
+                        .foregroundColor(.white.opacity(0.85))
+                    Spacer()
+                    Button("Open Settings") {
+                        viewModel.requestScreenRecordingPermission()
+                    }
+                    .font(.system(size: 10.5, weight: .bold))
+                    .buttonStyle(.plain)
+                    .foregroundColor(.cyan)
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(Color.orange.opacity(0.15))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Color.orange.opacity(0.35), lineWidth: 0.75)
+                )
+            } else if viewModel.isSuccess {
+                // Privacy offboarding reassurance: avatars are cached, user can revoke permission
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .foregroundColor(Color(red: 0.35, green: 0.88, blue: 0.52))
+                        .font(.system(size: 11))
+                    Text("Avatars cached locally. Screen Recording can be turned off.")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.white.opacity(0.85))
+                        .lineLimit(1)
+                    Spacer()
+                    Button("Turn Off…") {
+                        ChromeProfileEngine.openScreenRecordingSettings()
+                    }
+                    .font(.system(size: 10, weight: .bold))
+                    .buttonStyle(.plain)
+                    .foregroundColor(.cyan)
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(Color.white.opacity(0.06))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.75)
+                )
+            }
+            
             // Instructions / Status
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 5) {
                 if let count = viewModel.countdownSeconds {
                     HStack(spacing: 8) {
                         ProgressView()
@@ -280,92 +444,100 @@ public struct AvatarCaptureAssistantView: View {
                             .foregroundColor(.orange)
                     }
                 } else if let status = viewModel.statusMessage {
-                    Text(status)
-                        .font(.system(size: 11.5, weight: .semibold))
-                        .foregroundColor(viewModel.isSuccess ? Color(red: 0.35, green: 0.88, blue: 0.52) : .yellow)
-                } else {
-                    HStack(alignment: .top, spacing: 6) {
-                        Text("1.")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.secondary)
-                        Text("Click the profile avatar in Chrome (or open profile panel).")
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
+                    HStack(spacing: 6) {
+                        Image(systemName: viewModel.isSuccess ? "checkmark.circle.fill" : "info.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(viewModel.isSuccess ? Color(red: 0.35, green: 0.88, blue: 0.52) : .yellow)
+                        Text(status)
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundColor(viewModel.isSuccess ? Color(red: 0.35, green: 0.88, blue: 0.52) : .yellow)
                     }
-                    HStack(alignment: .top, spacing: 6) {
-                        Text("2.")
-                            .font(.system(size: 11, weight: .bold))
+                } else {
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 10))
+                                .foregroundColor(.cyan)
+                            Text("Fastest: Zero Permissions Needed")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        Text("1. In Chrome, press **⌘⌃⇧4** and snip your profile avatar.\n2. NNTS automatically catches it from the clipboard and saves it!")
+                            .font(.system(size: 10.5))
                             .foregroundColor(.secondary)
-                        Text("Click **Start Crosshair**, then drag a box over the avatar.")
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
+                            .lineSpacing(2)
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 4)
+            .padding(8)
+            .background(Color.white.opacity(0.04))
+            .cornerRadius(8)
             
-            // Action Buttons
-            HStack(spacing: 8) {
-                // Primary Crosshair Button
-                Button(action: {
-                    viewModel.startCrosshair(delayed: false)
-                }) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "crosshair")
-                            .font(.system(size: 11, weight: .bold))
-                        Text("Start Crosshair")
-                            .font(.system(size: 12, weight: .semibold))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 7)
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+            // Primary Hero Button: Paste from Clipboard
+            Button(action: {
+                viewModel.pasteFromClipboard()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "doc.on.clipboard.fill")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("Paste Snip from Clipboard")
+                        .font(.system(size: 12, weight: .semibold))
                 }
-                .buttonStyle(.plain)
-                
-                // 3-Second Timer Button (to allow opening popups/menus)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+                .background(Color.accentColor)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .help("Applies image currently in clipboard (or auto-saved via ⌘⌃⇧4)")
+            
+            // Secondary Options: 1-Click Auto-Sync or Native Crosshairs
+            HStack(spacing: 8) {
                 Button(action: {
-                    viewModel.startCrosshair(delayed: true)
+                    viewModel.syncAllProfiles()
                 }) {
                     HStack(spacing: 4) {
-                        Image(systemName: "timer")
-                            .font(.system(size: 11))
-                        Text("3s Timer")
-                            .font(.system(size: 12, weight: .medium))
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Auto-Sync (1-Click)")
+                            .font(.system(size: 11, weight: .medium))
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(Color.white.opacity(0.10))
-                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.08))
+                    .foregroundColor(.white.opacity(0.9))
                     .cornerRadius(8)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.75)
+                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.75)
                     )
                 }
                 .buttonStyle(.plain)
-                .help("Gives you 3 seconds to click inside Chrome and open the profile dropdown before crosshairs appear")
+                .help("Scans all open Chrome windows in 2 seconds (requires Screen Recording permission)")
                 
-                // Paste from Clipboard Button
                 Button(action: {
-                    viewModel.pasteFromClipboard()
+                    viewModel.startCrosshair(delayed: false)
                 }) {
-                    Image(systemName: "doc.on.clipboard")
-                        .font(.system(size: 12))
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 7)
-                        .background(Color.white.opacity(0.10))
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.75)
-                        )
+                    HStack(spacing: 4) {
+                        Image(systemName: "viewfinder")
+                            .font(.system(size: 11))
+                        Text("Crosshair")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.08))
+                    .foregroundColor(.white.opacity(0.9))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.75)
+                    )
                 }
                 .buttonStyle(.plain)
-                .help("Paste image currently in your clipboard (or Cmd+Ctrl+Shift+4)")
+                .help("Interactive crosshairs overlay")
             }
             
             if viewModel.isSuccess && viewModel.profiles.count > 1 {
@@ -464,17 +636,23 @@ public final class AvatarCaptureAssistantWindow: NSWindow {
         super.keyDown(with: event)
     }
     
-    public func show(profileDir: String? = nil) {
-        viewModel.refreshProfiles()
-        if let dir = profileDir {
-            viewModel.selectProfile(dir: dir)
+    public func show(profileDir: String? = nil, preservingState: Bool = false) {
+        if !preservingState {
+            viewModel.refreshProfiles()
+            if let dir = profileDir {
+                viewModel.selectProfile(dir: dir)
+            }
+        } else {
+            viewModel.updatePreview()
         }
+        viewModel.startPasteboardWatcher()
         centerOnScreen()
         makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
     
     public func hideImmediate() {
+        viewModel.stopPasteboardWatcher()
         orderOut(nil)
     }
     

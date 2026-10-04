@@ -70,8 +70,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         updateDynamicShortcuts()
         updateMenu()
         
-        // Smart Snap: Silently capture avatars from active browser windows with Zero Disk Access
+        // Smart Snap: If user previously authorized Screen Recording and has unsynced profiles, sync them
         Task { @MainActor [weak self] in
+            guard ChromeProfileEngine.hasScreenRecordingPermission else { return }
+            let needsSync = ChromeProfileEngine.shared.profiles.contains { p in
+                ChromeProfileEngine.loadStoredAvatar(dirKey: p.dir, name: p.name) == nil
+            }
+            guard needsSync else { return }
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             let count = await ChromeProfileEngine.shared.snapActiveBrowserAvatars()
             if count > 0 {
@@ -1123,6 +1128,18 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         snapSubmenu.addItem(autoSnapItem)
         
+        if ChromeProfileEngine.hasScreenRecordingPermission {
+            snapSubmenu.addItem(NSMenuItem.separator())
+            let revokeItem = makeAlignedMenuItem(
+                title: "Manage / Revoke Screen Recording in Settings…",
+                icon: NSImage(systemSymbolName: "hand.raised.slash", accessibilityDescription: "Manage Screen Recording"),
+                accessibilityHelp: "Open macOS System Settings to turn off Screen Recording after syncing avatars",
+                action: #selector(handleOpenScreenRecordingSettings),
+                target: self
+            )
+            snapSubmenu.addItem(revokeItem)
+        }
+        
         let snapItem = makeAlignedMenuItem(
             title: "Smart Snap Avatars (User-Assisted)...",
             icon: NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Smart Snap Avatars"),
@@ -1667,30 +1684,41 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
     
+    @objc public func handleOpenScreenRecordingSettings(_ sender: Any? = nil) {
+        ChromeProfileEngine.openScreenRecordingSettings()
+    }
+    
     @objc public func handleSmartSnapAvatars(_ sender: Any? = nil) {
         logger.info("Manual Smart Snap triggered from menu.")
         if !ChromeProfileEngine.hasScreenRecordingPermission {
             let alert = NSAlert()
-            alert.messageText = "Screen Recording Permission Required"
-            alert.informativeText = "Automatic background window capture requires the macOS 'Screen & System Audio Recording' permission in System Settings.\n\nAlternatively, you can use the User-Assisted Snap below to capture avatars interactively with 0 system permissions!"
-            alert.alertStyle = .warning
-            alert.addButton(withTitle: "Use Interactive Snap (0 Permissions)")
-            alert.addButton(withTitle: "Open System Settings")
+            alert.messageText = "1-Click Auto-Sync: Profile Avatars"
+            alert.informativeText = """
+Why this exists:
+Displaying real profile avatars in the HUD gives you intuitive visual recognition when switching profiles with caps lock + c + 1..4.
+
+What happens next (macOS Permissions):
+1. Clicking 'Open Settings' takes you to macOS System Settings.
+2. Toggle the switch for NNTS.
+3. macOS will prompt: "NNTS will not be able to record the screen until it is quit." Click [Quit & Reopen].
+4. After reopen, NNTS will automatically scan open browser windows in 2 seconds and permanently cache the avatars locally.
+5. Once cached, you can immediately turn off Screen Recording in System Settings — daily switching does NOT need it.
+
+Prefer 0 permissions?
+Use the Clipboard Assistant instead: simply press ⌘⌃⇧4 over your profile icon in Chrome, and NNTS catches it instantly without any system permissions!
+"""
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "Open System Settings (1-Click Sync)")
+            alert.addButton(withTitle: "Use Clipboard Snip (0 Permissions)")
             alert.addButton(withTitle: "Cancel")
             NSApp.activate(ignoringOtherApps: true)
             alert.window.level = .floating
             let response = alert.runModal()
             if response == .alertFirstButtonReturn {
-                let profileEngine = ChromeProfileEngine.shared
-                let activeDir = profileEngine.getActiveProfileDir() ?? profileEngine.profiles.first?.dir ?? "Default"
-                let dummyItem = NSMenuItem()
-                dummyItem.representedObject = activeDir
-                handleGuidedSnapAvatar(dummyItem)
-            } else if response == .alertSecondButtonReturn {
                 CGRequestScreenCaptureAccess()
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-                    NSWorkspace.shared.open(url)
-                }
+                ChromeProfileEngine.openScreenRecordingSettings()
+            } else if response == .alertSecondButtonReturn {
+                handleOpenAvatarCaptureAssistant()
             }
             return
         }
@@ -1703,18 +1731,33 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             
             let alert = NSAlert()
             if count > 0 {
-                alert.messageText = "Avatars Snapped Successfully!"
-                alert.informativeText = "Smart Snap captured \(count) profile avatars directly from open browser windows."
+                alert.messageText = "Avatars Synced Successfully!"
+                alert.informativeText = """
+Smart Snap captured and cached \(count) profile avatars locally on your Mac!
+
+Your profile photos are now active in the HUD for intuitive visual switching.
+
+Privacy Notice:
+For daily window switching (caps lock + c), Screen Recording is NOT required. You can safely revoke Screen Recording in System Settings now.
+"""
                 alert.alertStyle = .informational
+                alert.addButton(withTitle: "Done")
+                alert.addButton(withTitle: "Turn Off in System Settings…")
             } else {
                 alert.messageText = "No Windows Snapped"
-                alert.informativeText = "Could not capture profile avatars from the currently open windows. Please verify that Chrome is visible on screen, or use the interactive Snap option."
+                alert.informativeText = "Could not capture profile avatars from the currently open windows. Please verify that Chrome is visible on screen with open windows, or use the 0-permission Clipboard Assistant (⌘⌃⇧4)."
                 alert.alertStyle = .informational
+                alert.addButton(withTitle: "OK")
+                alert.addButton(withTitle: "Open Clipboard Assistant")
             }
-            alert.addButton(withTitle: "OK")
             NSApp.activate(ignoringOtherApps: true)
             alert.window.level = .floating
-            alert.runModal()
+            let resp = alert.runModal()
+            if count > 0 && resp == .alertSecondButtonReturn {
+                ChromeProfileEngine.openScreenRecordingSettings()
+            } else if count == 0 && resp == .alertSecondButtonReturn {
+                self.handleOpenAvatarCaptureAssistant()
+            }
         }
     }
     

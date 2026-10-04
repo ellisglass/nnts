@@ -3442,8 +3442,19 @@ struct ChromeQuickAccessUnitTests {
             assistantVM.selectProfile(dir: firstDir)
             #expect(assistantVM.selectedProfileDir == firstDir)
         }
+        #expect(assistantVM.isScreenRecordingAuthorized == ChromeProfileEngine.hasScreenRecordingPermission)
+        assistantVM.startPasteboardWatcher()
+        assistantVM.stopPasteboardWatcher()
         
-        // 4. Test saving captured avatar to storage and retrieving it
+        // 4. Test state preservation in show(preservingState: true)
+        AvatarCaptureAssistantWindow.shared.viewModel.isSuccess = true
+        AvatarCaptureAssistantWindow.shared.viewModel.statusMessage = "Test Success Message"
+        AvatarCaptureAssistantWindow.shared.show(preservingState: true)
+        #expect(AvatarCaptureAssistantWindow.shared.viewModel.isSuccess == true)
+        #expect(AvatarCaptureAssistantWindow.shared.viewModel.statusMessage == "Test Success Message")
+        AvatarCaptureAssistantWindow.shared.hideImmediate()
+        
+        // 5. Test saving captured avatar to storage and retrieving it
         let testImage = NSImage(size: NSSize(width: 48, height: 48))
         testImage.lockFocus()
         NSColor.systemBlue.setFill()
