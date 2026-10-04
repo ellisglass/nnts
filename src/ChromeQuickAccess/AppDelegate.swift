@@ -69,21 +69,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         AppGroupEngine.startGlobalAppSwitchObserver()
         updateDynamicShortcuts()
         updateMenu()
-        
-        // Smart Snap: If user previously authorized Screen Recording and has unsynced profiles, sync them
-        Task { @MainActor [weak self] in
-            guard ChromeProfileEngine.hasScreenRecordingPermission else { return }
-            let needsSync = ChromeProfileEngine.shared.profiles.contains { p in
-                ChromeProfileEngine.loadStoredAvatar(dirKey: p.dir, name: p.name) == nil
-            }
-            guard needsSync else { return }
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            let count = await ChromeProfileEngine.shared.snapActiveBrowserAvatars()
-            if count > 0 {
-                self?.updateDynamicShortcuts()
-                self?.updateMenu()
-            }
-        }
     }
     
     private func startAccessibilityPolling() {
@@ -1075,81 +1060,48 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(permItem)
         }
         
-        let snapSubmenu = NSMenu()
+        let avatarSubmenu = NSMenu()
         
         let assistantItem = makeAlignedMenuItem(
-            title: "Open Avatar Assistant...",
-            icon: NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Avatar Assistant"),
-            accessibilityHelp: "Open floating assistant with 3s timer and profile switcher",
+            title: "Open Avatar Assistant (Clipboard Snip)...",
+            icon: NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Avatar Assistant"),
+            accessibilityHelp: "Open assistant to paste profile avatars from clipboard with 0 permissions",
             action: #selector(handleOpenAvatarCaptureAssistant(_:)),
             target: self
         )
-        snapSubmenu.addItem(assistantItem)
-        snapSubmenu.addItem(NSMenuItem.separator())
+        avatarSubmenu.addItem(assistantItem)
+        avatarSubmenu.addItem(NSMenuItem.separator())
         
-        let guideHeader = NSMenuItem(title: "Select Profile to Snap:", action: nil, keyEquivalent: "")
+        let guideHeader = NSMenuItem(title: "Paste Avatar for Profile:", action: nil, keyEquivalent: "")
         guideHeader.attributedTitle = NSAttributedString(
-            string: "Select Profile to Snap:",
+            string: "Paste Avatar for Profile:",
             attributes: [.font: NSFont.boldSystemFont(ofSize: 11)]
         )
         guideHeader.isEnabled = false
-        snapSubmenu.addItem(guideHeader)
+        avatarSubmenu.addItem(guideHeader)
         
         for p in profileEngine.profiles {
-            let pSnapItem = makeAlignedMenuItem(
-                title: "Snap Avatar for \(p.effectiveName)...",
+            let pPasteItem = makeAlignedMenuItem(
+                title: "Paste Avatar for \(p.effectiveName)...",
                 icon: p.avatarImage,
-                accessibilityHelp: "Focus \(p.effectiveName) in Chrome and select avatar with crosshair",
-                action: #selector(handleGuidedSnapAvatar(_:)),
+                accessibilityHelp: "Apply image currently in clipboard as avatar for \(p.effectiveName)",
+                action: #selector(handlePasteAvatarFromClipboard(_:)),
                 target: self,
                 representedObject: p.dir
             )
-            snapSubmenu.addItem(pSnapItem)
+            avatarSubmenu.addItem(pPasteItem)
         }
         
-        snapSubmenu.addItem(NSMenuItem.separator())
-        
-        let pasteItem = makeAlignedMenuItem(
-            title: "Paste Avatar from Clipboard...",
-            icon: NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Paste Avatar"),
-            accessibilityHelp: "Apply image currently in clipboard as avatar for the active profile",
-            action: #selector(handlePasteAvatarFromClipboard(_:)),
-            target: self,
-            representedObject: profileEngine.getActiveProfileDir() ?? profileEngine.profiles.first?.dir
-        )
-        snapSubmenu.addItem(pasteItem)
-        
-        let autoSnapItem = makeAlignedMenuItem(
-            title: "Auto-Snap All Windows (Needs Screen Recording)...",
-            icon: NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Auto-Snap All Windows"),
-            accessibilityHelp: "Attempt automatic background capture of open windows (requires macOS Screen Recording permission)",
-            action: #selector(handleSmartSnapAvatars),
-            target: self
-        )
-        snapSubmenu.addItem(autoSnapItem)
-        
-        if ChromeProfileEngine.hasScreenRecordingPermission {
-            snapSubmenu.addItem(NSMenuItem.separator())
-            let revokeItem = makeAlignedMenuItem(
-                title: "Manage / Revoke Screen Recording in Settings…",
-                icon: NSImage(systemSymbolName: "hand.raised.slash", accessibilityDescription: "Manage Screen Recording"),
-                accessibilityHelp: "Open macOS System Settings to turn off Screen Recording after syncing avatars",
-                action: #selector(handleOpenScreenRecordingSettings),
-                target: self
-            )
-            snapSubmenu.addItem(revokeItem)
-        }
-        
-        let snapItem = makeAlignedMenuItem(
-            title: "Smart Snap Avatars (User-Assisted)...",
-            icon: NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Smart Snap Avatars"),
-            accessibilityHelp: "Interactively capture profile avatars with 0 permissions",
+        let avatarItem = makeAlignedMenuItem(
+            title: "Profile Avatars (Clipboard)...",
+            icon: NSImage(systemSymbolName: "person.crop.circle", accessibilityDescription: "Profile Avatars"),
+            accessibilityHelp: "Import profile avatars from clipboard with zero permissions",
             action: nil,
             target: nil
         )
-        snapItem.submenu = snapSubmenu
-        snapItem.toolTip = "Interactively capture profile avatars with zero disk permissions"
-        menu.addItem(snapItem)
+        avatarItem.submenu = avatarSubmenu
+        avatarItem.toolTip = "Import profile avatars from clipboard with zero permissions"
+        menu.addItem(avatarItem)
         
         let hasLinkedBookmark = UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") != nil
         if profileEngine.isLocalStateBlocked && !hasLinkedBookmark {
@@ -1684,90 +1636,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
     
-    @objc public func handleOpenScreenRecordingSettings(_ sender: Any? = nil) {
-        ChromeProfileEngine.openScreenRecordingSettings()
-    }
-    
-    @objc public func handleSmartSnapAvatars(_ sender: Any? = nil) {
-        logger.info("Manual Smart Snap triggered from menu.")
-        if !ChromeProfileEngine.hasScreenRecordingPermission {
-            let alert = NSAlert()
-            alert.messageText = "1-Click Auto-Sync: Profile Avatars"
-            alert.informativeText = """
-Why this exists:
-Displaying real profile avatars in the HUD gives you intuitive visual recognition when switching profiles with caps lock + c + 1..4.
-
-What happens next (macOS Permissions):
-1. Clicking 'Open Settings' takes you to macOS System Settings.
-2. Toggle the switch for NNTS.
-3. macOS will prompt: "NNTS will not be able to record the screen until it is quit." Click [Quit & Reopen].
-4. After reopen, NNTS will automatically scan open browser windows in 2 seconds and permanently cache the avatars locally.
-5. Once cached, you can immediately turn off Screen Recording in System Settings — daily switching does NOT need it.
-
-Prefer 0 permissions?
-Use the Clipboard Assistant instead: simply press ⌘⌃⇧4 over your profile icon in Chrome, and NNTS catches it instantly without any system permissions!
-"""
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "Open System Settings (1-Click Sync)")
-            alert.addButton(withTitle: "Use Clipboard Snip (0 Permissions)")
-            alert.addButton(withTitle: "Cancel")
-            NSApp.activate(ignoringOtherApps: true)
-            alert.window.level = .floating
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                CGRequestScreenCaptureAccess()
-                ChromeProfileEngine.openScreenRecordingSettings()
-            } else if response == .alertSecondButtonReturn {
-                handleOpenAvatarCaptureAssistant()
-            }
-            return
-        }
-        
-        Task { @MainActor [weak self] in
-            guard let self = self else { return }
-            let count = await ChromeProfileEngine.shared.snapActiveBrowserAvatars()
-            self.updateDynamicShortcuts()
-            self.updateMenu()
-            
-            let alert = NSAlert()
-            if count > 0 {
-                alert.messageText = "Avatars Synced Successfully!"
-                alert.informativeText = """
-Smart Snap captured and cached \(count) profile avatars locally on your Mac!
-
-Your profile photos are now active in the HUD for intuitive visual switching.
-
-Privacy Notice:
-For daily window switching (caps lock + c), Screen Recording is NOT required. You can safely revoke Screen Recording in System Settings now.
-"""
-                alert.alertStyle = .informational
-                alert.addButton(withTitle: "Done")
-                alert.addButton(withTitle: "Turn Off in System Settings…")
-            } else {
-                alert.messageText = "No Windows Snapped"
-                alert.informativeText = "Could not capture profile avatars from the currently open windows. Please verify that Chrome is visible on screen with open windows, or use the 0-permission Clipboard Assistant (⌘⌃⇧4)."
-                alert.alertStyle = .informational
-                alert.addButton(withTitle: "OK")
-                alert.addButton(withTitle: "Open Clipboard Assistant")
-            }
-            NSApp.activate(ignoringOtherApps: true)
-            alert.window.level = .floating
-            let resp = alert.runModal()
-            if count > 0 && resp == .alertSecondButtonReturn {
-                ChromeProfileEngine.openScreenRecordingSettings()
-            } else if count == 0 && resp == .alertSecondButtonReturn {
-                self.handleOpenAvatarCaptureAssistant()
-            }
-        }
-    }
-    
     @objc public func handleOpenAvatarCaptureAssistant(_ sender: Any? = nil) {
         AvatarCaptureAssistantWindow.shared.show()
-    }
-    
-    @objc public func handleGuidedSnapAvatar(_ sender: NSMenuItem) {
-        let dirKey = sender.representedObject as? String
-        AvatarCaptureAssistantWindow.shared.show(profileDir: dirKey)
     }
     
     @objc public func handlePasteAvatarFromClipboard(_ sender: NSMenuItem) {

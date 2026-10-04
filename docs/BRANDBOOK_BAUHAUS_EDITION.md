@@ -24,6 +24,7 @@ In Bauhaus functionalism, form follows flow to resolve three fundamental ergonom
 1. **Window-to-Profile Dissociation (#1):** macOS groups by application process, blinding the user to browser profiles. Xomsky directly addresses profile windows via `Caps + C/B + 1..4`.
 2. **Search-Input Overhead (#2):** Replacing lexical search (typing app names in Spotlight) with direct geometric letter-key mapping (`Caps + [Letter]`).
 3. **Redundant Motor Syntax (#3):** Selection equals intent to copy. Copy-on-Select removes the redundant `Cmd + C` keystroke.
+4. **Screen Privacy Responsibility (#4):** Absolute refusal of Screen Recording permissions. Profile avatars are imported strictly via clipboard (`⌘⌃⇧4`), keeping the application zero-trust compliant and lightweight.
 
 ---
 

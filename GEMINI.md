@@ -66,6 +66,9 @@
 - **Chromium Profile Automation Guardrail**:
   - **Never match Chromium windows by profile name or title substrings.**
   - **Always automate via native macOS menu bar (`kAXMenuBarAttribute`)**: Target the browser's "Profiles" menu bar item (`getProfilesMenuItems`), select items strictly by position/index, and detect the currently active profile using `AXMenuItemMarkChar == "✓"`.
+- **Zero-Permission Avatar Handling & Screen Privacy Invariant**:
+  - **Categorically avoid requesting macOS Screen Recording permissions (`CGRequestScreenCaptureAccess`)** or executing system screen captures (`/usr/sbin/screencapture`).
+  - Profile avatars are imported exclusively via clipboard paste (`⌘⌃⇧4`) or local user folder selection (`importAvatarsFromFolder`), guaranteeing absolute screen privacy without scary TCC dialogs.
 - **Testing**:
   - Use the modern `Swift Testing` framework (`import Testing`, `@Test`, `#expect`) for all unit tests.
   - Unit tests live in `tests/ChromeQuickAccessTests/ChromeQuickAccessTests.swift`.

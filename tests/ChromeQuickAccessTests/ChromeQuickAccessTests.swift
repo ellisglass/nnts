@@ -3417,36 +3417,30 @@ struct ChromeQuickAccessUnitTests {
     }
     
     @Test @MainActor
-    func testSmartSnapAvatarsEngineAndMenuItems() async {
+    func testClipboardAvatarAssistantAndMenuItems() async {
         let engine = ChromeProfileEngine.shared
         
-        // 1. In test environment, snapActiveBrowserAvatars safely returns without crashes
-        let snapped = await engine.snapActiveBrowserAvatars()
-        #expect(snapped >= 0)
-        
-        // 2. AppDelegate menu includes Smart Snap item and submenu actions
+        // 1. AppDelegate menu includes Profile Avatars item and submenu actions
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
-        let snapItem = menu.items.first(where: { $0.title.contains("Smart Snap Avatars") })
-        #expect(snapItem != nil)
-        #expect(snapItem?.submenu != nil)
-        let submenuTitles = snapItem?.submenu?.items.map { $0.title } ?? []
+        let avatarItem = menu.items.first(where: { $0.title.contains("Profile Avatars") })
+        #expect(avatarItem != nil)
+        #expect(avatarItem?.submenu != nil)
+        let submenuTitles = avatarItem?.submenu?.items.map { $0.title } ?? []
         #expect(submenuTitles.contains(where: { $0.contains("Open Avatar Assistant") }))
-        #expect(submenuTitles.contains(where: { $0.contains("Paste Avatar from Clipboard") }))
-        #expect(submenuTitles.contains(where: { $0.contains("Auto-Snap") }))
+        #expect(submenuTitles.contains(where: { $0.contains("Paste Avatar") }))
         
-        // 3. Test AvatarCaptureAssistantViewModel
+        // 2. Test AvatarCaptureAssistantViewModel
         let assistantVM = AvatarCaptureAssistantViewModel()
         assistantVM.refreshProfiles()
         if let firstDir = assistantVM.profiles.first?.dir {
             assistantVM.selectProfile(dir: firstDir)
             #expect(assistantVM.selectedProfileDir == firstDir)
         }
-        #expect(assistantVM.isScreenRecordingAuthorized == ChromeProfileEngine.hasScreenRecordingPermission)
         assistantVM.startPasteboardWatcher()
         assistantVM.stopPasteboardWatcher()
         
-        // 4. Test state preservation in show(preservingState: true)
+        // 3. Test state preservation in show(preservingState: true)
         AvatarCaptureAssistantWindow.shared.viewModel.isSuccess = true
         AvatarCaptureAssistantWindow.shared.viewModel.statusMessage = "Test Success Message"
         AvatarCaptureAssistantWindow.shared.show(preservingState: true)
@@ -3454,7 +3448,7 @@ struct ChromeQuickAccessUnitTests {
         #expect(AvatarCaptureAssistantWindow.shared.viewModel.statusMessage == "Test Success Message")
         AvatarCaptureAssistantWindow.shared.hideImmediate()
         
-        // 5. Test saving captured avatar to storage and retrieving it
+        // 4. Test saving captured avatar to storage and retrieving it
         let testImage = NSImage(size: NSSize(width: 48, height: 48))
         testImage.lockFocus()
         NSColor.systemBlue.setFill()

@@ -37,6 +37,7 @@ brew install ellisglass/tap/nnts
 * **Sub-16ms Latency:** Head-insert `CGEventTap` intercepts hotkeys before the window server for single-frame switching.
 * **Reliable Profile Switching:** Uses native macOS Accessibility (`kAXMenuBarAttribute`) on the browser's "Profiles" menu, not fragile window title regexes.
 * **100% Local & Lightweight:** Zero telemetry/network calls, ~15 MB RAM, 0% idle CPU. Resets keyboard layout on exit.
+* **Screen Privacy & Clipboard-Only Avatars:** Categorically zero Screen Recording permissions. Custom profile avatars are imported exclusively via clipboard (`⌘⌃⇧4`) or local folder linking—zero background screen capture.
 
 ---
 

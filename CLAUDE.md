@@ -50,6 +50,9 @@
 6. **HUD Window (`src/ChromeQuickAccess/Views/MinimalHUDWindow.swift`)**:
    - Non-activating, floating bezel overlay showing app icon and profile/app avatars.
    - Always dismissed immediately before window server transitions (`launchOrFocusTarget`).
+7. **Avatar Engine (`src/ChromeQuickAccess/Engine/ChromeProfileEngine.swift`)**:
+   - Zero-permission profile avatar import strictly via system clipboard (`⌘⌃⇧4`) or local folder linking.
+   - Categorically never requests or relies on macOS Screen Recording permissions.
 
 ## Key Code Conventions & Guardrails
 - **Accessibility & Event Taps**:
