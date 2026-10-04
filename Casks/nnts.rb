@@ -1,6 +1,6 @@
 cask "nnts" do
-  version "2.0.1"
-  sha256 "b11d9f63275cf0859e2f17a319a31ec6064d35fc3c10a7b664f99b9fb2818cc2"
+  version "2.0.3"
+  sha256 "aa490ea58df3328dd720c3e4b3acd5561edea43d50c5a7022f6173e64b17341f"
 
   url "https://github.com/ellisglass/nnts/releases/download/v#{version}/NNTS.dmg"
   name "NNTS"
