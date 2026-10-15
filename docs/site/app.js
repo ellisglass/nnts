@@ -182,7 +182,7 @@
       id: 1,
       ch: "CH 01",
       name: "Profiles & Quick Apps",
-      desc: "Caps + C/B + 1..4 to raise profile window",
+      desc: "caps lock + C/B + 1..4 to raise profile window",
       src: "assets/media/screenrec-switch-app.mp4",
       badge: "REC 60FPS"
     },
@@ -929,6 +929,62 @@
   }
 
   // ==========================================================================
+  // 5.5 MODERN SHOWCASE CONTROLLER (META / APPLE STYLE)
+  // ==========================================================================
+  class ModernShowcaseController {
+    constructor() {
+      this.video = document.getElementById("modern-video-player");
+      this.btn1 = document.getElementById("modern-ch-1");
+      this.btn2 = document.getElementById("modern-ch-2");
+      this.hudBadge = document.getElementById("modern-hud-badge");
+      this.hudTitle = document.getElementById("modern-hud-title");
+      this.hudSub = document.getElementById("modern-hud-sub");
+      this.hudAvatar = document.getElementById("modern-hud-avatar");
+      this.currentChannel = 1;
+    }
+
+    init() {
+      if (!this.video) return;
+
+      if (this.btn1) {
+        this.btn1.addEventListener("click", () => this.switchChannel(1));
+      }
+      if (this.btn2) {
+        this.btn2.addEventListener("click", () => this.switchChannel(2));
+      }
+
+      this.video.muted = true;
+      this.video.play().catch(() => {});
+    }
+
+    switchChannel(ch) {
+      if (this.currentChannel === ch) return;
+      this.currentChannel = ch;
+
+      if (this.btn1) this.btn1.classList.toggle("active", ch === 1);
+      if (this.btn2) this.btn2.classList.toggle("active", ch === 2);
+
+      const chData = TV_CHANNELS[ch];
+      if (chData && this.video) {
+        this.video.src = chData.src;
+        this.video.play().catch(() => {});
+      }
+
+      if (this.hudBadge) {
+        if (ch === 1) {
+          if (this.hudTitle) this.hudTitle.textContent = "Personal";
+          if (this.hudSub) this.hudSub.textContent = "Google Chrome • Window Raised";
+          if (this.hudAvatar) this.hudAvatar.src = "assets/images/profiles_v2/personal.png";
+        } else {
+          if (this.hudTitle) this.hudTitle.textContent = "Copied to Clipboard";
+          if (this.hudSub) this.hudSub.textContent = "Copy-on-Select • Auto Clipboard";
+          if (this.hudAvatar) this.hudAvatar.src = "assets/images/profiles_v2/work.png";
+        }
+      }
+    }
+  }
+
+  // ==========================================================================
   // 6. INITIALIZATION & BINDINGS
   // ==========================================================================
   document.addEventListener("DOMContentLoaded", () => {
@@ -958,22 +1014,30 @@
       });
     }
 
-    // 2. TV & Remote Controller
-    const tv = new RetroTvController();
-    tv.init();
+    // 2. TV & Remote Controller (Retro Cockpit)
+    if (document.getElementById("tv-video-player")) {
+      const tv = new RetroTvController();
+      tv.init();
 
-    // Check URL parameters for power=1 or channel=2
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("channel") === "2") {
-      tv.tuneChannel(2);
-    }
-    if (urlParams.get("power") === "1" || urlParams.get("on") === "1") {
-      tv.setPower(true);
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("channel") === "2") {
+        tv.tuneChannel(2);
+      }
+      // Auto-power ON by default so visitor immediately sees the 60fps CRT video
+      if (urlParams.get("power") !== "0" && urlParams.get("off") !== "1") {
+        tv.setPower(true);
+      }
+      setupKeyboardListener(tv);
     }
 
-    // 3. Simulators & Proofs
+    // 3. Modern Showcase Controller (Clean Modern)
+    if (document.getElementById("modern-video-player")) {
+      const modernShowcase = new ModernShowcaseController();
+      modernShowcase.init();
+    }
+
+    // 4. Simulators & Proofs
     setupBentoLabInteractions();
     setupBrewInstallCopy();
-    setupKeyboardListener(tv);
   });
 })();

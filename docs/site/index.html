@@ -3,17 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NNTS — App & Profile Switcher</title>
+  <title>NNTS — App & Profile Switcher (Modern Showcase)</title>
   <meta name="description" content="Instant Chrome/Brave profiles, first-letter app cycling, and Copy-on-Select.">
 
   <!-- OpenGraph -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://ellisglass.github.io/nnts/">
+  <meta property="og:url" content="https://ellisglass.github.io/nnts/modern.html">
   <meta property="og:title" content="NNTS — App & Profile Switcher">
   <meta property="og:description" content="Instant macOS app & browser profile channel switching.">
   <meta property="og:image" content="https://ellisglass.github.io/nnts/assets/nnts/canonical_realistic_rc_emblem.png">
-  <meta property="og:image:width" content="1024">
-  <meta property="og:image:height" content="1024">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
@@ -24,43 +22,36 @@
   <link rel="icon" type="image/png" href="assets/nnts/canonical_nnts_vector_wordmark.png">
   <link rel="apple-touch-icon" href="assets/nnts/canonical_realistic_rc_emblem.png">
 
-  <link rel="stylesheet" href="styles.min.css?v=6.1">
+  <link rel="stylesheet" href="styles.min.css?v=7.0">
 </head>
 <body class="nnts-body">
 
-  <!-- Authentic CRT Ambient Scanline & Cathode Vignette Overlays -->
-  <div class="crt-scanlines-overlay" aria-hidden="true"></div>
-  <div class="crt-vignette-overlay" aria-hidden="true"></div>
-
-  <!-- Main Cyber-Brutalist Container -->
+  <!-- Main Container -->
   <div class="nnts-wrapper">
 
     <!-- ====================================================================
-         TOP HEADER: LOGO, TELEMETRY STATUS, AUDIO SYNTH, DOWNLOAD CTA
+         TOP HEADER: LOGO, GITHUB, DOWNLOAD CTA
          ==================================================================== -->
     <header class="nnts-header">
       <div class="nnts-brand">
-        <a href="#" class="brand-link" title="NNTS Home">
+        <a href="modern.html" class="brand-link" title="NNTS Home">
           <img src="assets/nnts/canonical_nnts_vector_wordmark.png" alt="NNTS Master Wordmark" class="brand-wordmark-img" width="100" height="100">
+        </a>
+      </div>
+
+      <div class="variant-toggle" role="radiogroup" aria-label="Landing Page Experience">
+        <a href="retro.html" class="variant-btn" id="btn-variant-retro">
+          <span class="variant-icon">📺</span>
+          <span class="variant-label">Retro TV</span>
+        </a>
+        <a href="modern.html" class="variant-btn active" id="btn-variant-modern">
+          <span class="variant-icon">⚡</span>
+          <span class="variant-label">Modern Media</span>
         </a>
       </div>
 
       <!-- Header Action Controls -->
       <div class="nnts-header-actions">
-        <!-- Audio Synth Toggle -->
-        <button id="audio-toggle-btn" class="nnts-btn nnts-btn-tactile is-active" title="Sound Effects: ON (Click to mute)" aria-label="Toggle Tactile Relay Audio">
-          <svg class="audio-svg-icon audio-icon-on" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-          </svg>
-          <svg class="audio-svg-icon audio-icon-off" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-            <line x1="23" y1="9" x2="17" y2="15"></line>
-            <line x1="17" y1="9" x2="23" y2="15"></line>
-          </svg>
-        </button>
-
         <!-- GitHub Link -->
         <a href="https://github.com/ellisglass/nnts" target="_blank" rel="noopener" class="nnts-btn nnts-btn-ghost" title="Source Code on GitHub">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
@@ -77,13 +68,13 @@
 
 
     <!-- ====================================================================
-         HERO SECTION: PRODUCT VALUE HEADLINE + INTERACTIVE TRINITRON COCKPIT
+         HERO SECTION: PRODUCT VALUE HEADLINE + MONOLITHIC MEDIA SHOWCASE
          ==================================================================== -->
     <section class="nnts-hero">
       <div class="hero-header-box">
         <h1 class="hero-title">
           App & Profile Switcher.<br>
-          <span class="hero-title-accent">Direct from caps lock.</span>
+          Direct from <span class="hero-title-accent">caps lock</span>.
         </h1>
 
         <p class="hero-subtitle">
@@ -110,145 +101,49 @@
             </button>
           </div>
         </div>
-
-        
       </div>
 
       <!-- ====================================================================
-           HERO RETRO TV & REMOTE COCKPIT (SONY TRINITRON TV + RM-NNTS REMOTE)
+           MODERN SHOWCASE (META / APPLE STYLE MONOLITHIC MEDIA PLATE)
            ==================================================================== -->
-      <div class="hero-tv-station" id="hero-tv-station">
-
-        <!-- =======================
-             THE REALISTIC ALIENWARE SONY TRINITRON REMOTE (ПУЛЬТ)
-             ======================= -->
-        <div class="tv-remote-handset realistic-alienware-remote" id="tv-remote-handset" aria-label="Sony Trinitron Remote Control / Пульт ДУ">
-          <!-- Infrared Emitter Lens -->
-          <div class="remote-top-lens">
-            <div class="remote-ir-diode" id="remote-ir-led" aria-hidden="true"></div>
+      <div class="modern-showcase-container" id="modern-showcase">
+        
+        <!-- Showcase Header with Channel Tabs -->
+        <div class="modern-showcase-header">
+          <div class="modern-channel-tabs">
+            <button class="modern-channel-btn active" id="modern-ch-1" data-channel="1">
+              <span class="btn-dot"></span>
+              <span>01 // Browser Profiles</span>
+            </button>
+            <button class="modern-channel-btn" id="modern-ch-2" data-channel="2">
+              <span class="btn-dot"></span>
+              <span>02 // Copy-on-Select</span>
+            </button>
           </div>
 
-          <!-- Master Alienware Prop Body -->
-          <div class="remote-prop-body">
-            <img src="assets/nnts/canonical_realistic_rc_remote.png" alt="Sony Trinitron Remote Control RM-NNTS" class="remote-prop-image" id="remote-prop-image" draggable="false">
-
-            <!-- Real-time Tactile Interactive Hotspot Controls -->
-            <!-- 1. Glowing Green Power Key -->
-            <button class="rc-hotspot rc-hotspot-power pulsing" id="remote-power-btn" title="Turn TV ON / OFF (Power)" aria-label="Power TV">
-              <span class="hotspot-glow-ring"></span>
-            </button>
-
-            <!-- 2. Audio Mute Key -->
-            <button class="rc-hotspot rc-hotspot-mute" id="remote-mute-btn" title="Audio / Mute" aria-label="Mute Audio">
-              <span class="mute-sym-hidden" id="remote-mute-icon" style="display:none;">🔊</span>
-            </button>
-
-            <!-- 3. Number 1 Key (CH 1: Profiles & Apps) -->
-            <button class="rc-hotspot rc-hotspot-num rc-hotspot-num1 active" data-channel="1" id="remote-num-1" title="CH 1: Chrome Profiles & Apps" aria-label="Channel 1">
-              <span class="num-active-glow"></span>
-            </button>
-
-            <!-- 4. Number 2 Key (CH 2: Copy-on-Select) -->
-            <button class="rc-hotspot rc-hotspot-num rc-hotspot-num2" data-channel="2" id="remote-num-2" title="CH 2: Copy-on-Select" aria-label="Channel 2">
-              <span class="num-active-glow"></span>
-            </button>
-
-            <!-- 5. D-Pad Rocker (CH + / Up) -->
-            <button class="rc-hotspot rc-hotspot-dpad rc-hotspot-up" id="remote-ch-up" title="Next Channel (CH +)" aria-label="Channel Up"></button>
-
-            <!-- 6. D-Pad Rocker (CH - / Down) -->
-            <button class="rc-hotspot rc-hotspot-dpad rc-hotspot-down" id="remote-ch-down" title="Previous Channel (CH -)" aria-label="Channel Down"></button>
-          </div>
-
-          <!-- Bottom Subtitle / Status -->
-          <div class="remote-foot-meta">
-            <span class="remote-tx-status" id="remote-tx-led" title="IR TX Signal"></span>
-            <span class="remote-meta-model">RM-NNTS</span>
+          <div class="modern-showcase-meta">
+            <span class="modern-meta-badge">60 FPS</span>
+            <span>Real Native Recording</span>
           </div>
         </div>
 
-        <!-- =======================
-             THE TELEVISION (ТЕЛИК)
-             ======================= -->
-        <div class="retro-tv-chassis" id="retro-tv-chassis">
+        <!-- Video Viewport with Seamless HUD Overlay Badge -->
+        <div class="modern-video-viewport">
+          <video id="modern-video-player" class="modern-video-element" loop muted playsinline preload="auto" poster="assets/images/video-poster-hud.png">
+            <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
+          </video>
 
-          <!-- TV Cabinet Top Trim -->
-          <div class="tv-cabinet-header">
-            <div class="tv-brand-badge">
-              <span class="badge-nnts">NNTS</span>
+          <!-- Minimal Apple Floating HUD Badge -->
+          <div class="modern-hud-floating-badge" id="modern-hud-badge">
+            <img src="assets/images/profiles_v2/personal.png" alt="Profile" id="modern-hud-avatar" class="modern-hud-avatar">
+            <div class="modern-hud-info">
+              <div class="modern-hud-title" id="modern-hud-title">Personal</div>
+              <div class="modern-hud-sub" id="modern-hud-sub">Google Chrome &bull; Window Raised</div>
             </div>
-            <div class="tv-cabinet-grill" aria-hidden="true">
-              <span></span><span></span><span></span><span></span><span></span>
-            </div>
-          </div>
-
-          <!-- Main TV CRT Screen Container -->
-          <div class="tv-main-display-row">
-
-            <!-- CRT Screen Bezel -->
-            <div class="tv-screen-bezel" id="tv-screen-bezel">
-
-              <!-- CRT Cathode Tube Glass -->
-              <div class="tv-screen-glass" id="tv-screen-glass">
-
-                <!-- Authentic CRT Left Phosphor Trace (Trinitron signature) -->
-                <div class="crt-vector-arc" aria-hidden="true"></div>
-
-                <!-- CRT Screen Scanline & Curvature Vignette -->
-                <div class="tv-scanlines-layer" aria-hidden="true"></div>
-                <div class="tv-phosphor-glow-layer" aria-hidden="true"></div>
-
-                <!-- Standby Screen (Shown when TV is OFF) — Clean dark CRT glass, zero text -->
-                <div class="tv-standby-screen" id="tv-standby-screen"></div>
-
-                <!-- The Live Video Recording Player -->
-                <video id="tv-video-player" class="tv-video-element" loop muted playsinline preload="auto" poster="assets/images/video-poster-hud.png">
-                  <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
-                </video>
-
-                <!-- On-Screen Display (OSD) Overlay -->
-                <div class="tv-osd-overlay" id="tv-osd-overlay">
-                  <div class="osd-header-row">
-                    <span class="osd-num-pill" id="tv-osd-num">CH 01</span>
-                    <span class="osd-title-text" id="tv-osd-channel-label">Profiles & Quick Apps</span>
-                  </div>
-                  <div class="osd-sub-line" id="tv-osd-sub-label">
-                    caps lock + C/B + 1..4 to raise profile window
-                  </div>
-                </div>
-
-                <!-- CRT Power-On / Power-Off Flash Layer -->
-                <div class="crt-power-flash" id="crt-power-flash" aria-hidden="true"></div>
-
-              </div>
-            </div>
-
-          </div>
-
-          <!-- TV Cabinet Bottom Trim -->
-          <div class="tv-cabinet-footer">
-            <div class="tv-cabinet-footer-left">
-              <div class="tv-cabinet-grill" aria-hidden="true">
-                <span></span><span></span><span></span><span></span><span></span>
-              </div>
-            </div>
-            <div class="tv-cabinet-footer-right">
-              <!-- Infrared Receiver Window -->
-              <div class="tv-ir-sensor-eye" id="tv-ir-eye" title="Remote IR Receiver Sensor">
-                <div class="sensor-glow"></div>
-              </div>
-              <!-- Physical TV Power Button & LED -->
-              <div class="tv-panel-power-group">
-                <div class="tv-power-indicator-wrap">
-                  <span class="tv-power-led standby" id="tv-power-led" title="Power / Standby"></span>
-                </div>
-                <button class="tv-hardware-power-btn" id="tv-hardware-power-btn" title="TV Power On/Off">
-                  <span class="tv-hw-power-icon">⏻</span>
-                </button>
-              </div>
+            <div class="modern-hud-hotkey">
+              <kbd class="modern-hud-kbd">caps lock</kbd> + <kbd class="modern-hud-kbd">C</kbd> + <kbd class="modern-hud-kbd">1</kbd>
             </div>
           </div>
-
         </div>
 
       </div>
@@ -256,7 +151,7 @@
 
 
     <!-- ====================================================================
-         SECTION 2: THE 3 CORE PAINS NNTS ELIMINATES (CONCISE & IMPACTFUL)
+         SECTION 2: THE 3 CORE PAINS NNTS ELIMINATES (CLEANED BENTO CARDS)
          ==================================================================== -->
     <section class="nnts-section nnts-pains-section" id="superpowers">
       <div class="section-header">
@@ -282,7 +177,7 @@
             
             <!-- Live Profile Simulator Window -->
             <div class="bento-sim-window">
-              <!-- Apple Fluid Minimal HUD Overlay (Emil Kowalski / Apple HIG) -->
+              <!-- Apple Fluid Minimal HUD Overlay -->
               <div class="apple-hud-overlay" id="apple-hud-overlay" aria-hidden="true">
                 <img src="assets/images/profiles_v2/personal.png" alt="Profile" id="hud-profile-avatar" class="hud-profile-avatar">
                 <div class="hud-profile-meta">
@@ -327,25 +222,6 @@
               </div>
             </div>
 
-            <!-- Keymaster 3D Mechanical Keychord Cluster (Variant 3) -->
-            <div class="keychord-cluster" id="keychord-cluster" aria-label="Interactive 3D Mechanical Keychord Controls">
-              <div class="keychord-cap keychord-cap-caps" id="keychord-cap-caps" title="Tap or hold caps lock">
-                <span class="keychord-led-indicator" title="Driverless Remap Active (F18)"></span>
-                <span class="keychord-cap-label">⇪</span>
-                <span class="keychord-cap-sub">caps lock</span>
-              </div>
-              <span class="keychord-sep">+</span>
-              <div class="keychord-cap keychord-cap-c" id="keychord-cap-c" title="Tap C for Chrome profiles">
-                <span class="keychord-cap-label">C</span>
-                <span class="keychord-cap-sub">CHROME</span>
-              </div>
-              <span class="keychord-sep">+</span>
-              <div class="keychord-cap keychord-cap-digit" id="keychord-cap-digit" title="Tap 1-4 for specific profile">
-                <span class="keychord-cap-label" id="keychord-digit-label">1</span>
-                <span class="keychord-cap-sub">PROFILE</span>
-              </div>
-            </div>
-
             <!-- Profile Interactive Selector Shelf -->
             <div class="bento-profile-shelf" id="bento-profile-shelf">
               <button class="bento-profile-btn active" data-profile="1" data-name="Personal" data-url="app.almosteleven.com/personal" data-img="assets/images/profiles_v2/personal.png">
@@ -373,7 +249,7 @@
           <div class="bento-card-header">
             <span class="bento-tag tag-cyan">02 // NO SEARCH LAG</span>
             <div class="bento-hotkey-badge">
-              <kbd class="bento-kbd">caps lock</kbd> + <kbd class="bento-kbd">T</kbd>
+              <kbd class="bento-kbd">caps lock</kbd> + <kbd class="bento-kbd">[a-z]</kbd>
             </div>
           </div>
 
@@ -381,27 +257,7 @@
             <h3 class="bento-title">First-Letter App Cycling</h3>
             <p class="bento-desc">No Spotlight indexing delays. Hold <kbd class="inline-kbd">caps lock</kbd> and tap the first letter; tap again to cycle instantly.</p>
             
-            <!-- Live Interactive 3D Keycap & Carousel -->
             <div class="bento-key-cycler-box">
-              <div class="cycler-meta-bar">
-                <span class="cycler-key-label">INTERACTIVE 3D KEYCHORD:</span>
-                <span class="cycler-step-badge" id="bento-cycle-indicator">1 / 2 ↻ CYCLE</span>
-              </div>
-
-              <!-- Keymaster 3D Quick Apps Keychord Cluster -->
-              <div class="keychord-cluster keychord-cluster-cyan" id="quickapp-keychord-cluster" aria-label="Interactive 3D Mechanical Keychord for Quick Apps">
-                <div class="keychord-cap keychord-cap-caps keychord-cap-cyan" id="quickapp-cap-caps" title="Tap or hold caps lock">
-                  <span class="keychord-led-indicator keychord-led-cyan" title="Driverless Remap Active (F18)"></span>
-                  <span class="keychord-cap-label">⇪</span>
-                  <span class="keychord-cap-sub">caps lock</span>
-                </div>
-                <span class="keychord-sep">+</span>
-                <div class="keychord-cap keychord-cap-letter keychord-cap-cyan" id="quickapp-cap-letter" title="Tap letter or click to cycle apps on this key">
-                  <span class="keychord-cap-label" id="quickapp-letter-label">T</span>
-                  <span class="keychord-cap-sub" id="quickapp-letter-sub">CYCLE ↻</span>
-                </div>
-              </div>
-
               <!-- Switching App Cards -->
               <div class="cycler-app-stack" id="cycler-app-stack">
                 <div class="cycler-app-item active" id="cycler-app-1">
@@ -518,32 +374,7 @@
 
 
     <!-- ====================================================================
-         SECTION 3: DIRECT CATHODE CHANNEL GUIDE
-         ==================================================================== -->
-    <section class="nnts-section nnts-video-section" id="proofs">
-      <div class="section-header">
-        <h2 class="section-heading">Recording Channels (60fps)</h2>
-        <p class="section-description">Select a channel to play the live recording in the Sony Trinitron TV above.</p>
-      </div>
-
-      <div class="video-cathode-chassis" style="max-width: 600px; margin: 0 auto; padding: 1rem;">
-        <!-- Video Selector Tabs that tune the Hero TV -->
-        <div class="video-channel-tuner-bar" style="margin-bottom: 0;">
-          <button class="video-tuner-btn active" data-channel="1" id="section-tuner-1">
-            <span class="tuner-led">●</span>
-            <span class="tuner-title">CH 01 &bull; Profile & App Switching</span>
-          </button>
-          <button class="video-tuner-btn" data-channel="2" id="section-tuner-2">
-            <span class="tuner-led">●</span>
-            <span class="tuner-title">CH 02 &bull; Copy-on-Select</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- ====================================================================
-         SECTION 4: FINAL DOWNLOAD CTA STRIP
+         SECTION 3: FINAL DOWNLOAD CTA STRIP
          ==================================================================== -->
     <section class="nnts-section nnts-download-strip">
       <div class="strip-card">
@@ -598,6 +429,6 @@
     <span class="toast-msg">Copied!</span>
   </div>
 
-  <script src="app.min.js?v=6.1"></script>
+  <script src="app.min.js?v=7.0"></script>
 </body>
 </html>

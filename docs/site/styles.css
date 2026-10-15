@@ -3,6 +3,14 @@
    Authentic Aerospace & Cathode Ray Tube Design Language
    ========================================================================== */
 
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('assets/fonts/SpaceGrotesk-Bold.ttf') format('truetype');
+  font-weight: 700 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Canonical Brand Palette Tokens */
   --void-black: #030306;
@@ -27,6 +35,7 @@
   
   --font-mono: "SF Mono", "JetBrains Mono", "Menlo", "Courier New", monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Space Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
   
   --ease-elastic: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);
@@ -48,6 +57,8 @@ html {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body.nnts-body {
@@ -56,6 +67,7 @@ body.nnts-body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  max-width: 100vw;
   line-height: 1.5;
 }
 
@@ -94,6 +106,7 @@ body.nnts-body {
   padding: 0 1.5rem;
   position: relative;
   z-index: 10;
+  overflow-x: hidden;
 }
 
 /* ==========================================================================
@@ -179,6 +192,67 @@ body.nnts-body {
 
 .telemetry-sep {
   color: rgba(255, 255, 255, 0.15);
+}
+
+/* ==========================================================================
+   HEADER VARIANT SWITCHER (Apple-Style Segmented Pill)
+   ========================================================================== */
+.variant-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 3px;
+  gap: 2px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.variant-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  user-select: none;
+  line-height: 1;
+}
+
+.variant-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.variant-btn.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.variant-btn:active {
+  transform: scale(0.97);
+}
+
+.variant-icon {
+  font-size: 13px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.variant-label {
+  line-height: 1;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
 }
 
 .nnts-header-actions {
@@ -350,6 +424,7 @@ body.nnts-body {
 }
 
 .hero-title {
+  font-family: var(--font-display);
   font-size: clamp(1.45rem, 2.1vw, 1.85rem);
   line-height: 1.12;
   font-weight: 800;
@@ -358,7 +433,7 @@ body.nnts-body {
 }
 
 .hero-title-accent {
-  background: linear-gradient(135deg, var(--titanium-white) 30%, var(--scanline-magenta) 70%, var(--phosphor-green) 100%);
+  background: linear-gradient(135deg, var(--electric-cyan) 0%, var(--phosphor-green) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -541,7 +616,7 @@ body.nnts-body {
 }
 
 /* --------------------------------------------------------------------------
-   THE REALISTIC ALIENWARE SONY TRINITRON REMOTE CONTROL (ПУЛЬТ ДУ)
+   THE REALISTIC ALIENWARE SONY TRINITRON REMOTE CONTROL
    -------------------------------------------------------------------------- */
 .tv-remote-handset.realistic-alienware-remote {
   width: 104px;
@@ -751,7 +826,7 @@ body.nnts-body {
 }
 
 /* --------------------------------------------------------------------------
-   THE TELEVISION CHASSIS (ТЕЛИК - SONY TRINITRON CRT)
+   THE TELEVISION CHASSIS (SONY TRINITRON CRT)
    -------------------------------------------------------------------------- */
 .retro-tv-chassis {
   flex: 1;
@@ -1346,6 +1421,7 @@ body.nnts-body {
 }
 
 .section-heading {
+  font-family: var(--font-display);
   font-size: 2.35rem;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -2813,10 +2889,81 @@ body.nnts-body {
 }
 
 @media (max-width: 640px) {
+  .nnts-wrapper {
+    padding: 0 0.75rem;
+    overflow-x: hidden;
+  }
   .hero-title {
-    font-size: 2.1rem;
+    font-size: clamp(1.4rem, 6vw, 1.85rem);
+    line-height: 1.15;
+    word-break: break-word;
+  }
+  .nnts-header {
+    padding: 0.6rem 0.85rem;
+    gap: 0.5rem;
+  }
+  .nnts-brand .brand-wordmark-img {
+    width: 44px;
+    height: auto;
   }
   .nnts-telemetry-pill {
+    display: none;
+  }
+  .variant-toggle {
+    padding: 2px;
+  }
+  .variant-label {
+    display: none;
+  }
+  .variant-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+    gap: 0;
+  }
+  .nnts-header-actions .nnts-btn-ghost {
+    display: none;
+  }
+  .nnts-header-actions .nnts-btn-primary {
+    padding: 0.45rem 0.65rem;
+    font-size: 0.76rem;
+  }
+  .nnts-header-actions .nnts-btn-primary span {
+    display: none;
+  }
+  .modern-showcase-container {
+    padding: 0.75rem;
+    margin: 1rem auto 2rem auto;
+    border-radius: 20px;
+  }
+  .modern-showcase-header {
+    padding: 0.25rem 0.25rem 0.75rem;
+  }
+  .modern-channel-tabs {
+    width: 100%;
+    justify-content: center;
+  }
+  .modern-channel-btn {
+    font-size: 0.68rem;
+    padding: 0.35rem 0.65rem;
+  }
+  .modern-showcase-meta {
+    display: none;
+  }
+  .modern-hud-floating-badge {
+    top: 0.5rem;
+    left: 0.5rem;
+    max-width: calc(100% - 1rem);
+    padding: 0.45rem 0.75rem;
+    border-radius: 10px;
+    gap: 0.4rem;
+  }
+  .modern-hud-title {
+    font-size: 0.75rem;
+  }
+  .modern-hud-sub {
+    font-size: 0.6rem;
+  }
+  .modern-hud-hotkey {
     display: none;
   }
   .pains-triptych-grid,
@@ -2830,6 +2977,33 @@ body.nnts-body {
     width: 100%;
   }
   .strip-primary-btn, .strip-brew-box {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.32rem;
+    line-height: 1.15;
+  }
+  .nnts-brand .brand-wordmark-img {
+    width: 36px;
+  }
+  .variant-btn {
+    padding: 4px 7px;
+    font-size: 12px;
+  }
+  .modern-channel-btn {
+    font-size: 0.62rem;
+    padding: 0.3rem 0.5rem;
+  }
+  .hero-action-strip {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.65rem;
+  }
+  .hero-primary-cta, .hero-terminal-pill {
     width: 100%;
     justify-content: center;
   }
@@ -2857,4 +3031,187 @@ body.nnts-body {
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   MODERN SHOWCASE COMPONENT (META / APPLE STYLE HERO MEDIA)
+   ========================================================================== */
+.modern-showcase-container {
+  width: 100%;
+  max-width: 980px;
+  margin: 1.5rem auto 3rem auto;
+  background: rgba(15, 17, 23, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  padding: 1.25rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-showcase-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem 1rem 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.modern-channel-tabs {
+  display: inline-flex;
+  gap: 0.4rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modern-channel-btn {
+  background: transparent;
+  border: none;
+  color: var(--titanium-text-dim, #8f9ba8);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 180ms ease;
+}
+
+.modern-channel-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modern-channel-btn.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.modern-channel-btn .btn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #555;
+  transition: background-color 180ms ease;
+}
+
+.modern-channel-btn.active .btn-dot {
+  background: var(--phosphor-green, #39ff14);
+  box-shadow: 0 0 8px var(--phosphor-green, #39ff14);
+}
+
+.modern-showcase-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  color: var(--titanium-text-dim, #8f9ba8);
+}
+
+.modern-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  background: rgba(57, 255, 20, 0.08);
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  color: var(--phosphor-green, #39ff14);
+  font-weight: 600;
+}
+
+.modern-video-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.modern-video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.modern-hud-floating-badge {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(13, 16, 23, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  padding: 0.65rem 1.15rem;
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08) inset, 0 0 24px rgba(57, 255, 20, 0.18);
+  pointer-events: none;
+  animation: modernHudFloat 4s ease-in-out infinite alternate;
+  z-index: 10;
+}
+
+@keyframes modernHudFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
+}
+
+.modern-hud-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid var(--phosphor-green, #39ff14);
+}
+
+.modern-hud-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.modern-hud-title {
+  font-family: var(--font-sans, system-ui);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.modern-hud-sub {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.65rem;
+  color: var(--titanium-text-dim, #8f9ba8);
+}
+
+.modern-hud-hotkey {
+  margin-left: 0.5rem;
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.modern-hud-kbd {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #fff;
+}
+
 
