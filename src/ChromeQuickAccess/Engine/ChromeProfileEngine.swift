@@ -144,11 +144,22 @@ public final class ChromeProfileEngine: ObservableObject {
         }
     }
     
-    /// Returns the active selected profiles (up to 4), re-indexed 1...4 for hotkeys and HUD
+    public static let maxProfileSlots: Int = 8
+    
+    /// Returns the active selected profiles (up to 8), re-indexed 1...8 for hotkeys and HUD
     public var selectedProfiles: [ChromeProfile] {
-        let selectedSet = Set(selectedProfileDirs)
-        let matched = profiles.filter { selectedSet.contains($0.dir) }
-        let chosen = matched.isEmpty ? Array(profiles.prefix(4)) : Array(matched.prefix(4))
+        let chosen: [ChromeProfile]
+        if !selectedProfileDirs.isEmpty {
+            var ordered: [ChromeProfile] = []
+            for dir in selectedProfileDirs {
+                if let found = profiles.first(where: { $0.dir == dir }) {
+                    ordered.append(found)
+                }
+            }
+            chosen = ordered.isEmpty ? Array(profiles.prefix(Self.maxProfileSlots)) : Array(ordered.prefix(Self.maxProfileSlots))
+        } else {
+            chosen = Array(profiles.prefix(Self.maxProfileSlots))
+        }
         return chosen.enumerated().map { (idx, p) in
             ChromeProfile(
                 index: idx + 1,
@@ -168,12 +179,22 @@ public final class ChromeProfileEngine: ObservableObject {
     
     public func selectProfile(dir: String) {
         if !selectedProfileDirs.contains(dir) {
-            if selectedProfileDirs.count < 4 {
+            if selectedProfileDirs.count < Self.maxProfileSlots {
                 selectedProfileDirs.append(dir)
             } else {
-                selectedProfileDirs[3] = dir
+                selectedProfileDirs[Self.maxProfileSlots - 1] = dir
             }
         }
+    }
+    
+    public func moveProfile(fromOffsets source: IndexSet, toOffset destination: Int) {
+        var updated = selectedProfileDirs
+        updated.move(fromOffsets: source, toOffset: destination)
+        self.selectedProfileDirs = updated
+    }
+    
+    public func setProfileOrder(_ orderedDirs: [String]) {
+        self.selectedProfileDirs = Array(orderedDirs.prefix(Self.maxProfileSlots))
     }
     
     public func deselectProfile(dir: String) {
@@ -464,7 +485,7 @@ public final class ChromeProfileEngine: ObservableObject {
                 avatarImage: avatar
             )
             foundProfiles.append(profile)
-            if foundProfiles.count >= 8 { break }
+            if foundProfiles.count >= 50 { break }
         }
         return foundProfiles
     }
@@ -484,11 +505,11 @@ public final class ChromeProfileEngine: ObservableObject {
     private func applySavedProfileSelection() {
         let saved = UserDefaults.standard.stringArray(forKey: "SelectedBrowserProfileDirs") ?? []
         let validSaved = saved.filter { s in profiles.contains(where: { $0.dir == s }) }
-        // If saved was only ["Default"] while multiple profiles are available (e.g. recovering from fallback), expand to prefix(4)
+        // If saved was only ["Default"] while multiple profiles are available (e.g. recovering from fallback), expand to prefix(Self.maxProfileSlots)
         if !validSaved.isEmpty && !(validSaved.count == 1 && validSaved.first == "Default" && profiles.count > 1) {
-            self.selectedProfileDirs = Array(validSaved.prefix(4))
+            self.selectedProfileDirs = Array(validSaved.prefix(Self.maxProfileSlots))
         } else {
-            self.selectedProfileDirs = Array(profiles.prefix(4).map { $0.dir })
+            self.selectedProfileDirs = Array(profiles.prefix(Self.maxProfileSlots).map { $0.dir })
         }
     }
     

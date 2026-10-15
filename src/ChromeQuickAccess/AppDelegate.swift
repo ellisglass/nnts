@@ -920,7 +920,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             profileEngine.deselectProfile(dir: dir)
             updateMenu()
         } else {
-            if profileEngine.selectedProfiles.count < 4 {
+            if profileEngine.selectedProfiles.count < ChromeProfileEngine.maxProfileSlots {
                 profileEngine.selectProfile(dir: dir)
                 updateMenu()
             } else {
@@ -934,8 +934,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let newProfileName = profileEngine.profiles.first(where: { $0.dir == newDir })?.effectiveName ?? newDir
         
         let alert = NSAlert()
-        alert.messageText = "Chrome Profiles Limit Reached (4 of 4)"
-        alert.informativeText = "NNTS supports up to 4 quick profiles (Caps + 1..4).\n\nAll 4 profile slots are currently in use. Choose which profile slot to replace with '\(newProfileName)':"
+        alert.messageText = "Browser Profiles Limit Reached (\(ChromeProfileEngine.maxProfileSlots) of \(ChromeProfileEngine.maxProfileSlots))"
+        alert.informativeText = "NNTS supports up to \(ChromeProfileEngine.maxProfileSlots) quick profiles (caps lock + 1..8).\n\nAll \(ChromeProfileEngine.maxProfileSlots) profile slots are currently in use. Choose which profile slot to replace with '\(newProfileName)':"
         alert.alertStyle = .informational
         
         let popUp = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 300, height: 26))

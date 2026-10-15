@@ -62,6 +62,17 @@ public final class SettingsViewModel: ObservableObject {
     @Published public var currentBrowserBundleID: String = "com.google.Chrome"
     @Published public var availableBrowsers: [ChromiumBrowserCandidate] = []
     @Published public var profiles: [ChromeProfile] = []
+    @Published public var allDiscoveredProfiles: [ChromeProfile] = []
+    
+    public var unassignedProfiles: [ChromeProfile] {
+        let assignedDirs = Set(profiles.map { $0.dir })
+        return allDiscoveredProfiles.filter { !assignedDirs.contains($0.dir) }
+    }
+    
+    public var currentBrowserName: String {
+        availableBrowsers.first(where: { $0.bundleID == currentBrowserBundleID })?.name ?? "Browser"
+    }
+    @Published public var targetedProfileDir: String? = nil
     
     // License Tab State
     @Published public var isPro: Bool = false
@@ -103,6 +114,7 @@ public final class SettingsViewModel: ObservableObject {
         self.currentBrowserBundleID = engine.browserBundleID
         self.availableBrowsers = engine.availableBrowsers
         self.profiles = engine.selectedProfiles
+        self.allDiscoveredProfiles = engine.profiles
     }
     
     public func refreshLicense() {
@@ -214,6 +226,48 @@ public final class SettingsViewModel: ObservableObject {
     
     public func resetProfileAvatar(dir: String) {
         ChromeProfileEngine.shared.deleteCustomAvatar(profileDir: dir)
+        AppDelegate.shared?.updateMenu()
+        refreshShortcuts()
+    }
+    
+    public func reorderProfile(draggedDir: String, targetDir: String) {
+        var dirs = profiles.map { $0.dir }
+        guard let sourceIdx = dirs.firstIndex(of: draggedDir),
+              let targetIdx = dirs.firstIndex(of: targetDir),
+              sourceIdx != targetIdx else { return }
+        let item = dirs.remove(at: sourceIdx)
+        dirs.insert(item, at: targetIdx)
+        ChromeProfileEngine.shared.setProfileOrder(dirs)
+        AppDelegate.shared?.updateMenu()
+        refreshShortcuts()
+    }
+    
+    public func moveProfileUp(dir: String) {
+        var dirs = profiles.map { $0.dir }
+        guard let idx = dirs.firstIndex(of: dir), idx > 0 else { return }
+        dirs.swapAt(idx, idx - 1)
+        ChromeProfileEngine.shared.setProfileOrder(dirs)
+        AppDelegate.shared?.updateMenu()
+        refreshShortcuts()
+    }
+    
+    public func moveProfileDown(dir: String) {
+        var dirs = profiles.map { $0.dir }
+        guard let idx = dirs.firstIndex(of: dir), idx < dirs.count - 1 else { return }
+        dirs.swapAt(idx, idx + 1)
+        ChromeProfileEngine.shared.setProfileOrder(dirs)
+        AppDelegate.shared?.updateMenu()
+        refreshShortcuts()
+    }
+    
+    public func addProfileToActiveSlots(dir: String) {
+        ChromeProfileEngine.shared.selectProfile(dir: dir)
+        AppDelegate.shared?.updateMenu()
+        refreshShortcuts()
+    }
+    
+    public func removeProfileFromActiveSlots(dir: String) {
+        ChromeProfileEngine.shared.deselectProfile(dir: dir)
         AppDelegate.shared?.updateMenu()
         refreshShortcuts()
     }
@@ -561,7 +615,7 @@ private struct ShortcutsTabContent: View {
             }
             
             // Browser Profiles Section
-            SettingsSectionBox(title: "Browser Profiles (caps lock + 1..4)", icon: "person.2") {
+            SettingsSectionBox(title: "Browser Profiles (caps lock + 1..8)", icon: "person.2") {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         Picker("Browser:", selection: $viewModel.currentBrowserBundleID) {
@@ -590,66 +644,197 @@ private struct ShortcutsTabContent: View {
                             .foregroundColor(Color(nsColor: .secondaryLabelColor))
                             .padding(.vertical, 4)
                     } else {
-                        VStack(spacing: 6) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Drag to reorder slots 1–8. Up to 8 quick profiles active.")
+                                .font(.system(size: 11))
+                                .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                                .padding(.bottom, 2)
+                            
                             ForEach(viewModel.profiles) { p in
-                                HStack(spacing: 10) {
-                                    // Avatar
-                                    ZStack {
-                                        if let img = p.avatarImage {
-                                            Image(nsImage: img)
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 30, height: 30)
-                                                .clipShape(Circle())
-                                        } else {
-                                            Circle()
-                                                .fill(Color.accentColor.opacity(0.20))
-                                                .frame(width: 30, height: 30)
-                                            let char = p.effectiveName.first(where: { $0.isLetter || $0.isNumber }) ?? "P"
-                                            Text(String(char).uppercased())
-                                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                                                .foregroundColor(Color.accentColor)
-                                        }
-                                    }
-                                    .frame(width: 30, height: 30)
-                                    
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(p.effectiveName)
-                                            .font(.system(size: 12, weight: .semibold))
-                                            .foregroundColor(Color(nsColor: .labelColor))
-                                            .lineLimit(1)
-                                        Text("caps lock + \(p.index)")
-                                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                                            .foregroundColor(Color(nsColor: .secondaryLabelColor))
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Button("Paste Avatar") {
-                                        viewModel.pasteProfileAvatar(dir: p.dir)
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.small)
-                                    .help("Paste image from clipboard as avatar")
-                                    
-                                    Button("Reset") {
-                                        viewModel.resetProfileAvatar(dir: p.dir)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .font(.system(size: 11))
-                                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
-                                    .help("Reset to monogram avatar")
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(Color(nsColor: .controlBackgroundColor).opacity(0.45))
+                                DraggableProfileRow(
+                                    profile: p,
+                                    totalCount: viewModel.profiles.count,
+                                    viewModel: viewModel
                                 )
+                            }
+                            
+                            if !viewModel.unassignedProfiles.isEmpty {
+                                Divider()
+                                    .padding(.vertical, 6)
+                                
+                                Text("Available Profiles (\(viewModel.unassignedProfiles.count))")
+                                    .font(.system(size: 11.5, weight: .semibold))
+                                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                                
+                                VStack(spacing: 5) {
+                                    ForEach(viewModel.unassignedProfiles) { p in
+                                        HStack(spacing: 8) {
+                                            ZStack {
+                                                if let img = p.avatarImage {
+                                                    Image(nsImage: img)
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 22, height: 22)
+                                                        .clipShape(Circle())
+                                                } else {
+                                                    Circle()
+                                                        .fill(Color.gray.opacity(0.20))
+                                                        .frame(width: 22, height: 22)
+                                                    let char = p.effectiveName.first(where: { $0.isLetter || $0.isNumber }) ?? "P"
+                                                    Text(String(char).uppercased())
+                                                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            }
+                                            .frame(width: 22, height: 22)
+                                            
+                                            Text(p.effectiveName)
+                                                .font(.system(size: 11.5))
+                                                .foregroundColor(Color(nsColor: .labelColor))
+                                                .lineLimit(1)
+                                            
+                                            Spacer()
+                                            
+                                            Button("+ Add to Slots") {
+                                                viewModel.addProfileToActiveSlots(dir: p.dir)
+                                            }
+                                            .buttonStyle(.bordered)
+                                            .controlSize(.small)
+                                            .disabled(viewModel.profiles.count >= ChromeProfileEngine.maxProfileSlots)
+                                            .help(viewModel.profiles.count >= ChromeProfileEngine.maxProfileSlots ? "All 8 slots full" : "Add to quick access slots")
+                                        }
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                    }
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+// MARK: - Draggable Profile Row
+private struct DraggableProfileRow: View {
+    let profile: ChromeProfile
+    let totalCount: Int
+    @ObservedObject var viewModel: SettingsViewModel
+    
+    var body: some View {
+        let isTargeted = viewModel.targetedProfileDir == profile.dir
+        HStack(spacing: 8) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+                .help("Drag to reorder slot")
+            
+            Text("\(profile.index)")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundColor(.white)
+                .frame(width: 18, height: 18)
+                .background(Circle().fill(Color.accentColor.opacity(0.85)))
+            
+            // Avatar
+            ZStack {
+                if let img = profile.avatarImage {
+                    Image(nsImage: img)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 26, height: 26)
+                        .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.20))
+                        .frame(width: 26, height: 26)
+                    let char = profile.effectiveName.first(where: { $0.isLetter || $0.isNumber }) ?? "P"
+                    Text(String(char).uppercased())
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(Color.accentColor)
+                }
+            }
+            .frame(width: 26, height: 26)
+            
+            VStack(alignment: .leading, spacing: 1) {
+                Text(profile.effectiveName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color(nsColor: .labelColor))
+                    .lineLimit(1)
+                Text("caps lock + \(profile.index)")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
+            }
+            
+            Spacer()
+            
+            // Reorder buttons
+            HStack(spacing: 3) {
+                Button(action: { viewModel.moveProfileUp(dir: profile.dir) }) {
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                }
+                .buttonStyle(.plain)
+                .frame(width: 16, height: 16)
+                .disabled(profile.index <= 1)
+                .help("Move slot up")
+                
+                Button(action: { viewModel.moveProfileDown(dir: profile.dir) }) {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                }
+                .buttonStyle(.plain)
+                .frame(width: 16, height: 16)
+                .disabled(profile.index >= totalCount)
+                .help("Move slot down")
+            }
+            
+            Button("Paste Avatar") {
+                viewModel.pasteProfileAvatar(dir: profile.dir)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Paste image from clipboard as avatar")
+            
+            Button("Reset") {
+                viewModel.resetProfileAvatar(dir: profile.dir)
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 11))
+            .foregroundColor(Color(nsColor: .secondaryLabelColor))
+            .help("Reset to monogram avatar")
+            
+            if totalCount > 1 {
+                Button(action: { viewModel.removeProfileFromActiveSlots(dir: profile.dir) }) {
+                    Image(systemName: "xmark.circle")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                }
+                .buttonStyle(.plain)
+                .help("Remove from quick access slots")
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(isTargeted ? Color.accentColor.opacity(0.18) : Color(nsColor: .controlBackgroundColor).opacity(0.45))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(isTargeted ? Color.accentColor : Color.clear, lineWidth: 1.5)
+        )
+        .draggable(profile.dir)
+        .dropDestination(for: String.self) { items, _ in
+            viewModel.targetedProfileDir = nil
+            guard let droppedDir = items.first, droppedDir != profile.dir else { return false }
+            viewModel.reorderProfile(draggedDir: droppedDir, targetDir: profile.dir)
+            return true
+        } isTargeted: { targeted in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                viewModel.targetedProfileDir = targeted ? profile.dir : nil
             }
         }
     }

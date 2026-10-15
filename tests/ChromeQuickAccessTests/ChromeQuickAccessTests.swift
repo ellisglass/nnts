@@ -1001,7 +1001,10 @@ struct ChromeQuickAccessUnitTests {
                     "Profile 2": { "name": "Profile 3" },
                     "Profile 3": { "name": "Profile 4" },
                     "Profile 4": { "name": "Profile 5" },
-                    "Profile 5": { "name": "Profile 6" }
+                    "Profile 5": { "name": "Profile 6" },
+                    "Profile 6": { "name": "Profile 7" },
+                    "Profile 7": { "name": "Profile 8" },
+                    "Profile 8": { "name": "Profile 9" }
                 }
             }
         }
@@ -1012,25 +1015,27 @@ struct ChromeQuickAccessUnitTests {
         defer { ChromeProfileEngine.localStatePathOverride = nil }
         
         let engine = ChromeProfileEngine()
-        #expect(engine.profiles.count == 6)
+        #expect(engine.profiles.count == 9)
         
-        // Initial selection should default to first 4
-        #expect(engine.selectedProfiles.count == 4)
+        // Initial selection should default to first 8 (maxProfileSlots)
+        #expect(engine.selectedProfiles.count == 8)
         #expect(engine.selectedProfiles[0].dir == "Default")
-        #expect(engine.selectedProfiles[1].dir == "Profile 1")
-        #expect(engine.selectedProfiles[2].dir == "Profile 2")
-        #expect(engine.selectedProfiles[3].dir == "Profile 3")
+        #expect(engine.selectedProfiles[7].dir == "Profile 7")
         
-        // Selecting 5th replaces 4th profile (max 4)
-        engine.selectProfile(dir: "Profile 4")
-        #expect(engine.selectedProfiles.count == 4)
-        #expect(engine.isProfileSelected(dir: "Profile 4") == true)
-        #expect(engine.isProfileSelected(dir: "Profile 3") == false)
+        // Selecting 9th replaces 8th profile (max 8)
+        engine.selectProfile(dir: "Profile 8")
+        #expect(engine.selectedProfiles.count == 8)
+        #expect(engine.isProfileSelected(dir: "Profile 8") == true)
+        #expect(engine.isProfileSelected(dir: "Profile 7") == false)
+        
+        // Reordering profiles preserves custom slot order
+        engine.moveProfile(fromOffsets: IndexSet(integer: 7), toOffset: 0)
+        #expect(engine.selectedProfiles[0].dir == "Profile 8")
         
         // Toggle selection (deselecting if > 1)
-        engine.toggleProfileSelection(dir: "Profile 4")
-        #expect(engine.selectedProfiles.count == 3)
-        #expect(engine.isProfileSelected(dir: "Profile 4") == false)
+        engine.toggleProfileSelection(dir: "Profile 8")
+        #expect(engine.selectedProfiles.count == 7)
+        #expect(engine.isProfileSelected(dir: "Profile 8") == false)
     }
     
     @Test @MainActor
@@ -1478,14 +1483,14 @@ struct ChromeQuickAccessUnitTests {
             engine.selectedProfileDirs = savedDirs
         }
         
-        engine.selectedProfileDirs = ["Default", "Profile 1", "Profile 2", "Profile 3"]
-        #expect(engine.selectedProfileDirs.count == 4)
+        engine.selectedProfileDirs = ["Default", "Profile 1", "Profile 2", "Profile 3", "Profile 4", "Profile 5", "Profile 6", "Profile 7"]
+        #expect(engine.selectedProfileDirs.count == 8)
         
         // Replace slot without silent overflow
-        engine.replaceProfile(oldDir: "Profile 3", newDir: "Profile 4")
-        #expect(engine.selectedProfileDirs == ["Default", "Profile 1", "Profile 2", "Profile 4"])
-        #expect(engine.isProfileSelected(dir: "Profile 4") == true)
-        #expect(engine.isProfileSelected(dir: "Profile 3") == false)
+        engine.replaceProfile(oldDir: "Profile 7", newDir: "Profile 8")
+        #expect(engine.selectedProfileDirs == ["Default", "Profile 1", "Profile 2", "Profile 3", "Profile 4", "Profile 5", "Profile 6", "Profile 8"])
+        #expect(engine.isProfileSelected(dir: "Profile 8") == true)
+        #expect(engine.isProfileSelected(dir: "Profile 7") == false)
     }
     
     @Test @MainActor
@@ -2534,8 +2539,8 @@ struct ChromeQuickAccessUnitTests {
 
     @Test @MainActor
     func testRetroCRTChannelSwitcherHUDInvariants() {
-        // 1. Deterministic size invariance: HUD must always be fixed 300pt x 270pt
-        #expect(MinimalHUDView.hudWidth == 300)
+        // 1. Deterministic size invariance: HUD must always be fixed 320pt x 270pt
+        #expect(MinimalHUDView.hudWidth == 320)
         #expect(MinimalHUDView.hudHeight == 270)
         
         let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
@@ -2622,7 +2627,7 @@ struct ChromeQuickAccessUnitTests {
         #expect(blur.state == .active)
         
         // 3. Verify MinimalHUDView fixed dimensions and glass integration
-        #expect(MinimalHUDView.hudWidth == 300)
+        #expect(MinimalHUDView.hudWidth == 320)
         #expect(MinimalHUDView.hudHeight == 270)
         
         // 4. Verify CopyToastView integration
@@ -3593,6 +3598,24 @@ struct ChromeQuickAccessUnitTests {
         let rect1 = strip.tileRect(for: 1)
         #expect(rect0.width > 0)
         #expect(rect1.width > 0)
+        
+        let rep = strip.bitmapImageRepForCachingDisplay(in: strip.bounds)
+        #expect(rep != nil)
+    }
+    
+    @Test @MainActor
+    func testProfileStripViewCompactLayoutWith8Profiles() {
+        let profiles = (1...8).map { i in
+            ChromeProfile(index: i, dir: "Profile \(i)", name: "Work \(i)")
+        }
+        let strip = ProfileStripView(profiles: profiles, activeDir: "Profile 1")
+        #expect(strip.profiles.count == 8)
+        
+        let rect0 = strip.tileRect(for: 0)
+        let rect7 = strip.tileRect(for: 7)
+        #expect(rect0.width > 0)
+        #expect(rect7.width > 0)
+        #expect(rect7.maxX <= strip.bounds.width)
         
         let rep = strip.bitmapImageRepForCachingDisplay(in: strip.bounds)
         #expect(rep != nil)

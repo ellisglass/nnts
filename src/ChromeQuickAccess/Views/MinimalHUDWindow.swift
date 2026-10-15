@@ -401,7 +401,7 @@ public struct HUDCardView: View {
     
     public var cardWidth: CGFloat {
         if isSingleCard {
-            return (isBrowser && !profiles.isEmpty) ? 240 : 190
+            return (isBrowser && !profiles.isEmpty) ? (profiles.count > 4 ? 280 : 240) : 190
         }
         return Self.standardCardWidth
     }
@@ -438,13 +438,15 @@ public struct HUDCardView: View {
             
             // 3. Profiles Avatar Row or Balanced Spacer (when row has profiles)
             if isBrowser && !profiles.isEmpty {
-                HStack(spacing: isSingleCard ? 8 : 4) {
+                let useCompact = profiles.count > 4
+                HStack(spacing: isSingleCard ? (useCompact ? 5 : 8) : 4) {
                     ForEach(Array(profiles.enumerated()), id: \.element.id) { idx, profile in
                         ProfileAvatarView(
                             profile: profile,
                             isSelected: isSelected && (idx == selectedProfileIndex),
                             slotIndex: idx + 1,
-                            isLarge: isSingleCard,
+                            isLarge: isSingleCard && !useCompact,
+                            isCompact: useCompact || !isSingleCard,
                             namespace: namespace
                         )
                     }
@@ -830,7 +832,7 @@ public struct MinimalHUDView: View {
     @Namespace private var selectionNamespace
     
     /// Deterministic size-invariant CRT screen frame
-    public static let hudWidth: CGFloat = 300
+    public static let hudWidth: CGFloat = 320
     public static let hudHeight: CGFloat = 270
     
     public init() {}
@@ -988,14 +990,15 @@ public struct MinimalHUDView: View {
                 
                 // 3. Bottom Presets Row (Chrome Profiles)
                 if showProfilesRow {
-                    HStack(spacing: 8) {
+                    let useCompact = state.profiles.count > 4
+                    HStack(spacing: useCompact ? 4 : 8) {
                         ForEach(Array(state.profiles.enumerated()), id: \.element.id) { idx, profile in
                             ProfileAvatarView(
                                 profile: profile,
                                 isSelected: idx == state.selectedProfileIndex,
                                 slotIndex: idx + 1,
                                 isLarge: false,
-                                isCompact: false,
+                                isCompact: useCompact,
                                 namespace: selectionNamespace
                             )
                         }

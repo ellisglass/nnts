@@ -37,17 +37,20 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
         guard count > 0, index >= 0, index < count else { return .zero }
         
         let totalWidth = bounds.width
-        let tileHeight: CGFloat = 50
-        let spacing: CGFloat = 6
+        let isCompact = count > 4
+        let tileHeight: CGFloat = isCompact ? 46 : 50
+        let spacing: CGFloat = isCompact ? 4 : 6
         let maxTileWidth: CGFloat
         if count == 1 {
             maxTileWidth = min(220, totalWidth - 24)
+        } else if isCompact {
+            maxTileWidth = min(32, (totalWidth - 16 - CGFloat(count - 1) * spacing) / CGFloat(count))
         } else {
             maxTileWidth = min(66, (totalWidth - 16 - CGFloat(count - 1) * spacing) / CGFloat(count))
         }
         let contentWidth = CGFloat(count) * maxTileWidth + CGFloat(count - 1) * spacing
         let startX = max(8, (totalWidth - contentWidth) / 2.0)
-        let startY: CGFloat = 3
+        let startY: CGFloat = isCompact ? 5 : 3
         
         return NSRect(
             x: startX + CGFloat(index) * (maxTileWidth + spacing),
@@ -176,10 +179,12 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
             let isActive = (p.dir == activeDir)
             
             // 2. Avatar circular image with fallback monogram & active ring
-            let avatarDiameter: CGFloat = 30
+            let isCompact = profiles.count > 4
+            let avatarDiameter: CGFloat = isCompact ? 28 : 30
+            let avatarY: CGFloat = isCompact ? round(rect.midY - avatarDiameter / 2.0) : rect.minY + 3.5
             let avatarRect = NSRect(
                 x: round(rect.midX - avatarDiameter / 2.0),
-                y: rect.minY + 3.5,
+                y: avatarY,
                 width: avatarDiameter,
                 height: avatarDiameter
             )
@@ -196,7 +201,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
                 bg.fill()
                 let char = p.effectiveName.first(where: { $0.isLetter || $0.isNumber }) ?? "P"
                 let monoAttr: [NSAttributedString.Key: Any] = [
-                    .font: NSFont.systemFont(ofSize: 12.5, weight: .bold),
+                    .font: NSFont.systemFont(ofSize: isCompact ? 11.0 : 12.5, weight: .bold),
                     .foregroundColor: NSColor.controlAccentColor
                 ]
                 let monoStr = NSAttributedString(string: String(char).uppercased(), attributes: monoAttr)
@@ -217,11 +222,11 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
                 ring.stroke()
             }
             
-            // 3. Hotkey slot badge (caps lock + 1...4)
-            let badgeDiameter: CGFloat = 13.5
+            // 3. Hotkey slot badge (caps lock + 1...8)
+            let badgeDiameter: CGFloat = isCompact ? 12.0 : 13.5
             let badgeRect = NSRect(
-                x: avatarRect.maxX - 6,
-                y: avatarRect.maxY - 7,
+                x: avatarRect.maxX - (isCompact ? 4.5 : 6),
+                y: avatarRect.maxY - (isCompact ? 5.5 : 7),
                 width: badgeDiameter,
                 height: badgeDiameter
             )
@@ -234,7 +239,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
             
             let slotStr = "\(p.index)"
             let slotAttr: [NSAttributedString.Key: Any] = [
-                .font: NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .bold),
+                .font: NSFont.monospacedDigitSystemFont(ofSize: isCompact ? 8.0 : 9.0, weight: .bold),
                 .foregroundColor: NSColor.white
             ]
             let slotAttrStr = NSAttributedString(string: slotStr, attributes: slotAttr)
@@ -247,24 +252,26 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
             )
             slotAttrStr.draw(in: slotDrawRect)
             
-            // 4. Profile Name label below avatar
-            let nameRect = NSRect(
-                x: rect.minX + 2,
-                y: avatarRect.maxY + 2.5,
-                width: rect.width - 4,
-                height: 13
-            )
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.alignment = .center
-            paragraphStyle.lineBreakMode = .byTruncatingTail
-            
-            let nameAttr: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 10, weight: isActive ? .semibold : .medium),
-                .foregroundColor: isActive ? NSColor.labelColor : NSColor.secondaryLabelColor.withAlphaComponent(0.85),
-                .paragraphStyle: paragraphStyle
-            ]
-            let nameStr = NSAttributedString(string: p.effectiveName, attributes: nameAttr)
-            nameStr.draw(in: nameRect)
+            // 4. Profile Name label below avatar (shown in standard mode; in compact mode names are shown in hover tooltip)
+            if !isCompact {
+                let nameRect = NSRect(
+                    x: rect.minX + 2,
+                    y: avatarRect.maxY + 2.5,
+                    width: rect.width - 4,
+                    height: 13
+                )
+                let paragraphStyle = NSMutableParagraphStyle()
+                paragraphStyle.alignment = .center
+                paragraphStyle.lineBreakMode = .byTruncatingTail
+                
+                let nameAttr: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: 10, weight: isActive ? .semibold : .medium),
+                    .foregroundColor: isActive ? NSColor.labelColor : NSColor.secondaryLabelColor.withAlphaComponent(0.85),
+                    .paragraphStyle: paragraphStyle
+                ]
+                let nameStr = NSAttributedString(string: p.effectiveName, attributes: nameAttr)
+                nameStr.draw(in: nameRect)
+            }
         }
     }
     
