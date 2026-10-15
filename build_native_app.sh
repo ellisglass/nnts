@@ -50,6 +50,7 @@ SOURCES=(
     "src/ChromeQuickAccess/Engine/AntigravityEngine.swift"
     "src/ChromeQuickAccess/Engine/AppGroupEngine.swift"
     "src/ChromeQuickAccess/Engine/CopyOnSelectEngine.swift"
+    "src/ChromeQuickAccess/Engine/FinderTidyEngine.swift"
     "src/ChromeQuickAccess/Engine/LicenseEngine.swift"
     "src/ChromeQuickAccess/Engine/UpdateEngine.swift"
     "src/ChromeQuickAccess/Engine/TelemetryBuffer.swift"

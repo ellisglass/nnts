@@ -57,6 +57,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         stopAccessibilityPolling()
         CapsLockEngine.shared.stop()
         CopyOnSelectEngine.shared.stop()
+        FinderTidyEngine.shared.stop()
     }
     
     public func startServices() {
@@ -65,6 +66,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         if CopyOnSelectEngine.shared.isEnabled && !CopyOnSelectEngine.shared.isStarted {
             CopyOnSelectEngine.shared.start()
+        }
+        if FinderTidyEngine.shared.isEnabled && !FinderTidyEngine.shared.isRunning {
+            FinderTidyEngine.shared.start()
         }
         AppGroupEngine.startGlobalAppSwitchObserver()
         updateDynamicShortcuts()
@@ -797,6 +801,118 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         copyStatusItem.toolTip = "Automatically copy selected text to the clipboard on drag selection (\(isCopyEnabled ? "Active" : "Disabled"))"
         menu.addItem(copyStatusItem)
         
+        // Finder Window Tidy Section
+        let finderTidyEngine = FinderTidyEngine.shared
+        let finderWindows = finderTidyEngine.getOpenFinderWindows()
+        let finderWindowCount = finderWindows.count
+        
+        let finderTidyItem = makeAlignedMenuItem(
+            title: "Finder Window Tidy",
+            icon: NSImage(systemSymbolName: "macwindow.on.rectangle", accessibilityDescription: "Finder Windows"),
+            accessibilityHelp: "Manage and automatically close old or duplicate Finder windows",
+            target: self
+        )
+        let tidyAttr = NSMutableAttributedString(string: "Finder Window Tidy")
+        let tidyBadgeText = finderWindowCount > 0 ? " · \(finderWindowCount) open" : (finderTidyEngine.isEnabled ? " · On" : " · Off")
+        let tidyBadge = NSAttributedString(
+            string: tidyBadgeText,
+            attributes: [
+                .foregroundColor: NSColor.secondaryLabelColor,
+                .font: NSFont.systemFont(ofSize: 11, weight: .regular)
+            ]
+        )
+        tidyAttr.append(tidyBadge)
+        finderTidyItem.attributedTitle = tidyAttr
+        finderTidyItem.toolTip = "Automatically close old Finder windows and maintain a maximum window ceiling (\(finderWindowCount) open now)"
+        
+        let tidySubmenu = NSMenu()
+        
+        let tidyNowItem = NSMenuItem(
+            title: "Tidy Now (Keep Active Window)",
+            action: #selector(handleFinderTidyNow),
+            keyEquivalent: ""
+        )
+        tidyNowItem.target = self
+        tidyNowItem.isEnabled = finderWindowCount > 1
+        tidySubmenu.addItem(tidyNowItem)
+        
+        if finderTidyEngine.maxWindows > 0 && finderWindowCount > finderTidyEngine.maxWindows {
+            let tidyMaxItem = NSMenuItem(
+                title: "Tidy to Max (\(finderTidyEngine.maxWindows) Windows)",
+                action: #selector(handleFinderTidyToMax),
+                keyEquivalent: ""
+            )
+            tidyMaxItem.target = self
+            tidySubmenu.addItem(tidyMaxItem)
+        }
+        
+        let closeDupesItem = NSMenuItem(
+            title: "Close Duplicate Folders",
+            action: #selector(handleFinderCloseDuplicates),
+            keyEquivalent: ""
+        )
+        closeDupesItem.target = self
+        closeDupesItem.isEnabled = finderWindowCount > 1
+        tidySubmenu.addItem(closeDupesItem)
+        
+        tidySubmenu.addItem(NSMenuItem.separator())
+        
+        let toggleAutoItem = NSMenuItem(
+            title: "Auto-Tidy Enabled",
+            action: #selector(handleToggleFinderTidyEnabled),
+            keyEquivalent: ""
+        )
+        toggleAutoItem.target = self
+        toggleAutoItem.state = finderTidyEngine.isEnabled ? .on : .off
+        tidySubmenu.addItem(toggleAutoItem)
+        
+        let ceilingHeader = NSMenuItem.sectionHeader(title: "Window Ceiling Limit")
+        ceilingHeader.isEnabled = false
+        tidySubmenu.addItem(ceilingHeader)
+        
+        let limits: [(String, Int)] = [
+            ("Off (Unlimited)", 0),
+            ("1 Window", 1),
+            ("3 Windows", 3),
+            ("5 Windows (Recommended)", 5),
+            ("8 Windows", 8),
+            ("10 Windows", 10)
+        ]
+        for (limitTitle, limitVal) in limits {
+            let limitItem = NSMenuItem(
+                title: limitTitle,
+                action: #selector(handleSetFinderMaxWindows(_:)),
+                keyEquivalent: ""
+            )
+            limitItem.target = self
+            limitItem.representedObject = limitVal
+            limitItem.state = finderTidyEngine.maxWindows == limitVal ? .on : .off
+            tidySubmenu.addItem(limitItem)
+        }
+        
+        tidySubmenu.addItem(NSMenuItem.separator())
+        
+        let autoDupesItem = NSMenuItem(
+            title: "Auto-Close Duplicate Folders",
+            action: #selector(handleToggleFinderAutoDuplicates),
+            keyEquivalent: ""
+        )
+        autoDupesItem.target = self
+        autoDupesItem.state = finderTidyEngine.closeDuplicates ? .on : .off
+        tidySubmenu.addItem(autoDupesItem)
+        
+        let autoTTLItem = NSMenuItem(
+            title: "Auto-Close Inactive Windows (1h)",
+            action: #selector(handleToggleFinderInactivity),
+            keyEquivalent: ""
+        )
+        autoTTLItem.target = self
+        autoTTLItem.state = finderTidyEngine.inactivityMinutes > 0 ? .on : .off
+        tidySubmenu.addItem(autoTTLItem)
+        
+        finderTidyItem.submenu = tidySubmenu
+        menu.addItem(finderTidyItem)
+        
         let settingsItem = makeAlignedMenuItem(
             title: "Settings...",
             keyEquivalent: ",",
@@ -1224,6 +1340,68 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             CopyOnSelectEngine.shared.start()
         } else {
             CopyOnSelectEngine.shared.stop()
+        }
+        updateMenu()
+    }
+    
+    // MARK: - Finder Window Tidy Action Handlers
+    @objc private func handleFinderTidyNow() {
+        let closed = FinderTidyEngine.shared.tidyNow(keepCount: 1)
+        logger.info("Manual Finder tidy executed: closed \(closed) windows.")
+        TelemetryBuffer.shared.append(category: "finder-tidy", level: "INFO", message: "Manual Finder tidy: closed \(closed) windows.")
+        if closed > 0 {
+            NSSound(named: "Hero")?.play()
+        }
+        updateMenu()
+    }
+    
+    @objc private func handleFinderTidyToMax() {
+        let maxLimit = FinderTidyEngine.shared.maxWindows
+        let closed = FinderTidyEngine.shared.enforceMaxWindows(limit: maxLimit)
+        logger.info("Finder tidy to max (\(maxLimit)) executed: closed \(closed) windows.")
+        TelemetryBuffer.shared.append(category: "finder-tidy", level: "INFO", message: "Finder tidy to max (\(maxLimit)): closed \(closed) windows.")
+        if closed > 0 {
+            NSSound(named: "Hero")?.play()
+        }
+        updateMenu()
+    }
+    
+    @objc private func handleFinderCloseDuplicates() {
+        let closed = FinderTidyEngine.shared.closeDuplicateWindows()
+        logger.info("Finder close duplicates executed: closed \(closed) windows.")
+        TelemetryBuffer.shared.append(category: "finder-tidy", level: "INFO", message: "Finder close duplicates: closed \(closed) windows.")
+        if closed > 0 {
+            NSSound(named: "Hero")?.play()
+        }
+        updateMenu()
+    }
+    
+    @objc private func handleToggleFinderTidyEnabled() {
+        FinderTidyEngine.shared.isEnabled.toggle()
+        if FinderTidyEngine.shared.isEnabled {
+            FinderTidyEngine.shared.start()
+        } else {
+            FinderTidyEngine.shared.stop()
+        }
+        updateMenu()
+    }
+    
+    @objc private func handleSetFinderMaxWindows(_ sender: NSMenuItem) {
+        guard let limit = sender.representedObject as? Int else { return }
+        FinderTidyEngine.shared.maxWindows = limit
+        updateMenu()
+    }
+    
+    @objc private func handleToggleFinderAutoDuplicates() {
+        FinderTidyEngine.shared.closeDuplicates.toggle()
+        updateMenu()
+    }
+    
+    @objc private func handleToggleFinderInactivity() {
+        if FinderTidyEngine.shared.inactivityMinutes > 0 {
+            FinderTidyEngine.shared.inactivityMinutes = 0
+        } else {
+            FinderTidyEngine.shared.inactivityMinutes = 60
         }
         updateMenu()
     }
