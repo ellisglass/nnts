@@ -16,7 +16,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
     private var hoveredIndex: Int? = nil
     private var trackingArea: NSTrackingArea?
     
-    public init(profiles: [ChromeProfile], activeDir: String?) {
+    public init(profiles: [ChromeProfile], activeDir: String? = nil) {
         self.profiles = profiles
         self.activeDir = activeDir
         
@@ -39,7 +39,12 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
         let totalWidth = bounds.width
         let tileHeight: CGFloat = 50
         let spacing: CGFloat = 6
-        let maxTileWidth: CGFloat = min(66, (totalWidth - 16 - CGFloat(count - 1) * spacing) / CGFloat(count))
+        let maxTileWidth: CGFloat
+        if count == 1 {
+            maxTileWidth = min(220, totalWidth - 24)
+        } else {
+            maxTileWidth = min(66, (totalWidth - 16 - CGFloat(count - 1) * spacing) / CGFloat(count))
+        }
         let contentWidth = CGFloat(count) * maxTileWidth + CGFloat(count - 1) * spacing
         let startX = max(8, (totalWidth - contentWidth) / 2.0)
         let startY: CGFloat = 3
@@ -78,7 +83,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
     public func view(_ view: NSView, stringForToolTip tag: NSView.ToolTipTag, point: NSPoint, userData data: UnsafeMutableRawPointer?) -> String {
         for (i, p) in profiles.enumerated() {
             if tileRect(for: i).contains(point) {
-                return "caps lock + \(p.index): switch to \(p.effectiveName)\nClick to focus · Right-click for Avatar Assistant"
+                return "caps lock + \(p.index): switch to \(p.effectiveName)"
             }
         }
         return ""
@@ -97,11 +102,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
             hoveredIndex = newHover
             needsDisplay = true
         }
-        if newHover != nil {
-            NSCursor.pointingHand.set()
-        } else {
-            NSCursor.arrow.set()
-        }
+        NSCursor.arrow.set() // Native macOS menu cursor invariant
     }
     
     public override func mouseExited(with event: NSEvent) {
@@ -121,9 +122,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
                 if let menu = enclosingMenuItem?.menu {
                     menu.cancelTracking()
                 }
-                if event.modifierFlags.contains(.control) {
-                    AvatarCaptureAssistantWindow.shared.show(profileDir: p.dir)
-                } else if event.modifierFlags.contains(.option) {
+                if event.modifierFlags.contains(.option) {
                     ChromeProfileEngine.shared.toggleProfileSelection(dir: p.dir)
                 } else {
                     ChromeProfileEngine.shared.focusProfile(dir: p.dir)
@@ -141,7 +140,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
                 if let menu = enclosingMenuItem?.menu {
                     menu.cancelTracking()
                 }
-                AvatarCaptureAssistantWindow.shared.show(profileDir: p.dir)
+                ChromeProfileEngine.shared.focusProfile(dir: p.dir)
                 return
             }
         }
@@ -155,75 +154,71 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
         // 0. Sleek unified Card Dock container
         let cardRect = NSRect(x: 8, y: 1, width: bounds.width - 16, height: bounds.height - 2)
         let cardPath = NSBezierPath(roundedRect: cardRect, xRadius: 10, yRadius: 10)
-        NSColor.quaternaryLabelColor.withAlphaComponent(0.28).setFill()
+        NSColor.white.withAlphaComponent(0.06).setFill()
         cardPath.fill()
-        NSColor.separatorColor.withAlphaComponent(0.2).setStroke()
-        cardPath.lineWidth = 0.5
+        NSColor.white.withAlphaComponent(0.12).setStroke()
+        cardPath.lineWidth = 0.75
         cardPath.stroke()
         
         for (i, p) in profiles.enumerated() {
             let rect = tileRect(for: i)
             guard rect.width > 0 else { continue }
             
-            let isActive = (p.dir == activeDir)
             let isHovered = (hoveredIndex == i)
             
             // 1. Hover state background
             if isHovered {
                 let hoverBg = NSBezierPath(roundedRect: rect.insetBy(dx: 1, dy: 1), xRadius: 8, yRadius: 8)
-                NSColor.quaternaryLabelColor.withAlphaComponent(0.6).setFill()
+                NSColor.white.withAlphaComponent(0.12).setFill()
                 hoverBg.fill()
             }
             
-            // 2. Avatar circular image
-            let avatarDiameter: CGFloat = 28
+            let isActive = (p.dir == activeDir)
+            
+            // 2. Avatar circular image with fallback monogram & active ring
+            let avatarDiameter: CGFloat = 30
             let avatarRect = NSRect(
                 x: round(rect.midX - avatarDiameter / 2.0),
-                y: rect.minY + 4,
+                y: rect.minY + 3.5,
                 width: avatarDiameter,
                 height: avatarDiameter
             )
             
-            NSGraphicsContext.saveGraphicsState()
-            let clip = NSBezierPath(ovalIn: avatarRect)
-            clip.addClip()
-            p.avatarImage?.draw(in: avatarRect)
-            NSGraphicsContext.restoreGraphicsState()
-            
-            // 3. Active ring & checkmark indicator
-            if isActive {
-                let ring = NSBezierPath(ovalIn: avatarRect.insetBy(dx: -1.5, dy: -1.5))
-                ring.lineWidth = 2.0
-                NSColor.controlAccentColor.setStroke()
-                ring.stroke()
-                
-                // Vector Checkmark badge at top-right
-                let checkBadgeRect = NSRect(
-                    x: avatarRect.maxX - 7,
-                    y: avatarRect.minY - 2,
-                    width: 11,
-                    height: 11
+            if let img = p.avatarImage {
+                NSGraphicsContext.saveGraphicsState()
+                let clip = NSBezierPath(ovalIn: avatarRect)
+                clip.addClip()
+                img.draw(in: avatarRect)
+                NSGraphicsContext.restoreGraphicsState()
+            } else {
+                let bg = NSBezierPath(ovalIn: avatarRect)
+                NSColor.controlAccentColor.withAlphaComponent(0.20).setFill()
+                bg.fill()
+                let char = p.effectiveName.first(where: { $0.isLetter || $0.isNumber }) ?? "P"
+                let monoAttr: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: 12.5, weight: .bold),
+                    .foregroundColor: NSColor.controlAccentColor
+                ]
+                let monoStr = NSAttributedString(string: String(char).uppercased(), attributes: monoAttr)
+                let sSize = monoStr.size()
+                let sRect = NSRect(
+                    x: round(avatarRect.midX - sSize.width / 2.0),
+                    y: round(avatarRect.midY - sSize.height / 2.0 - 0.5),
+                    width: sSize.width,
+                    height: sSize.height
                 )
-                let checkBg = NSBezierPath(ovalIn: checkBadgeRect)
-                NSColor.controlAccentColor.setFill()
-                checkBg.fill()
-                NSColor.windowBackgroundColor.setStroke()
-                checkBg.lineWidth = 0.75
-                checkBg.stroke()
-                
-                let checkPath = NSBezierPath()
-                checkPath.move(to: NSPoint(x: checkBadgeRect.minX + 2.8, y: checkBadgeRect.midY + 0.2))
-                checkPath.line(to: NSPoint(x: checkBadgeRect.minX + 4.5, y: checkBadgeRect.maxY - 3.2))
-                checkPath.line(to: NSPoint(x: checkBadgeRect.maxX - 2.8, y: checkBadgeRect.minY + 3.0))
-                checkPath.lineWidth = 1.25
-                checkPath.lineCapStyle = .round
-                checkPath.lineJoinStyle = .round
-                NSColor.white.setStroke()
-                checkPath.stroke()
+                monoStr.draw(in: sRect)
             }
             
-            // 4. Hotkey slot badge (caps lock + 1...4)
-            let badgeDiameter: CGFloat = 13
+            if isActive {
+                let ring = NSBezierPath(ovalIn: avatarRect.insetBy(dx: -1.75, dy: -1.75))
+                NSColor.controlAccentColor.setStroke()
+                ring.lineWidth = 1.75
+                ring.stroke()
+            }
+            
+            // 3. Hotkey slot badge (caps lock + 1...4)
+            let badgeDiameter: CGFloat = 13.5
             let badgeRect = NSRect(
                 x: avatarRect.maxX - 6,
                 y: avatarRect.maxY - 7,
@@ -231,10 +226,10 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
                 height: badgeDiameter
             )
             let badgeBg = NSBezierPath(ovalIn: badgeRect)
-            NSColor.black.withAlphaComponent(0.85).setFill()
+            NSColor(white: 0.12, alpha: 0.95).setFill()
             badgeBg.fill()
-            NSColor.white.withAlphaComponent(0.4).setStroke()
-            badgeBg.lineWidth = 0.5
+            NSColor.white.withAlphaComponent(0.35).setStroke()
+            badgeBg.lineWidth = 0.75
             badgeBg.stroke()
             
             let slotStr = "\(p.index)"
@@ -252,10 +247,10 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
             )
             slotAttrStr.draw(in: slotDrawRect)
             
-            // 5. Profile Name label below avatar
+            // 4. Profile Name label below avatar
             let nameRect = NSRect(
                 x: rect.minX + 2,
-                y: avatarRect.maxY + 3,
+                y: avatarRect.maxY + 2.5,
                 width: rect.width - 4,
                 height: 13
             )
@@ -265,7 +260,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
             
             let nameAttr: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: 10, weight: isActive ? .semibold : .medium),
-                .foregroundColor: isActive ? NSColor.labelColor : NSColor.secondaryLabelColor,
+                .foregroundColor: isActive ? NSColor.labelColor : NSColor.secondaryLabelColor.withAlphaComponent(0.85),
                 .paragraphStyle: paragraphStyle
             ]
             let nameStr = NSAttributedString(string: p.effectiveName, attributes: nameAttr)
@@ -284,6 +279,8 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
             element.setAccessibilityRole(.button)
             element.setAccessibilityLabel("\(p.effectiveName), Profile \(p.index)")
             element.setAccessibilityHelp("Hold caps lock and press \(p.index) to switch to \(p.effectiveName)")
+            let screenRect = window?.convertToScreen(convert(tileRect(for: i), to: nil)) ?? .zero
+            element.setAccessibilityFrame(screenRect)
             return element
         }
     }

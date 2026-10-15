@@ -3257,9 +3257,9 @@ struct ChromeQuickAccessUnitTests {
         let stripItem = menu.items.first(where: { $0.view is ProfileStripView })
         #expect(stripItem != nil)
         
-        // Explicit Avatar Assistant menu item is directly available
+        // In streamlined menu, Avatar Assistant is removed from root menu
         let directAssistantItem = menu.items.first(where: { $0.title.contains("Avatar Assistant") })
-        #expect(directAssistantItem != nil)
+        #expect(directAssistantItem == nil)
         
         guard let stripView = stripItem?.view as? ProfileStripView else {
             Issue.record("ProfileStripView not found")
@@ -3570,15 +3570,71 @@ struct ChromeQuickAccessUnitTests {
         #expect(tidyItem?.submenu != nil)
         
         let sub = tidyItem?.submenu
-        let tidyNow = sub?.items.first(where: { $0.title == "Tidy Now (Keep Active Window)" })
+        let tidyNow = sub?.items.first(where: { $0.title.contains("Tidy") })
         #expect(tidyNow != nil)
         #expect(tidyNow?.isEnabled == true)
         
-        let dupes = sub?.items.first(where: { $0.title == "Close Duplicate Folders" })
+        let dupes = sub?.items.first(where: { $0.title.contains("Duplicate") })
         #expect(dupes != nil)
         
-        let autoItem = sub?.items.first(where: { $0.title == "Auto-Tidy Enabled" })
+        let autoItem = sub?.items.first(where: { $0.title.contains("Auto-Tidy") })
         #expect(autoItem != nil)
+    }
+    
+    @Test @MainActor
+    func testProfileStripViewHasNoActiveIndicator() {
+        let p1 = ChromeProfile(index: 1, dir: "Default", name: "Igor")
+        let p2 = ChromeProfile(index: 2, dir: "Profile 1", name: "Nastya")
+        let strip = ProfileStripView(profiles: [p1, p2])
+        #expect(strip.profiles.count == 2)
+        #expect(strip.activeDir == nil)
+        
+        let rect0 = strip.tileRect(for: 0)
+        let rect1 = strip.tileRect(for: 1)
+        #expect(rect0.width > 0)
+        #expect(rect1.width > 0)
+        
+        let rep = strip.bitmapImageRepForCachingDisplay(in: strip.bounds)
+        #expect(rep != nil)
+    }
+    
+    @Test @MainActor
+    func testSettingsMenuItemOpensNativeSettingsWindow() {
+        let appDelegate = AppDelegate()
+        let menu = appDelegate.buildStatusMenu()
+        let settingsItem = menu.items.first(where: { $0.title == "Settings..." })
+        #expect(settingsItem != nil)
+        #expect(settingsItem?.keyEquivalent == ",")
+        #expect(settingsItem?.keyEquivalentModifierMask == [.command])
+        #expect(settingsItem?.action == #selector(AppDelegate.handleOpenSettings))
+    }
+    
+    @Test @MainActor
+    func testSettingsViewModelEngineBindingsAndTabNavigation() {
+        let vm = SettingsViewModel()
+        
+        // Tab switching
+        #expect(vm.selectedTab == .general)
+        vm.selectedTab = .profiles
+        #expect(vm.selectedTab == .profiles)
+        vm.selectedTab = .copyOnSelect
+        #expect(vm.selectedTab == .copyOnSelect)
+        vm.selectedTab = .finderTidy
+        #expect(vm.selectedTab == .finderTidy)
+        vm.selectedTab = .license
+        #expect(vm.selectedTab == .license)
+        
+        // Copy on Select binding
+        let initialCopyState = CopyOnSelectEngine.shared.isEnabled
+        vm.setCopyOnSelectEnabled(!initialCopyState)
+        #expect(CopyOnSelectEngine.shared.isEnabled == !initialCopyState)
+        vm.setCopyOnSelectEnabled(initialCopyState)
+        
+        // Finder Tidy binding
+        let initialTidyLimit = FinderTidyEngine.shared.maxWindows
+        vm.setFinderMaxWindows(8)
+        #expect(FinderTidyEngine.shared.maxWindows == 8)
+        vm.setFinderMaxWindows(initialTidyLimit)
     }
 }
 

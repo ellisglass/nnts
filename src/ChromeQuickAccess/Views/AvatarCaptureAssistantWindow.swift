@@ -96,7 +96,11 @@ public final class AvatarCaptureAssistantViewModel: ObservableObject {
     }
     
     public func pasteFromClipboard() {
-        guard let profile = selectedProfile else { return }
+        guard let profile = selectedProfile else {
+            self.statusMessage = "No Chrome profile found to update."
+            NSSound.beep()
+            return
+        }
         let success = ChromeProfileEngine.shared.saveCapturedAvatarFromPasteboard(forProfileDir: profile.dir, name: profile.name)
         if success {
             if NSSound(named: "Hero")?.play() != true {
@@ -123,18 +127,37 @@ private struct KeyCapView: View {
     var body: some View {
         Text(key)
             .font(.system(size: 11, weight: .semibold, design: .rounded))
-            .foregroundColor(.white)
-            .padding(.horizontal, 5.5)
-            .padding(.vertical, 2)
+            .foregroundColor(.white.opacity(0.95))
+            .frame(minWidth: 20, minHeight: 19)
+            .padding(.horizontal, 4)
             .background(
-                RoundedRectangle(cornerRadius: 4.5)
-                    .fill(Color(red: 0.16, green: 0.18, blue: 0.22))
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(white: 0.24),
+                                Color(white: 0.16)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 4.5)
-                            .strokeBorder(Color.white.opacity(0.30), lineWidth: 0.75)
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.30),
+                                        Color.white.opacity(0.08)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 0.75
+                            )
                     )
             )
-            .shadow(color: .black.opacity(0.35), radius: 1.5, y: 1)
+            .shadow(color: Color.black.opacity(0.40), radius: 1.5, x: 0, y: 1)
     }
 }
 
@@ -145,27 +168,55 @@ private struct AvatarPreviewCircle: View {
     
     var body: some View {
         ZStack {
-            Circle()
-                .fill(Color.white.opacity(0.08))
-                .frame(width: 48, height: 48)
-            
             if let img = image {
                 Image(nsImage: img)
                     .resizable()
-                    .scaledToFit()
-                    .frame(width: 48, height: 48)
+                    .scaledToFill()
+                    .frame(width: 52, height: 52)
                     .clipShape(Circle())
                     .overlay(
                         Circle()
-                            .strokeBorder(Color.white.opacity(0.40), lineWidth: 1.5)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.40), Color.white.opacity(0.12)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 1.5
+                            )
                     )
             } else {
-                Text(monogram)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.20, green: 0.24, blue: 0.32),
+                                Color(red: 0.12, green: 0.14, blue: 0.18)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 52, height: 52)
+                    .overlay(
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.accentColor.opacity(0.60), Color.accentColor.opacity(0.20)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 1.5
+                            )
+                    )
+                    .overlay(
+                        Text(monogram)
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    )
             }
         }
-        .shadow(color: Color.black.opacity(0.35), radius: 3, x: 0, y: 1.5)
+        .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 3)
     }
 }
 
@@ -176,32 +227,34 @@ public struct AvatarCaptureAssistantView: View {
     
     public var body: some View {
         VStack(spacing: 0) {
-            // 1. Header Bar (Identical to Settings & Quick Apps)
+            // 1. Header Bar
             HStack(spacing: 10) {
                 HStack(spacing: 7) {
                     Image(systemName: "camera.viewfinder")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.70))
+                        .foregroundColor(Color.accentColor)
                     Text("Avatar Assistant")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.88))
+                        .tracking(-0.3)
+                        .foregroundColor(.white.opacity(0.92))
                 }
                 
-                // Zero Permissions Pill (Matches Pro Active badge style)
-                HStack(spacing: 3) {
+                // Zero Permissions Pill
+                HStack(spacing: 4) {
                     Image(systemName: "lock.shield.fill")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(Color(red: 0.35, green: 0.85, blue: 0.50))
                     Text("0 Permissions")
-                        .font(.system(size: 9.5, weight: .bold))
+                        .font(.system(size: 9.5, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.85))
                 }
-                .foregroundColor(Color(red: 0.35, green: 0.85, blue: 0.50))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2.5)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
                 .background(
-                    Capsule().fill(Color(red: 0.35, green: 0.85, blue: 0.50).opacity(0.18))
+                    Capsule().fill(Color.white.opacity(0.08))
                 )
                 .overlay(
-                    Capsule().stroke(Color(red: 0.35, green: 0.85, blue: 0.50).opacity(0.35), lineWidth: 0.75)
+                    Capsule().stroke(Color.white.opacity(0.16), lineWidth: 0.5)
                 )
                 .help("Zero screen recording. Imports strictly via clipboard (⌘⌃⇧4).")
                 
@@ -211,20 +264,20 @@ public struct AvatarCaptureAssistantView: View {
                 Button(action: { viewModel.refreshProfiles() }) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.65))
-                        .padding(5)
+                        .foregroundColor(.white.opacity(0.75))
+                        .padding(5.5)
                         .background(Circle().fill(Color.white.opacity(0.08)))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(MacTactileButtonStyle(scaleAmount: 0.94))
                 .help("Refresh Profiles (⌘R)")
                 
                 // Close Button
                 Button(action: onClose) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.40))
+                        .foregroundColor(.white.opacity(0.45))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(MacTactileButtonStyle(scaleAmount: 0.94))
                 .help("Close (Esc)")
             }
             .padding(.horizontal, 16)
@@ -232,22 +285,23 @@ public struct AvatarCaptureAssistantView: View {
             .padding(.bottom, 12)
             
             Divider()
-                .opacity(0.4)
+                .opacity(0.25)
             
             // 2. Body Content
             VStack(spacing: 12) {
-                // Target Profile Card (Identical to Settings row card)
-                HStack(spacing: 12) {
+                // Target Profile Hero Card (Elevated Frosted Glass)
+                HStack(spacing: 14) {
                     AvatarPreviewCircle(
                         image: viewModel.previewAvatarImage,
                         monogram: viewModel.selectedProfileMonogram
                     )
+                    .fixedSize()
                     
-                    VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: 3.5) {
                         if viewModel.profiles.count > 1 {
                             HStack(spacing: 6) {
                                 Text("Profile:")
-                                    .font(.system(size: 11.5, weight: .semibold))
+                                    .font(.system(size: 12, weight: .semibold))
                                     .foregroundColor(.white.opacity(0.85))
                                 
                                 Picker("", selection: Binding(
@@ -260,159 +314,203 @@ public struct AvatarCaptureAssistantView: View {
                                 }
                                 .labelsHidden()
                                 .pickerStyle(.menu)
-                                .frame(maxWidth: 160)
+                                .frame(maxWidth: 170)
                             }
                             
-                            Text("Target profile for avatar snip")
-                                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.70))
+                            Text("Target profile to update")
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(.white.opacity(0.65))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         } else {
                             Text(viewModel.selectedProfile?.effectiveName ?? "Chrome Profile")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
+                                .truncationMode(.middle)
                             
                             Text("Active Profile · \(viewModel.selectedProfile?.dir ?? "Default")")
-                                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.70))
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(.white.opacity(0.65))
+                                .lineLimit(1)
                         }
                     }
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
                     
-                    Spacer()
+                    Spacer(minLength: 8)
                     
-                    // Profile hotkey badge (Capsule pill identical to Settings caps lock + A)
+                    // Profile hotkey badge
                     let slotIndex = viewModel.selectedProfile?.index ?? 1
-                    Text("caps lock + c + \(slotIndex)")
-                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.85))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Capsule().fill(Color.white.opacity(0.14)))
-                        .overlay(Capsule().stroke(Color.white.opacity(0.22), lineWidth: 0.5))
+                    HStack(spacing: 3) {
+                        Text("caps lock")
+                            .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.70))
+                        Text("+")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white.opacity(0.40))
+                        Text("c")
+                            .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.90))
+                        Text("+")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white.opacity(0.40))
+                        Text("\(slotIndex)")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 7.5)
+                    .padding(.vertical, 3.5)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(Color.white.opacity(0.12))
+                    )
+                    .overlay(
+                        Capsule(style: .continuous)
+                            .stroke(Color.white.opacity(0.20), lineWidth: 0.5)
+                    )
+                    .fixedSize()
                 }
-                .padding(12)
+                .padding(14)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.black.opacity(0.25))
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.white.opacity(0.06))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.75)
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 0.75
+                                )
                         )
                 )
+                .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
                 
                 // Instructions / Status Card
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 9) {
                     if viewModel.isSuccess {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 9) {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 14))
+                                .font(.system(size: 16))
                                 .foregroundColor(Color(red: 0.35, green: 0.88, blue: 0.52))
                             
                             Text(viewModel.statusMessage ?? "Avatar applied successfully!")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.system(size: 12.5, weight: .semibold))
                                 .foregroundColor(Color(red: 0.35, green: 0.88, blue: 0.52))
                         }
+                        .padding(.vertical, 2)
                     } else if let status = viewModel.statusMessage {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 9) {
                             Image(systemName: "info.circle.fill")
-                                .font(.system(size: 14))
+                                .font(.system(size: 15))
                                 .foregroundColor(.yellow)
                             
                             Text(status)
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.yellow)
                         }
+                        .padding(.vertical, 2)
                     } else {
-                        VStack(alignment: .leading, spacing: 7) {
-                            HStack(spacing: 6) {
-                                Text("1")
-                                    .font(.system(size: 9.5, weight: .bold))
-                                    .foregroundColor(.cyan)
-                                    .frame(width: 15, height: 15)
-                                    .background(Circle().fill(Color.cyan.opacity(0.20)))
-                                
-                                Text("In Chrome, press")
-                                    .font(.system(size: 11.5, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.85))
-                                
-                                HStack(spacing: 2.5) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 8) {
+                                HStack(spacing: 3) {
                                     KeyCapView(key: "⌘")
                                     KeyCapView(key: "⌃")
                                     KeyCapView(key: "⇧")
                                     KeyCapView(key: "4")
                                 }
-                                
-                                Text("and snip your avatar.")
-                                    .font(.system(size: 11.5, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.85))
+                                Text("Snip avatar area in Chrome")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.88))
                             }
                             
-                            HStack(spacing: 6) {
-                                Text("2")
-                                    .font(.system(size: 9.5, weight: .bold))
-                                    .foregroundColor(.cyan)
-                                    .frame(width: 15, height: 15)
-                                    .background(Circle().fill(Color.cyan.opacity(0.20)))
-                                
-                                Text("NNTS catches it from the clipboard automatically.")
-                                    .font(.system(size: 11.5, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.85))
+                            HStack(spacing: 8) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(Color.accentColor)
+                                    .frame(width: 20)
+                                Text("NNTS detects clipboard & saves automatically")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.70))
                             }
                         }
                     }
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(11)
+                .padding(12)
                 .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.black.opacity(0.25))
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.white.opacity(0.04))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.75)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.75)
                         )
                 )
                 
-                // Primary Action Button (Matching Settings +Pin style)
+                // Primary Action Button (Tactile Apple Prominent Button)
                 Button(action: {
                     viewModel.pasteFromClipboard()
                 }) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 9) {
                         Image(systemName: "doc.on.clipboard.fill")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                         
                         Text("Paste Avatar from Clipboard")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                         
                         Spacer()
                         
-                        Text("[ ↵ ]")
-                            .font(.system(size: 10, weight: .regular, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.70))
+                        // Return Keycap Badge
+                        HStack(spacing: 2) {
+                            Text("↩")
+                                .font(.system(size: 12, weight: .bold))
+                        }
+                        .foregroundColor(.white.opacity(0.90))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(Color.black.opacity(0.28))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                        .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
+                                )
+                        )
                     }
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 16)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 36)
+                    .frame(height: 38)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        Color(red: 0.16, green: 0.48, blue: 0.96),
-                                        Color(red: 0.08, green: 0.38, blue: 0.86)
+                                        Color(red: 0.08, green: 0.52, blue: 0.98),
+                                        Color(red: 0.02, green: 0.40, blue: 0.88)
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 )
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.75)
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.35), Color.white.opacity(0.08)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 0.75
+                                    )
                             )
                     )
                     .foregroundColor(.white)
+                    .shadow(color: Color(red: 0.05, green: 0.42, blue: 0.95).opacity(0.35), radius: 6, x: 0, y: 2.5)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(MacTactileButtonStyle(scaleAmount: 0.97, pressedOpacity: 0.92))
                 .help("Paste image currently in clipboard (or press Enter)")
                 
                 if viewModel.isSuccess && viewModel.profiles.count > 1 {
@@ -423,57 +521,46 @@ public struct AvatarCaptureAssistantView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 9.5, weight: .bold))
                         }
-                        .foregroundColor(.cyan)
+                        .foregroundColor(Color.accentColor)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(MacTactileButtonStyle(scaleAmount: 0.97))
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
             
             Divider()
-                .opacity(0.4)
+                .opacity(0.25)
             
-            // 3. Footer Bar (Identical to Settings footer)
+            // 3. Footer Bar
             HStack {
                 HStack(spacing: 5) {
                     Image(systemName: "lock.shield.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(red: 0.35, green: 0.85, blue: 0.50).opacity(0.85))
+                        .font(.system(size: 10.5))
+                        .foregroundColor(Color(red: 0.35, green: 0.85, blue: 0.50))
                     Text("Zero screen recording · 100% private")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.white.opacity(0.70))
+                        .foregroundColor(.white.opacity(0.65))
                 }
                 
                 Spacer()
                 
                 Button(action: {
                     AvatarCaptureAssistantWindow.shared.hideImmediate()
-                    AppSearchPickerWindow.shared.show()
+                    SettingsWindow.shared.show(tab: .profiles)
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "gearshape")
-                            .font(.system(size: 11))
+                            .font(.system(size: 10.5))
                         Text("Settings... (⌘,)")
                             .font(.system(size: 11, weight: .medium))
                     }
-                    .foregroundColor(Color(red: 0.40, green: 0.70, blue: 1.0))
+                    .foregroundColor(Color(red: 0.40, green: 0.72, blue: 1.0))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(MacTactileButtonStyle(scaleAmount: 0.97))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            
-            // 4. Key Hints Bar (Identical to Settings)
-            HStack(spacing: 12) {
-                Text("[⌘⌃⇧4] Snip")
-                Text("[↵] Paste")
-                Text("[⌘R] Refresh")
-                Text("[Esc] Close")
-            }
-            .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-            .foregroundColor(.white.opacity(0.60))
-            .padding(.bottom, 8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
         .frame(width: 440)
         .background(

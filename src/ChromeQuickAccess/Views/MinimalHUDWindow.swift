@@ -882,7 +882,7 @@ public struct MinimalHUDView: View {
     }
     
     private var showProfilesRow: Bool {
-        (state.mode == .chrome || isCurrentBrowser) && !state.profiles.isEmpty
+        (state.mode == .chrome || isCurrentBrowser) && state.profiles.count > 1
     }
     
     private var cycleIndicator: String? {
@@ -956,8 +956,11 @@ public struct MinimalHUDView: View {
                                 .frame(width: 5, height: 5)
                                 .shadow(color: Color(red: 0.25, green: 0.90, blue: 0.55).opacity(0.85), radius: 3)
                             Text(prof.effectiveName)
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(.white)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .frame(maxWidth: 180)
                         }
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3.5)
@@ -1007,9 +1010,9 @@ public struct MinimalHUDView: View {
             .background(
                 MacNativeLiquidGlassBackground(cornerRadius: 28, material: .popover)
             )
-            .scaleEffect(state.isVisible ? 1.0 : 0.94)
+            .scaleEffect(state.isVisible ? 1.0 : 0.95)
             .opacity(state.isVisible ? 1.0 : 0.0)
-            .animation(NNTSMotion.interactiveSnap, value: state.isVisible)
+            .animation(nil, value: state.isVisible)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .preferredColorScheme(.dark)

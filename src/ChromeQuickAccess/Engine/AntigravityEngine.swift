@@ -22,6 +22,10 @@ public struct AntigravityItem: Identifiable, Sendable, Equatable {
         self.index = index
     }
     
+    public var firstLetter: Character {
+        Character((name.first(where: { $0.isLetter }) ?? "A").uppercased())
+    }
+    
     public static func == (lhs: AntigravityItem, rhs: AntigravityItem) -> Bool {
         lhs.id == rhs.id && lhs.name == rhs.name && lhs.index == rhs.index
     }

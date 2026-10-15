@@ -824,6 +824,14 @@ public final class ChromeProfileEngine: ObservableObject {
     }
     
     @MainActor
+    public func deleteCustomAvatar(profileDir: String) {
+        let dest = Self.localAvatarStorageURL.appendingPathComponent("\(profileDir).png")
+        try? FileManager.default.removeItem(at: dest)
+        cachedAvatars.removeValue(forKey: profileDir)
+        refreshProfiles()
+    }
+    
+    @MainActor
     public func startPasteboardAvatarWatcher(
         forProfileDir dirKey: String,
         name: String,

@@ -109,6 +109,7 @@ public struct AppSearchPickerRowView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 32, height: 32)
                     .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .fixedSize()
                 
                 // Name & Bundle Identifier
                 VStack(alignment: .leading, spacing: 2) {
@@ -225,7 +226,7 @@ public struct AppSearchPickerRowView: View {
             .scaleEffect(isSelected ? 1.01 : 1.0)
             .animation(NNTSMotion.interactiveSnap, value: isSelected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(MacTactileButtonStyle(scaleAmount: 0.98, pressedOpacity: 0.92))
     }
 }
 
@@ -465,24 +466,6 @@ public struct AppSearchPickerView: View {
                         .foregroundColor(.white.opacity(0.25))
                         .font(.system(size: 10))
                 }
-                
-                // Avatar Assistant button
-                Button(action: onOpenAvatarAssistant) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "camera.viewfinder")
-                            .font(.system(size: 11))
-                        Text("Avatar Assistant...")
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundColor(Color(red: 0.35, green: 0.75, blue: 1.0))
-                }
-                .buttonStyle(.plain)
-                .help("Open interactive assistant to snip and assign profile photos (⌘⌃⇧4)")
-                
-                Text("•")
-                    .foregroundColor(.white.opacity(0.25))
-                    .font(.system(size: 10))
-
                 // Browse in Finder button
                 Button(action: onChooseOther) {
                     HStack(spacing: 4) {
@@ -491,24 +474,12 @@ public struct AppSearchPickerView: View {
                         Text("Browse in Finder... (⌘O)")
                             .font(.system(size: 11, weight: .medium))
                     }
-                    .foregroundColor(Color(red: 0.40, green: 0.70, blue: 1.0))
+                    .foregroundColor(Color.accentColor)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            
-            // Key hints bar
-            HStack(spacing: 12) {
-                Text("[↑/↓] Navigate")
-                Text("[↵] Pin / Unpin")
-                Text("[⌘R] Refresh")
-                Text("[⌘O] Browse")
-                Text("[Esc] Close")
-            }
-            .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-            .foregroundColor(.white.opacity(0.60))
-            .padding(.bottom, 8)
         }
         .frame(width: 440)
         .background(

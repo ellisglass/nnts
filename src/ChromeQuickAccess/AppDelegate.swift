@@ -757,23 +757,12 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menu.addItem(chromeItem)
         
-        let activeProfileDir = profileEngine.getActiveProfileDir()
         let displayProfiles = !selectedList.isEmpty ? selectedList : (profileEngine.profiles.first != nil ? [profileEngine.profiles.first!] : [])
         if !displayProfiles.isEmpty {
             let stripItem = NSMenuItem()
             stripItem.title = "Profiles"
-            stripItem.view = ProfileStripView(profiles: displayProfiles, activeDir: activeProfileDir)
+            stripItem.view = ProfileStripView(profiles: displayProfiles, activeDir: profileEngine.getActiveProfileDir())
             menu.addItem(stripItem)
-            
-            let assistantItem = makeAlignedMenuItem(
-                title: "Avatar Assistant (⌘⌃⇧4)...",
-                icon: NSImage(systemSymbolName: "person.crop.circle.badge.plus", accessibilityDescription: "Avatar Assistant"),
-                accessibilityHelp: "Open interactive assistant to snip and assign profile avatars with zero permissions",
-                action: #selector(handleOpenAvatarCaptureAssistant(_:)),
-                target: self
-            )
-            assistantItem.toolTip = "Interactive assistant: snip any profile photo with ⌘⌃⇧4 and NNTS applies it automatically"
-            menu.addItem(assistantItem)
         }
         
         menu.addItem(NSMenuItem.separator())
@@ -809,26 +798,26 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let finderTidyItem = makeAlignedMenuItem(
             title: "Finder Window Tidy",
             icon: NSImage(systemSymbolName: "macwindow.on.rectangle", accessibilityDescription: "Finder Windows"),
-            accessibilityHelp: "Manage and automatically close old or duplicate Finder windows",
+            accessibilityHelp: "Manage open Finder windows",
             target: self
         )
-        let tidyAttr = NSMutableAttributedString(string: "Finder Window Tidy")
-        let tidyBadgeText = finderWindowCount > 0 ? " · \(finderWindowCount) open" : (finderTidyEngine.isEnabled ? " · On" : " · Off")
-        let tidyBadge = NSAttributedString(
-            string: tidyBadgeText,
-            attributes: [
-                .foregroundColor: NSColor.secondaryLabelColor,
-                .font: NSFont.systemFont(ofSize: 11, weight: .regular)
-            ]
-        )
-        tidyAttr.append(tidyBadge)
-        finderTidyItem.attributedTitle = tidyAttr
-        finderTidyItem.toolTip = "Automatically close old Finder windows and maintain a maximum window ceiling (\(finderWindowCount) open now)"
+        if finderWindowCount > 1 {
+            let tidyAttr = NSMutableAttributedString(string: "Finder Window Tidy")
+            let tidyBadge = NSAttributedString(
+                string: " · \(finderWindowCount) open",
+                attributes: [
+                    .foregroundColor: NSColor.secondaryLabelColor,
+                    .font: NSFont.systemFont(ofSize: 11, weight: .regular)
+                ]
+            )
+            tidyAttr.append(tidyBadge)
+            finderTidyItem.attributedTitle = tidyAttr
+        }
         
         let tidySubmenu = NSMenu()
         
         let tidyNowItem = NSMenuItem(
-            title: "Tidy Now (Keep Active Window)",
+            title: "Tidy Windows Now",
             action: #selector(handleFinderTidyNow),
             keyEquivalent: ""
         )
@@ -836,18 +825,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         tidyNowItem.isEnabled = finderWindowCount > 1
         tidySubmenu.addItem(tidyNowItem)
         
-        if finderTidyEngine.maxWindows > 0 && finderWindowCount > finderTidyEngine.maxWindows {
-            let tidyMaxItem = NSMenuItem(
-                title: "Tidy to Max (\(finderTidyEngine.maxWindows) Windows)",
-                action: #selector(handleFinderTidyToMax),
-                keyEquivalent: ""
-            )
-            tidyMaxItem.target = self
-            tidySubmenu.addItem(tidyMaxItem)
-        }
-        
         let closeDupesItem = NSMenuItem(
-            title: "Close Duplicate Folders",
+            title: "Close Duplicate Windows",
             action: #selector(handleFinderCloseDuplicates),
             keyEquivalent: ""
         )
@@ -858,57 +837,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         tidySubmenu.addItem(NSMenuItem.separator())
         
         let toggleAutoItem = NSMenuItem(
-            title: "Auto-Tidy Enabled",
+            title: "Auto-Tidy (Keep Max 5 Windows)",
             action: #selector(handleToggleFinderTidyEnabled),
             keyEquivalent: ""
         )
         toggleAutoItem.target = self
         toggleAutoItem.state = finderTidyEngine.isEnabled ? .on : .off
         tidySubmenu.addItem(toggleAutoItem)
-        
-        let ceilingHeader = NSMenuItem.sectionHeader(title: "Window Ceiling Limit")
-        ceilingHeader.isEnabled = false
-        tidySubmenu.addItem(ceilingHeader)
-        
-        let limits: [(String, Int)] = [
-            ("Off (Unlimited)", 0),
-            ("1 Window", 1),
-            ("3 Windows", 3),
-            ("5 Windows (Recommended)", 5),
-            ("8 Windows", 8),
-            ("10 Windows", 10)
-        ]
-        for (limitTitle, limitVal) in limits {
-            let limitItem = NSMenuItem(
-                title: limitTitle,
-                action: #selector(handleSetFinderMaxWindows(_:)),
-                keyEquivalent: ""
-            )
-            limitItem.target = self
-            limitItem.representedObject = limitVal
-            limitItem.state = finderTidyEngine.maxWindows == limitVal ? .on : .off
-            tidySubmenu.addItem(limitItem)
-        }
-        
-        tidySubmenu.addItem(NSMenuItem.separator())
-        
-        let autoDupesItem = NSMenuItem(
-            title: "Auto-Close Duplicate Folders",
-            action: #selector(handleToggleFinderAutoDuplicates),
-            keyEquivalent: ""
-        )
-        autoDupesItem.target = self
-        autoDupesItem.state = finderTidyEngine.closeDuplicates ? .on : .off
-        tidySubmenu.addItem(autoDupesItem)
-        
-        let autoTTLItem = NSMenuItem(
-            title: "Auto-Close Inactive Windows (1h)",
-            action: #selector(handleToggleFinderInactivity),
-            keyEquivalent: ""
-        )
-        autoTTLItem.target = self
-        autoTTLItem.state = finderTidyEngine.inactivityMinutes > 0 ? .on : .off
-        tidySubmenu.addItem(autoTTLItem)
         
         finderTidyItem.submenu = tidySubmenu
         menu.addItem(finderTidyItem)
@@ -917,8 +852,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             title: "Settings...",
             keyEquivalent: ",",
             modifierMask: [.command],
-            accessibilityHelp: "Configure pinned apps, shortcuts, and browser profiles",
-            action: #selector(handleOpenAppSearch),
+            accessibilityHelp: "Configure quick apps, browser profiles, copy on select, and system shortcuts",
+            action: #selector(handleOpenSettings),
             target: self
         )
         menu.addItem(settingsItem)
@@ -1276,6 +1211,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         } else if response == .alertThirdButtonReturn {
             promptEnterLicenseKey(thenPinBundleID: newBundleID)
         }
+    }
+    
+    @objc public func handleOpenSettings() {
+        MinimalHUDWindow.shared.hideImmediate()
+        SettingsWindow.shared.show()
     }
     
     @objc public func handleOpenAppSearch() {
