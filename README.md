@@ -1,6 +1,6 @@
 # NNTS
 
-[![Version](https://img.shields.io/badge/version-2.0.1-007AFF.svg?style=flat-square)](https://github.com/ellisglass/nnts/releases/latest)
+[![Version](https://img.shields.io/badge/version-2.0.3-007AFF.svg?style=flat-square)](https://github.com/ellisglass/nnts/releases/latest)
 [![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-black.svg?style=flat-square)](https://github.com/ellisglass/nnts)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 

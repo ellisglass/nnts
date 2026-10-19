@@ -43,44 +43,45 @@
 
 ## 3. Subsystem Architecture
 
-### 3.1 Caps-Lock Engine (`src/ChromeQuickAccess/Engine/CapsLockEngine.swift`)
+### 3.1 Caps-Lock Engine (`src/NNTS/Engine/CapsLockEngine.swift`)
 - **Driverless Remapping**: Uses macOS `hidutil property --set` to map physical caps lock (`0x700000039`) to F18 (`0x70000006D`). Restores default mapping upon application termination.
 - **Head-Insert Event Tap**: Intercepts `keyDown`, `keyUp`, and `flagsChanged` via `.cghidEventTap`.
 - **Modifier State Machine**: Tracks physical F18 events and isolates external multi-modifier (`Cmd+Opt+Ctrl+Shift`) state, ensuring modifier keys (e.g. Shift during Shift-Tab navigation) never cause premature caps lock release. Physical caps lock acts purely as a dedicated modifier without synthetic Escape side effects or LED toggling.
 - **Sleep/Wake Resilience**: Registers an observer for `NSWorkspace.didWakeNotification` to re-apply HID mappings and re-enable event taps upon system wake.
 
-### 3.2 Chrome Profile Engine (`src/ChromeQuickAccess/Engine/ChromeProfileEngine.swift`)
+### 3.2 Chrome Profile Engine (`src/NNTS/Engine/ChromeProfileEngine.swift`)
 - **Dynamic Chromium Parsing**: Dynamically parses Chromium `Local State` JSON files (`profile.info_cache`) across Google Chrome, Brave, Microsoft Edge, and Chromium.
 - **Avatar & Monogram Rendering**: Resolves custom profile avatars, Google Profile Pictures, or generates high-resolution circular monogram avatars with deterministic color seeding.
 - **Native Accessibility Switching**: Uses macOS Accessibility API (`AXUIElementCopyAttributeValue`) traversing the browser's menu bar (`kAXMenuBarAttribute`) to trigger profile switching via `AXMenuItemMarkChar == "✓"` and item selection, eliminating brittle window title matching.
 - **Minimized Window Recovery**: Detects minimized windows via `kAXMinimizedAttribute` and unminimizes/raises them without unwanted tab creation.
 - **8 Profile Slots**: Supports up to 8 pinned profiles with dynamic drag-and-drop ordering and status synchronization.
 
-### 3.3 App Group Engine (`src/ChromeQuickAccess/Engine/AppGroupEngine.swift`)
+### 3.3 App Group Engine (`src/NNTS/Engine/AppGroupEngine.swift`)
 - **Universal Pinned Quick Apps**: Maps home-row keys (`T`, `I`, `A`, `N`, `C`) to core toolchains with a 4-slot pinned limit in Free mode (unlimited in Pro).
 - **Letter-Cycle Submenus**: When multiple apps share a hotkey or letter group, subsequent presses cycle deterministically across candidates (`1/2 ↻`).
 - **MRU Priority**: Prefers frontmost or most recently used open application windows when selecting ambiguous keys.
 
-### 3.4 Copy-on-Select Engine (`src/ChromeQuickAccess/Engine/CopyOnSelectEngine.swift`)
+### 3.4 Copy-on-Select Engine (`src/NNTS/Engine/CopyOnSelectEngine.swift`)
 - **Driverless Mouse Tap**: Listens for `leftMouseDown` and `leftMouseUp` via `.cghidEventTap` (`.listenOnly`) with fallback to `NSEvent.addGlobalMonitorForEvents`.
 - **Displacement & Multi-Click Trigger**: Triggers automatic clipboard copying if drag displacement exceeds 10pt (`dx > 10 || dy > 10`) or if multi-click (`clickCount > 1`).
 - **Modifier Protection**: Ignores drags with `Command` or `Control` held to avoid conflicting with window movements, canvas operations, or Xcode outlet connections.
 - **Sensitive App Shielding**: Automatically suspends Copy-on-Select in 1Password, Bitwarden, KeePass, Terminal password prompts, Google Sheets, Microsoft Excel, and interactive canvas components.
 - **Loop Prevention & Marking**: Synthesizes `Cmd+C` tagged with `syntheticMarker` (`0x43514150`) to prevent recursive event interception.
 
-### 3.5 Finder Tidy Engine (`src/ChromeQuickAccess/Engine/FinderTidyEngine.swift`)
+### 3.5 Finder Tidy Engine (`src/NNTS/Engine/FinderTidyEngine.swift`)
 - **Ceiling Enforcement**: Closes stale background Finder windows when open window count exceeds the configured maximum (default: 3).
 - **Duplicate Pruning**: Closes redundant duplicate folder views automatically.
 - **Active Window Immunity**: Never closes the frontmost active Finder window or windows hosting open modal sheets.
 
-### 3.6 Antigravity Engine (`src/ChromeQuickAccess/Engine/AntigravityEngine.swift`)
+### 3.6 Antigravity Engine (`src/NNTS/Engine/AntigravityEngine.swift`)
 - Discovers `Antigravity` and `Antigravity IDE` application bundles.
 - Tracks frontmost application transitions via `NSWorkspace.didActivateApplicationNotification`.
 - Provides instant toggle between Antigravity and Antigravity IDE on `caps lock + a`.
 
-### 3.7 Minimal HUD Window (`src/ChromeQuickAccess/Views/MinimalHUDWindow.swift`)
+### 3.7 Minimal HUD Window (`src/NNTS/Views/MinimalHUDWindow.swift`)
 - Non-activating, floating bezel overlay rendered in SwiftUI with AppKit bridging.
 - Conforms to macOS Human Interface Guidelines (HIG) with portrait card indicators.
+- Modularized into `MinimalHUDWindow.swift`, `RetroHUDComponents.swift`, and `HUDCardView.swift`.
 - **Dismissal Guardrail**: Always hidden immediately (`MinimalHUDWindow.shared.hideImmediate()`) BEFORE triggering application activation to avoid window server transition lockouts.
 
 ---
@@ -90,7 +91,7 @@
 ```
 nnts/
 ├── Package.swift                             # Swift Package Manager manifest
-├── VERSION.txt                               # Semantic version tracking (2.0.0)
+├── VERSION.txt                               # Semantic version tracking (2.0.3)
 ├── BUILD.txt                                 # Build increment counter
 ├── Makefile                                  # Developer inner loop & CI automation targets
 ├── build_native_app.sh                       # Universal Mach-O binary & DMG build pipeline
@@ -106,9 +107,12 @@ nnts/
 │   ├── PRD_LANDING_REDESIGN.md               # Landing page UX/UI PRD
 │   └── site/                                 # Official web showcase (modern & retro variants)
 ├── src/
-│   └── ChromeQuickAccess/                    # Core native Swift 6 engine
+│   └── NNTS/                                 # Core native Swift 6 engine
 │       ├── main.swift                        # AppKit application entry point
-│       ├── AppDelegate.swift                 # Menu bar status item & action routing
+│       ├── AppDelegate.swift                 # Application lifecycle coordinator
+│       ├── AppDelegate+Mascot.swift          # Menu bar mascot animation & eye gaze
+│       ├── AppDelegate+Hotkeys.swift         # Dynamic hotkeys & modifier event routing
+│       ├── AppDelegate+StatusMenu.swift      # Menu bar status menu & action handlers
 │       ├── Info.plist                        # macOS application bundle metadata
 │       ├── Resources/                        # AppIcon & DMG background
 │       ├── Engine/
@@ -126,6 +130,8 @@ nnts/
 │       │   └── NNTSMotion.swift              # Mascot spring micro-interactions
 │       └── Views/
 │           ├── MinimalHUDWindow.swift        # Floating bezel HUD overlay
+│           ├── RetroHUDComponents.swift      # CRT / Kinescope / Liquid Glass visuals
+│           ├── HUDCardView.swift             # App channel & profile card subviews
 │           ├── SettingsWindow.swift          # Native SwiftUI multi-tab settings panel
 │           ├── CopyToastWindow.swift         # Non-intrusive cursor-following copy confirmation
 │           ├── ProfileStripView.swift        # 8-slot draggable profile strip
@@ -136,9 +142,13 @@ nnts/
 │   ├── health_check.sh                       # 3-point system health validation
 │   ├── monitor_telemetry.sh                  # macOS Unified Logging telemetry monitor
 │   ├── watch_dev.sh                          # Continuous file change watcher & reloader
-│   ├── build_nnts_font.py                    # Font builder script
-│   └── generate_mascot_assets.swift          # Mascot icon asset generator
+│   └── generators/                           # Font & showcase generators
+│       ├── build_nnts_font.py                # Space Grotesk Bold font compiler
+│       ├── build_nnts_japanese_font.py       # Japanese font generator
+│       ├── generate_font_showcase.py         # Typography specimen generator
+│       ├── generate_mascot_assets.swift      # Mascot icon asset generator
+│       └── generate_media_assets.py          # Media asset compiler
 └── tests/
     ├── run_tests.sh                          # Headless test runner
-    └── ChromeQuickAccessTests/               # Swift Testing unit test suites
+    └── NNTSTests/                            # Swift Testing unit test suites
 ```
