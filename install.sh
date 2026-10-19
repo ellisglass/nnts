@@ -99,11 +99,9 @@ if [ -z "${INSTALLED_FROM}" ]; then
 
     CANDIDATE_URLS=(
         "https://github.com/${GITHUB_REPO}/releases/latest/download/${APP_NAME}.dmg"
-        "https://github.com/${GITHUB_REPO}/releases/download/v1.0.1/${APP_NAME}.dmg"
+        "https://github.com/${GITHUB_REPO}/releases/download/v2.0.3/${APP_NAME}.dmg"
         "https://almosteleven.com/downloads/${APP_NAME}.dmg"
         "https://almosteleven.com/${APP_NAME}.dmg"
-        "https://github.com/${GITHUB_REPO}/releases/latest/download/Khomyak.dmg"
-        "https://github.com/${GITHUB_REPO}/releases/latest/download/ChromeQuickAccess.dmg"
     )
 
     DOWNLOAD_SUCCESS=false
