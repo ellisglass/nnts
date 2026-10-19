@@ -26,6 +26,7 @@ build/
 test_*.swift
 test_*.sh
 test_main
+tmp/
 /tmp/
 
 # Payloads & Download Caches (Binary dependencies)

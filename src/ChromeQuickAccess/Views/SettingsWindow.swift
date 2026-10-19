@@ -49,6 +49,8 @@ public final class SettingsViewModel: ObservableObject {
     
     // Copy on Select & Finder Tidy State
     @Published public var isCopyOnSelectEnabled: Bool = true
+    @Published public var isCopyToastEnabled: Bool = false
+    @Published public var isCopyAllowEverywhere: Bool = true
     @Published public var isFinderTidyEnabled: Bool = true
     @Published public var finderMaxWindows: Int = 5
     
@@ -97,6 +99,8 @@ public final class SettingsViewModel: ObservableObject {
         
         let copyEngine = CopyOnSelectEngine.shared
         self.isCopyOnSelectEnabled = copyEngine.isEnabled
+        self.isCopyToastEnabled = copyEngine.isToastEnabled
+        self.isCopyAllowEverywhere = copyEngine.allowEverywhere
         
         let tidyEngine = FinderTidyEngine.shared
         self.isFinderTidyEnabled = tidyEngine.isEnabled
@@ -162,6 +166,16 @@ public final class SettingsViewModel: ObservableObject {
         }
         AppDelegate.shared?.updateMenu()
         self.isCopyOnSelectEnabled = enabled
+    }
+    
+    public func setCopyToastEnabled(_ enabled: Bool) {
+        CopyOnSelectEngine.shared.isToastEnabled = enabled
+        self.isCopyToastEnabled = enabled
+    }
+    
+    public func setCopyAllowEverywhere(_ allow: Bool) {
+        CopyOnSelectEngine.shared.allowEverywhere = allow
+        self.isCopyAllowEverywhere = allow
     }
     
     public func setFinderTidyEnabled(_ enabled: Bool) {
@@ -432,19 +446,54 @@ private struct GeneralTabContent: View {
             SettingsSectionBox(title: "Productivity Features", icon: "sparkles") {
                 VStack(alignment: .leading, spacing: 12) {
                     // Copy on Select
-                    Toggle(isOn: Binding(
-                        get: { viewModel.isCopyOnSelectEnabled },
-                        set: { viewModel.setCopyOnSelectEnabled($0) }
-                    )) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Copy on Select")
-                                .font(.system(size: 12.5, weight: .medium))
-                            Text("Automatically copies text to clipboard whenever you highlight it")
-                                .font(.system(size: 11))
-                                .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle(isOn: Binding(
+                            get: { viewModel.isCopyOnSelectEnabled },
+                            set: { viewModel.setCopyOnSelectEnabled($0) }
+                        )) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Copy on Select")
+                                    .font(.system(size: 12.5, weight: .medium))
+                                Text("Automatically copies text to clipboard whenever you highlight it")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                            }
+                        }
+                        .toggleStyle(.switch)
+                        
+                        if viewModel.isCopyOnSelectEnabled {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Toggle(isOn: Binding(
+                                    get: { viewModel.isCopyToastEnabled },
+                                    set: { viewModel.setCopyToastEnabled($0) }
+                                )) {
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text("Show Copied Toast")
+                                            .font(.system(size: 11.5))
+                                        Text("Displays an ephemeral badge near your cursor upon copying")
+                                            .font(.system(size: 10.5))
+                                            .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                                    }
+                                }
+                                .toggleStyle(.checkbox)
+                                
+                                Toggle(isOn: Binding(
+                                    get: { viewModel.isCopyAllowEverywhere },
+                                    set: { viewModel.setCopyAllowEverywhere($0) }
+                                )) {
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text("Allow Everywhere")
+                                            .font(.system(size: 11.5))
+                                        Text("Enables copying across all applications, including Terminal emulators")
+                                            .font(.system(size: 10.5))
+                                            .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                                    }
+                                }
+                                .toggleStyle(.checkbox)
+                            }
+                            .padding(.leading, 24)
                         }
                     }
-                    .toggleStyle(.switch)
                     
                     Divider()
                     

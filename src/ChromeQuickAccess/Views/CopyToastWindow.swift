@@ -83,7 +83,7 @@ public final class CopyToastWindow: NSPanel {
     
     public init() {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 120, height: 40),
+            contentRect: NSRect(x: 0, y: 0, width: 84, height: 28),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -107,23 +107,23 @@ public final class CopyToastWindow: NSPanel {
     public func show(at mouseLocation: CGPoint) {
         dismissTask?.cancel()
         
-        // Offset slightly above and to the right of the cursor
-        let toastWidth: CGFloat = 110
-        let toastHeight: CGFloat = 36
-        var originX = mouseLocation.x + 12
-        var originY = mouseLocation.y + 12
+        // Offset snuggly beside the cursor
+        let toastWidth: CGFloat = 84
+        let toastHeight: CGFloat = 28
+        var originX = mouseLocation.x + 8
+        var originY = mouseLocation.y + 4
         
         // Clamp to screen bounds if available
         if let screen = NSScreen.screens.first(where: { NSPointInRect(mouseLocation, $0.frame) }) ?? NSScreen.main {
             let visible = screen.visibleFrame
             if originX + toastWidth > visible.maxX {
-                originX = mouseLocation.x - toastWidth - 8
+                originX = mouseLocation.x - toastWidth - 6
             }
             if originY + toastHeight > visible.maxY {
-                originY = mouseLocation.y - toastHeight - 8
+                originY = mouseLocation.y - toastHeight - 6
             }
-            originX = max(visible.minX + 8, originX)
-            originY = max(visible.minY + 8, originY)
+            originX = max(visible.minX, min(originX, visible.maxX - toastWidth))
+            originY = max(visible.minY, min(originY, visible.maxY - toastHeight))
         }
         
         self.setFrame(NSRect(x: originX, y: originY, width: toastWidth, height: toastHeight), display: true)

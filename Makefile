@@ -1,4 +1,4 @@
-.PHONY: all run dev watch build native package test health validate checksums monitor diagnostics clean bump-major bump-minor bump-patch install release help
+.PHONY: all run dev watch build native package test health validate checksums monitor diagnostics clean clean-scratch bump-major bump-minor bump-patch install release help
 
 # Default target
 all: validate test native checksums health
@@ -88,6 +88,14 @@ bump-patch:
 # ==============================================================================
 clean:
 	@rm -rf dist .build
+	@rm -rf tmp/*.mov tmp/*.mp4 tmp/*.png tmp/*.py tmp/*.swift tmp/screens* tmp/frames* 2>/dev/null || true
+
+clean-scratch:
+	@echo "Purging temporary frame dumps and scratch media..."
+	@rm -rf scratch/*_frames scratch/video_inspection* scratch/__pycache__ 2>/dev/null || true
+	@rm -rf tmp/*.mov tmp/*.mp4 tmp/*.png tmp/*.py tmp/*.swift tmp/screens* tmp/frames* 2>/dev/null || true
+	@find . -name ".DS_Store" -type f -delete 2>/dev/null || true
+	@echo "✅ Temporary scratch caches and OS metadata purged."
 
 help:
 	@echo "NNTS Developer Commands:"

@@ -6,7 +6,7 @@ import os
 
 // MARK: - Chrome Profile Model
 public struct ChromeProfile: Identifiable, Equatable, @unchecked Sendable {
-    public var id: String { dir }
+    public var id: String { "\(dir)::\(name)" }
     public let index: Int
     public let dir: String
     public let name: String
@@ -505,11 +505,18 @@ public final class ChromeProfileEngine: ObservableObject {
     private func applySavedProfileSelection() {
         let saved = UserDefaults.standard.stringArray(forKey: "SelectedBrowserProfileDirs") ?? []
         let validSaved = saved.filter { s in profiles.contains(where: { $0.dir == s }) }
-        // If saved was only ["Default"] while multiple profiles are available (e.g. recovering from fallback), expand to prefix(Self.maxProfileSlots)
-        if !validSaved.isEmpty && !(validSaved.count == 1 && validSaved.first == "Default" && profiles.count > 1) {
+        let targetCount = min(profiles.count, Self.maxProfileSlots)
+        if validSaved.count >= targetCount && !(validSaved.count == 1 && validSaved.first == "Default" && profiles.count > 1) {
             self.selectedProfileDirs = Array(validSaved.prefix(Self.maxProfileSlots))
         } else {
-            self.selectedProfileDirs = Array(profiles.prefix(Self.maxProfileSlots).map { $0.dir })
+            var combined = validSaved
+            for p in profiles {
+                if !combined.contains(p.dir) {
+                    combined.append(p.dir)
+                }
+                if combined.count >= Self.maxProfileSlots { break }
+            }
+            self.selectedProfileDirs = combined.isEmpty ? Array(profiles.prefix(Self.maxProfileSlots).map { $0.dir }) : combined
         }
     }
     
@@ -539,8 +546,20 @@ public final class ChromeProfileEngine: ObservableObject {
         guard !profileNames.isEmpty else { return [] }
         
         var discovered: [ChromeProfile] = []
+        var usedDirs = Set<String>()
         for (idx, name) in profileNames.enumerated() {
-            let dir = idx == 0 ? "Default" : "Profile \(idx)"
+            var candidateDir = self.profiles.first(where: { $0.name == name || $0.effectiveName == name })?.dir
+            if let c = candidateDir, usedDirs.contains(c) {
+                candidateDir = nil
+            }
+            let baseDir = candidateDir ?? (idx == 0 ? "Default" : "Profile \(idx)")
+            var dir = baseDir
+            var counter = idx
+            while usedDirs.contains(dir) {
+                counter += 1
+                dir = "Profile \(counter)"
+            }
+            usedDirs.insert(dir)
             let avatar: NSImage
             if let customImg = Self.loadStoredAvatar(dirKey: dir, name: name) {
                 avatar = makeCircularImage(image: customImg)
@@ -907,148 +926,64 @@ public final class ChromeProfileEngine: ObservableObject {
     }
     
     public func getActiveProfileDir() -> String? {
-        let menuItems = getProfilesMenuItems(bundleID: self.browserBundleID)
-        for item in menuItems {
-            var markRef: CFTypeRef?
-            AXUIElementCopyAttributeValue(item, ("AXMenuItemMarkChar" as NSString) as CFString, &markRef)
-            if let mark = markRef as? String, mark == "✓" {
-                var titleRef: CFTypeRef?
-                AXUIElementCopyAttributeValue(item, kAXTitleAttribute as CFString, &titleRef)
-                if let title = titleRef as? String {
-                    let norm = title.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-                    if let match = profiles.first(where: {
-                        let eff = $0.effectiveName.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-                        let exp = $0.expectedMenuTitle.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-                        return norm == eff || norm == exp || norm.contains("(\(eff))")
-                    }) {
-                        return match.dir
-                    }
+        let filtered = getFilteredProfileMenuItems(bundleID: self.browserBundleID)
+        if let activeItem = filtered.first(where: { $0.isMarked }) {
+            let activeTitleNorm = activeItem.title.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            func matchInProfiles(_ list: [ChromeProfile]) -> String? {
+                list.first(where: {
+                    let nameNorm = $0.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                    let effNorm = $0.effectiveName.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                    let expNorm = $0.expectedMenuTitle.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                    return activeTitleNorm == nameNorm || activeTitleNorm == effNorm || activeTitleNorm == expNorm || activeTitleNorm.contains("(\(effNorm))") || activeTitleNorm.contains("(\(nameNorm))")
+                })?.dir
+            }
+            
+            if let dir = matchInProfiles(self.profiles) {
+                return dir
+            }
+            
+            if syncProfilesFromRunningBrowser() {
+                if let dir = matchInProfiles(self.profiles) {
+                    return dir
                 }
             }
         }
         return nil
     }
     
-    public func focusProfile(dir: String) {
+    public func focusProfile(_ profile: ChromeProfile) {
         let bundleID = self.browserBundleID
-        guard let profile = profiles.first(where: { $0.dir == dir }) else {
-            focusChrome()
-            return
-        }
-        
         let runningApps = NSWorkspace.shared.runningApplications
         guard let chromeApp = runningApps.first(where: { $0.bundleIdentifier == bundleID }) else {
             launchColdStart(profileDir: profile.dir)
             return
         }
         
-        let appElement = AXUIElementCreateApplication(chromeApp.processIdentifier)
-        
-        func scanProfileWindows() -> (open: [AXUIElement], minimized: [AXUIElement]) {
-            var windowsRef: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-                  let windows = windowsRef as? [AXUIElement] else {
-                return ([], [])
-            }
-            
-            let expected = profile.expectedMenuTitle.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            let effective = profile.effectiveName.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            let isOnlyProfile = self.profiles.count <= 1
-            
-            let matching = windows.filter { window in
-                if isOnlyProfile { return true }
-                var titleRef: CFTypeRef?
-                if AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef) == .success,
-                   let title = titleRef as? String {
-                    let lowerTitle = title.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-                    return lowerTitle.hasSuffix(expected) || lowerTitle.hasSuffix(effective)
+        // Automate via native macOS menu bar (kAXMenuBarAttribute) strictly adhering to profile guardrail
+        let filtered = getFilteredProfileMenuItems(bundleID: bundleID)
+        if !filtered.isEmpty {
+            if let targetItem = findMenuItem(for: profile, in: filtered.map { $0.element }) {
+                let res = AXUIElementPerformAction(targetItem, kAXPressAction as CFString)
+                if res == .success {
+                    chromeApp.activate()
+                    logger.info("Switched to profile '\(profile.name)' via Accessibility menu item.")
+                    return
                 }
-                return false
-            }
-            
-            var opens: [AXUIElement] = []
-            var mins: [AXUIElement] = []
-            for w in matching {
-                var isMinRef: CFTypeRef?
-                if AXUIElementCopyAttributeValue(w, kAXMinimizedAttribute as CFString, &isMinRef) == .success,
-                   let isMin = isMinRef as? Bool, isMin {
-                    mins.append(w)
-                } else {
-                    var titleRef: CFTypeRef?
-                    if AXUIElementCopyAttributeValue(w, kAXTitleAttribute as CFString, &titleRef) == .success,
-                       let title = titleRef as? String, !title.isEmpty {
-                        opens.append(w)
-                    }
-                }
-            }
-            return (opens, mins)
-        }
-        
-        // 1. Immediate check: if open window already visible on current Space, focus instantly
-        let initial = scanProfileWindows()
-        if let targetWindow = initial.open.first {
-            AXUIElementPerformAction(targetWindow, kAXRaiseAction as CFString)
-            AXUIElementSetAttributeValue(targetWindow, kAXMainAttribute as CFString, true as CFTypeRef)
-            chromeApp.activate()
-            logger.info("Focused existing open window for profile '\(profile.name)'.")
-            return
-        }
-        
-        // 2. No open window found on current Space.
-        // We cannot see windows on other Spaces, so we rely on Chrome's Profiles menu to find and focus them.
-        let minimizedBefore = initial.minimized
-        let menuItems = self.getProfilesMenuItems(bundleID: bundleID)
-        
-        if !menuItems.isEmpty, let targetItem = self.findMenuItem(for: profile, in: menuItems) {
-            let res = AXUIElementPerformAction(targetItem, kAXPressAction as CFString)
-            if res == .success {
-                chromeApp.activate()
-                self.logger.info("Switched to profile '\(profile.name)' via Accessibility menu.")
-                
-                // 3. Post-Menu Cleanup: Chrome natively unminimizes a profile's minimized window when selected from the menu,
-                // even if an open window existed on another Space. We revert this to respect the user's explicit preference.
-                if !minimizedBefore.isEmpty {
-                    Task { @MainActor [weak self] in
-                        guard let self = self else { return }
-                        // Poll for up to 1.5s (15 iterations x 100ms) to catch the space transition and unminimize animation
-                        for _ in 0..<15 {
-                            try? await Task.sleep(nanoseconds: 100_000_000)
-                            let postState = scanProfileWindows()
-                            let openNow = postState.open
-                            
-                            var newlyUnminimized: AXUIElement? = nil
-                            for openWin in openNow {
-                                for minWin in minimizedBefore {
-                                    if CFEqual(openWin, minWin) {
-                                        newlyUnminimized = openWin
-                                        break
-                                    }
-                                }
-                                if newlyUnminimized != nil { break }
-                            }
-                            
-                            if let unmin = newlyUnminimized {
-                                // It was unminimized! Are there OTHER open windows for this profile on this space?
-                                if openNow.count > 1 {
-                                    AXUIElementSetAttributeValue(unmin, kAXMinimizedAttribute as CFString, true as CFTypeRef)
-                                    self.logger.info("Re-minimized window that was auto-unminimized by Chrome.")
-                                    // Ensure another open window gets focus
-                                    if let other = openNow.first(where: { !CFEqual($0, unmin) }) {
-                                        AXUIElementPerformAction(other, kAXRaiseAction as CFString)
-                                        AXUIElementSetAttributeValue(other, kAXMainAttribute as CFString, true as CFTypeRef)
-                                    }
-                                }
-                                break
-                            }
-                        }
-                    }
-                }
-                return
             }
         }
         
-        // 4. Fallback: Launch via /usr/bin/open CLI
+        // Fallback: Launch or focus via /usr/bin/open CLI
         self.launchColdStart(profileDir: profile.dir)
+        chromeApp.activate()
+    }
+    
+    public func focusProfile(dir: String) {
+        if let profile = profiles.first(where: { $0.dir == dir }) ?? profiles.first(where: { $0.name == dir }) {
+            focusProfile(profile)
+        } else {
+            focusChrome()
+        }
     }
     
     private func launchColdStart(profileDir: String) {
@@ -1120,6 +1055,60 @@ public final class ChromeProfileEngine: ObservableObject {
         return []
     }
     
+    public struct FilteredProfileMenuItem {
+        public let element: AXUIElement
+        public let title: String
+        public let isMarked: Bool
+    }
+    
+    public func getFilteredProfileMenuItems(bundleID: String) -> [FilteredProfileMenuItem] {
+        let menuItems = getProfilesMenuItems(bundleID: bundleID)
+        guard !menuItems.isEmpty else { return [] }
+        
+        var result: [FilteredProfileMenuItem] = []
+        for item in menuItems {
+            var titleRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(item, kAXTitleAttribute as CFString, &titleRef)
+            let title = (titleRef as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if title.isEmpty || title.hasPrefix("Edit") || title.hasPrefix("Add Profile") || title.hasPrefix("Guest") ||
+               title.hasPrefix("Изменить") || title.hasPrefix("Добавить") || title.hasPrefix("Гость") {
+                if !result.isEmpty && (title.isEmpty || title.hasPrefix("Edit") || title.hasPrefix("Add Profile") || title.hasPrefix("Изменить") || title.hasPrefix("Добавить")) {
+                    break
+                }
+                continue
+            }
+            var markRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(item, ("AXMenuItemMarkChar" as NSString) as CFString, &markRef)
+            let mark = markRef as? String ?? ""
+            result.append(FilteredProfileMenuItem(element: item, title: title, isMarked: mark == "✓"))
+        }
+        return result
+    }
+    
+    @discardableResult
+    public func syncProfilesFromRunningBrowser() -> Bool {
+        let bundleID = self.browserBundleID
+        let runningApps = NSWorkspace.shared.runningApplications
+        guard runningApps.contains(where: { $0.bundleIdentifier == bundleID }) else {
+            return false
+        }
+        
+        let axProfiles = discoverProfilesViaAccessibility(bundleID: bundleID)
+        guard !axProfiles.isEmpty else { return false }
+        
+        let currentNames = self.profiles.map { $0.name }
+        let newNames = axProfiles.map { $0.name }
+        if currentNames != newNames {
+            logger.info("Syncing \(axProfiles.count) profiles from running browser (\(bundleID)).")
+            self.profiles = axProfiles
+            saveCachedProfiles(axProfiles, bundleID: bundleID)
+            applySavedProfileSelection()
+            return true
+        }
+        return false
+    }
+    
     public static func isProfileMenuTitle(_ title: String) -> Bool {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let lower = clean.lowercased()
@@ -1130,9 +1119,10 @@ public final class ChromeProfileEngine: ObservableObject {
                clean == "个人资料" || clean == "プロファイル"
     }
     
-    private func findMenuItem(for profile: ChromeProfile, in menuItems: [AXUIElement]) -> AXUIElement? {
+    public func findMenuItem(for profile: ChromeProfile, in menuItems: [AXUIElement]) -> AXUIElement? {
         let targetNorm = profile.expectedMenuTitle.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         let effNorm = profile.effectiveName.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let nameNorm = profile.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
         for item in menuItems {
             var titleRef: CFTypeRef?
@@ -1140,7 +1130,13 @@ public final class ChromeProfileEngine: ObservableObject {
             guard let title = titleRef as? String else { continue }
             let norm = title.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
             
-            if norm == targetNorm || norm == effNorm || norm.contains("(\(effNorm))") {
+            if norm == targetNorm || norm == effNorm || norm == nameNorm {
+                return item
+            }
+            if !effNorm.isEmpty && (norm.contains("(\(effNorm))") || norm.hasSuffix(" (\(effNorm))")) {
+                return item
+            }
+            if !nameNorm.isEmpty && (norm.contains("(\(nameNorm))") || norm.hasSuffix(" (\(nameNorm))")) {
                 return item
             }
             if let email = profile.email?.lowercased(), !email.isEmpty, norm.contains(email) {

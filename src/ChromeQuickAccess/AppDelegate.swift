@@ -220,6 +220,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let profileEngine = ChromeProfileEngine.shared
         logger.info("Caps-Lock + C triggered.")
         TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Caps-Lock + C triggered.")
+        profileEngine.syncProfilesFromRunningBrowser()
         
         let profiles = profileEngine.selectedProfiles
         guard !profiles.isEmpty else {
@@ -319,6 +320,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.logger.info("Caps-Lock + \(digit) triggered.")
                 TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Caps-Lock + \(digit) profile select triggered.")
                 self.triggerMascotGaze(offset: digit <= 2 ? -0.8 : 0.8)
+                profileEngine.syncProfilesFromRunningBrowser()
                 
                 if self.isCyclingHUDActive && self.activeMode != .chrome && !ChromeSwitcherState.shared.antigravityItems.isEmpty {
                     let isCurrentBrowser = ChromeSwitcherState.shared.selectedAppItem.map { item in
@@ -398,7 +400,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                     if let target = targetProfile {
                         self.logger.info("Caps-Lock released: switching to profile '\(target.effectiveName)' (\(target.dir)).")
                         TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Switched to Chrome profile '\(target.effectiveName)' (\(target.dir)).")
-                        profileEngine.focusProfile(dir: target.dir)
+                        profileEngine.focusProfile(target)
                     } else {
                         TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Switched to Chrome.")
                         profileEngine.focusChrome()
