@@ -3,12 +3,12 @@ set -euo pipefail
 
 # ==============================================================================
 # NNTS Live Watcher
-# Continuously monitors src/ChromeQuickAccess for changes and triggers
+# Continuously monitors src/NNTS for changes and triggers
 # instant compilation, installation to /Applications, and app relaunch.
 # ==============================================================================
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WATCH_DIR="${PROJECT_DIR}/src/ChromeQuickAccess"
+WATCH_DIR="${PROJECT_DIR}/src/NNTS"
 
 echo "=================================================="
 echo " 🔭 NNTS Live Dev Watcher Active"

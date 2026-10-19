@@ -24,7 +24,7 @@ validate:
 	@echo "Checking version synchronization..."
 	@V_TXT=$$(cat VERSION.txt | tr -d '[:space:]'); \
 	B_TXT=$$(cat BUILD.txt | tr -d '[:space:]'); \
-	PLIST="src/ChromeQuickAccess/Info.plist"; \
+	PLIST="src/NNTS/Info.plist"; \
 	V_PLIST=$$(plutil -extract CFBundleShortVersionString raw "$$PLIST" 2>/dev/null || echo "missing"); \
 	B_PLIST=$$(plutil -extract CFBundleVersion raw "$$PLIST" 2>/dev/null || echo "missing"); \
 	if [ "$$V_TXT" != "$$V_PLIST" ] || [ "$$B_TXT" != "$$B_PLIST" ]; then \

@@ -2,7 +2,7 @@ import Cocoa
 import AppKit
 
 @main
-struct ChromeQuickAccessApp {
+struct NNTSApp {
     static func main() {
         if NSClassFromString("XCTest") != nil ||
            ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||

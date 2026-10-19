@@ -22,7 +22,7 @@ jobs:
         run: |
           V_TXT=$(cat VERSION.txt | tr -d '[:space:]')
           B_TXT=$(cat BUILD.txt | tr -d '[:space:]')
-          PLIST="src/ChromeQuickAccess/Info.plist"
+          PLIST="src/NNTS/Info.plist"
           V_PLIST=$(plutil -extract CFBundleShortVersionString raw "$PLIST" 2>/dev/null || echo "missing")
           B_PLIST=$(plutil -extract CFBundleVersion raw "$PLIST" 2>/dev/null || echo "missing")
           echo "VERSION.txt: $V_TXT (Build $B_TXT)"

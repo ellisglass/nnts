@@ -1,10 +1,10 @@
 import Foundation
 import Testing
 import AppKit
-@testable import ChromeQuickAccess
+@testable import NNTS
 
 @Suite(.serialized)
-struct ChromeQuickAccessUnitTests {
+struct NNTSUnitTests {
     // 156 automated unit tests are modularized across 7 domain test suites:
     // - CapsLockAndKeyCodesTests.swift (10 tests)
     // - ChromeProfileEngineTests.swift (25 tests)
@@ -14,3 +14,5 @@ struct ChromeQuickAccessUnitTests {
     // - HUDAndViewsTests.swift (30 tests)
     // - LicenseAndUpdateTests.swift (20 tests)
 }
+
+typealias ChromeQuickAccessUnitTests = NNTSUnitTests

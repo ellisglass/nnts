@@ -9,9 +9,9 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ChromeQuickAccess",
+            name: "NNTS",
             dependencies: [],
-            path: "src/ChromeQuickAccess",
+            path: "src/NNTS",
             exclude: ["Info.plist", "main.swift", "Resources"],
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"])
@@ -26,12 +26,12 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "ChromeQuickAccessTests",
+            name: "NNTSTests",
             dependencies: [
-                "ChromeQuickAccess",
+                "NNTS",
                 .product(name: "Testing", package: "swift-testing")
             ],
-            path: "tests/ChromeQuickAccessTests"
+            path: "tests/NNTSTests"
         )
     ]
 )

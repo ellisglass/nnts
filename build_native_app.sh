@@ -42,29 +42,12 @@ fi
 rm -rf "${APP_BUNDLE}" "${BUILD_DIR}"
 mkdir -p "${MACOS_DIR}" "${CONTENTS_DIR}" "${RESOURCES_DIR}" "${BUILD_DIR}/temp"
 
+# Dynamically discover all Swift source files, placing main.swift at the end
 SOURCES=(
-    "src/ChromeQuickAccess/Engine/KeyCodes.swift"
-    "src/ChromeQuickAccess/Engine/NNTSMotion.swift"
-    "src/ChromeQuickAccess/Engine/CapsLockEngine.swift"
-    "src/ChromeQuickAccess/Engine/ChromeProfileEngine.swift"
-    "src/ChromeQuickAccess/Engine/AntigravityEngine.swift"
-    "src/ChromeQuickAccess/Engine/AppGroupEngine.swift"
-    "src/ChromeQuickAccess/Engine/CopyOnSelectEngine.swift"
-    "src/ChromeQuickAccess/Engine/FinderTidyEngine.swift"
-    "src/ChromeQuickAccess/Engine/LicenseEngine.swift"
-    "src/ChromeQuickAccess/Engine/UpdateEngine.swift"
-    "src/ChromeQuickAccess/Engine/TelemetryBuffer.swift"
-    "src/ChromeQuickAccess/Engine/DiagnosticBundleService.swift"
-    "src/ChromeQuickAccess/Views/CopyToastWindow.swift"
-    "src/ChromeQuickAccess/Views/MinimalHUDWindow.swift"
-    "src/ChromeQuickAccess/Views/AppSearchPickerWindow.swift"
-    "src/ChromeQuickAccess/Views/FeedbackWindow.swift"
-    "src/ChromeQuickAccess/Views/AvatarCaptureAssistantWindow.swift"
-    "src/ChromeQuickAccess/Views/ProfileStripView.swift"
-    "src/ChromeQuickAccess/Views/SettingsWindow.swift"
-    "src/ChromeQuickAccess/AppDelegate.swift"
-    "src/ChromeQuickAccess/main.swift"
+    $(find src/NNTS -name "*.swift" ! -name "main.swift" | sort)
+    "src/NNTS/main.swift"
 )
+
 
 FRAMEWORKS=(
     "-framework" "Cocoa"
@@ -94,10 +77,10 @@ if [ "${FAST_DEV}" = true ]; then
         -Onone
 
     echo "[2/2] Packaging Info.plist, AppIcon & Code-Signing..."
-    cp "src/ChromeQuickAccess/Info.plist" "${CONTENTS_DIR}/Info.plist"
+    cp "src/NNTS/Info.plist" "${CONTENTS_DIR}/Info.plist"
 
-    if [ -f "src/ChromeQuickAccess/Resources/AppIcon.icns" ]; then
-        cp "src/ChromeQuickAccess/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
+    if [ -f "src/NNTS/Resources/AppIcon.icns" ]; then
+        cp "src/NNTS/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
         
     fi
     codesign --force --sign - --identifier "com.almosteleven.nnts" -r="designated => identifier \"com.almosteleven.nnts\"" "${APP_BUNDLE}"
@@ -151,14 +134,14 @@ lipo -create -output "${MACOS_DIR}/${APP_NAME}" \
     "${BUILD_DIR}/temp/binary_x86_64"
 
 echo "[4/5] Packaging Info.plist, AppIcon & Code-Signing..."
-cp "src/ChromeQuickAccess/Info.plist" "${CONTENTS_DIR}/Info.plist"
+cp "src/NNTS/Info.plist" "${CONTENTS_DIR}/Info.plist"
 
-if [ -f "src/ChromeQuickAccess/Resources/AppIcon.icns" ]; then
-    cp "src/ChromeQuickAccess/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
+if [ -f "src/NNTS/Resources/AppIcon.icns" ]; then
+    cp "src/NNTS/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
         
 fi
-if [ -f "src/ChromeQuickAccess/Resources/dmg_background.png" ]; then
-    cp "src/ChromeQuickAccess/Resources/dmg_background.png" "${RESOURCES_DIR}/dmg_background.png"
+if [ -f "src/NNTS/Resources/dmg_background.png" ]; then
+    cp "src/NNTS/Resources/dmg_background.png" "${RESOURCES_DIR}/dmg_background.png"
 fi
 
 codesign --force --sign - --identifier "com.almosteleven.nnts" -r="designated => identifier \"com.almosteleven.nnts\"" "${APP_BUNDLE}"
@@ -171,8 +154,8 @@ rm -rf "${DMG_STAGE}"
 mkdir -p "${DMG_STAGE}/.background"
 cp -R "${APP_BUNDLE}" "${DMG_STAGE}/"
 ln -s /Applications "${DMG_STAGE}/Applications"
-if [ -f "src/ChromeQuickAccess/Resources/dmg_background.png" ]; then
-    cp "src/ChromeQuickAccess/Resources/dmg_background.png" "${DMG_STAGE}/.background/background.png"
+if [ -f "src/NNTS/Resources/dmg_background.png" ]; then
+    cp "src/NNTS/Resources/dmg_background.png" "${DMG_STAGE}/.background/background.png"
 fi
 hdiutil create -volname "${APP_NAME}" -srcfolder "${DMG_STAGE}" -ov -format UDZO "${DMG_PATH}"
 

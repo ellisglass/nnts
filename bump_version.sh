@@ -9,7 +9,7 @@ fi
 BUMP_TYPE=$1
 VERSION_FILE="VERSION.txt"
 BUILD_FILE="BUILD.txt"
-PLIST_FILE="src/ChromeQuickAccess/Info.plist"
+PLIST_FILE="src/NNTS/Info.plist"
 
 if [ ! -f "$VERSION_FILE" ]; then
     echo "1.0.0" > "$VERSION_FILE"

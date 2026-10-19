@@ -332,7 +332,7 @@ for (name, px) in iconSizes {
 }
 
 // 2. Compile iconset into AppIcon.icns using iconutil
-let icnsTarget = "\(appRoot)/src/ChromeQuickAccess/Resources/AppIcon.icns"
+let icnsTarget = "\(appRoot)/src/NNTS/Resources/AppIcon.icns"
 let proc = Process()
 proc.executableURL = URL(fileURLWithPath: "/usr/bin/iconutil")
 proc.arguments = ["-c", "icns", iconsetDir, "-o", icnsTarget]
@@ -342,7 +342,7 @@ print("Compiled ICNS: \(icnsTarget)")
 
 // 3. Update master AppIcon.png (1024x1024) for app resources
 let masterIcon = renderMacAppIcon(size: 1024)
-savePNG(image: masterIcon, path: "\(appRoot)/src/ChromeQuickAccess/Resources/AppIcon.png", pixelSize: 1024)
+savePNG(image: masterIcon, path: "\(appRoot)/src/NNTS/Resources/AppIcon.png", pixelSize: 1024)
 savePNG(image: masterIcon, path: "\(appRoot)/docs/site/assets/images/AppIcon.png", pixelSize: 1024)
 
 // 4. Generate Web Favicons

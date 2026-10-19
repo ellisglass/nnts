@@ -17,7 +17,7 @@ echo -n "[1/3] Checking Versioning Consistency... "
 if [ -f "VERSION.txt" ] && [ -f "BUILD.txt" ]; then
     V_TXT=$(cat VERSION.txt | tr -d '[:space:]')
     B_TXT=$(cat BUILD.txt | tr -d '[:space:]')
-    PLIST="src/ChromeQuickAccess/Info.plist"
+    PLIST="src/NNTS/Info.plist"
     if [ -f "$PLIST" ]; then
         V_PLIST=$(plutil -extract CFBundleShortVersionString raw "$PLIST" 2>/dev/null || echo "missing")
         B_PLIST=$(plutil -extract CFBundleVersion raw "$PLIST" 2>/dev/null || echo "missing")

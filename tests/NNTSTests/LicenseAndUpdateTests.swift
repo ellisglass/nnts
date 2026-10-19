@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import AppKit
-@testable import ChromeQuickAccess
+@testable import NNTS
 
 extension ChromeQuickAccessUnitTests {
     @Test @MainActor
