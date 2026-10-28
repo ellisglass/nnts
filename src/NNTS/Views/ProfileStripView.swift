@@ -11,7 +11,17 @@ import AppKit
 
 public final class ProfileStripView: NSView, NSViewToolTipOwner {
     public let profiles: [ChromeProfile]
-    public let activeDir: String?
+    public private(set) var activeDir: String? {
+        didSet {
+            if activeDir != oldValue {
+                needsDisplay = true
+            }
+        }
+    }
+    
+    public func updateActiveDir(_ dir: String?) {
+        self.activeDir = dir
+    }
     
     private var hoveredIndex: Int? = nil
     private var trackingArea: NSTrackingArea?
@@ -128,6 +138,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
                 if event.modifierFlags.contains(.option) {
                     ChromeProfileEngine.shared.toggleProfileSelection(dir: p.dir)
                 } else {
+                    self.updateActiveDir(p.dir)
                     ChromeProfileEngine.shared.focusProfile(dir: p.dir)
                 }
                 return
@@ -143,6 +154,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
                 if let menu = enclosingMenuItem?.menu {
                     menu.cancelTracking()
                 }
+                self.updateActiveDir(p.dir)
                 ChromeProfileEngine.shared.focusProfile(dir: p.dir)
                 return
             }
@@ -153,6 +165,9 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
         super.draw(dirtyRect)
         
         guard !profiles.isEmpty else { return }
+        
+        // Dynamic active profile synchronization
+        let currentActive = activeDir ?? ChromeProfileEngine.shared.getActiveProfileDir()
         
         // 0. Sleek unified Card Dock container
         let cardRect = NSRect(x: 8, y: 1, width: bounds.width - 16, height: bounds.height - 2)
@@ -176,7 +191,7 @@ public final class ProfileStripView: NSView, NSViewToolTipOwner {
                 hoverBg.fill()
             }
             
-            let isActive = (p.dir == activeDir)
+            let isActive = (p.dir == currentActive)
             
             // 2. Avatar circular image with fallback monogram & active ring
             let isCompact = profiles.count > 4

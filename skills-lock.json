@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "autoresearch": {
+      "source": "uditgoenka/autoresearch",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/autoresearch/SKILL.md",
+      "computedHash": "d40c4a47adfea1c736f9c191c89d7f813fccd46337d2608307783b5140a51f90"
+    },
     "emil-design-eng": {
       "source": "emilkowalski/skills",
       "sourceType": "github",
@@ -30,6 +36,12 @@
       "sourceType": "github",
       "skillPath": "skills/review-animations/SKILL.md",
       "computedHash": "b4e5f0f4fe3e2743c85bf7354108f48a0b9d502cb20ef5c4a9c195da91f93736"
+    },
+    "testing-reality-checker": {
+      "source": "dev-dennis-040/openclaw-agency-skills",
+      "sourceType": "github",
+      "skillPath": "skills/testing/testing-reality-checker/SKILL.md",
+      "computedHash": "6bef4bcd342b5902ab7ea69aad82a782f2d5a355c51b9d5e8031a0fd3986bf6a"
     }
   }
 }

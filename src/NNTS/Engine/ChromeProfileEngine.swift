@@ -7,7 +7,7 @@ import os
 // MARK: - Chrome Profile Model
 public struct ChromeProfile: Identifiable, Equatable, @unchecked Sendable {
     public var id: String { "\(dir)::\(name)" }
-    public let index: Int
+    public var index: Int
     public let dir: String
     public let name: String
     public let email: String?
@@ -17,7 +17,10 @@ public struct ChromeProfile: Identifiable, Equatable, @unchecked Sendable {
     
     public var effectiveName: String {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty { return trimmed }
+        if !trimmed.isEmpty {
+            let parsed = ChromeProfileEngine.parseMenuProfileTitle(trimmed)
+            return parsed.cleanName
+        }
         if let g = gaiaGivenName?.trimmingCharacters(in: .whitespacesAndNewlines), !g.isEmpty { return g }
         if let gn = gaiaName?.trimmingCharacters(in: .whitespacesAndNewlines), !gn.isEmpty { return gn }
         if let u = email?.trimmingCharacters(in: .whitespacesAndNewlines), !u.isEmpty { return u }
@@ -26,7 +29,9 @@ public struct ChromeProfile: Identifiable, Equatable, @unchecked Sendable {
     
     public var expectedMenuTitle: String {
         let cleanName = effectiveName
-        if let given = gaiaGivenName?.trimmingCharacters(in: .whitespacesAndNewlines), !given.isEmpty {
+        let given = gaiaGivenName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? ChromeProfileEngine.parseMenuProfileTitle(name).gaiaGivenName
+        if let given = given, !given.isEmpty {
             if cleanName.lowercased() != given.lowercased() {
                 return "\(given) (\(cleanName))"
             }
@@ -74,10 +79,26 @@ public struct ChromiumBrowserCandidate: Identifiable, Equatable, Sendable {
 public final class ChromeProfileEngine: ObservableObject {
     public static let shared = ChromeProfileEngine()
     
+    /// Splits composite Chrome menu titles like "Igor (Al11)" into clean profile name "Al11" and account name "Igor".
+    nonisolated public static func parseMenuProfileTitle(_ rawTitle: String) -> (cleanName: String, gaiaGivenName: String?) {
+        let trimmed = rawTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let openParen = trimmed.firstIndex(of: "("),
+           let closeParen = trimmed.lastIndex(of: ")"),
+           openParen < closeParen {
+            let given = String(trimmed[..<openParen]).trimmingCharacters(in: .whitespacesAndNewlines)
+            let inner = String(trimmed[trimmed.index(after: openParen)..<closeParen]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !inner.isEmpty {
+                return (inner, given.isEmpty ? nil : given)
+            }
+        }
+        return (trimmed, nil)
+    }
+    
     @Published public internal(set) var profiles: [ChromeProfile] = []
     @Published public internal(set) var availableBrowsers: [ChromiumBrowserCandidate] = []
     @Published public var browserBundleID: String = "com.google.Chrome"
     @Published public internal(set) var isLocalStateBlocked: Bool = false
+    @Published public var currentActiveProfileDir: String? = nil
     
     public var preferredBrowserBundleID: String? {
         get { UserDefaults.standard.string(forKey: "PreferredBrowserBundleID") }
@@ -505,21 +526,34 @@ public final class ChromeProfileEngine: ObservableObject {
     }
     
     internal func applySavedProfileSelection() {
-        let saved = UserDefaults.standard.stringArray(forKey: "SelectedBrowserProfileDirs") ?? []
+        let defaults = UserDefaults.standard
+        let hasSavedPreference = defaults.object(forKey: "SelectedBrowserProfileDirs") != nil
+        let saved = defaults.stringArray(forKey: "SelectedBrowserProfileDirs") ?? []
         let validSaved = saved.filter { s in profiles.contains(where: { $0.dir == s }) }
-        let targetCount = min(profiles.count, Self.maxProfileSlots)
-        if validSaved.count >= targetCount && !(validSaved.count == 1 && validSaved.first == "Default" && profiles.count > 1) {
-            self.selectedProfileDirs = Array(validSaved.prefix(Self.maxProfileSlots))
-        } else {
-            var combined = validSaved
-            for p in profiles {
-                if !combined.contains(p.dir) {
-                    combined.append(p.dir)
-                }
-                if combined.count >= Self.maxProfileSlots { break }
+        
+        // Single fallback recovery: if ONLY ["Default"] was saved but multiple profiles exist on disk
+        let isSingleFallbackBug = validSaved.count == 1 && validSaved.first == "Default" && profiles.count > 1
+        
+        if hasSavedPreference && !isSingleFallbackBug {
+            // Strict user preference: never auto-fill unselected profiles!
+            if !validSaved.isEmpty {
+                self.selectedProfileDirs = Array(validSaved.prefix(Self.maxProfileSlots))
+            } else if let first = profiles.first?.dir {
+                self.selectedProfileDirs = [first]
+            } else {
+                self.selectedProfileDirs = ["Default"]
             }
-            self.selectedProfileDirs = combined.isEmpty ? Array(profiles.prefix(Self.maxProfileSlots).map { $0.dir }) : combined
+        } else {
+            // First launch on clean system or recovery from single fallback: initialize default slots
+            let initial = Array(profiles.prefix(Self.maxProfileSlots).map { $0.dir })
+            self.selectedProfileDirs = initial.isEmpty ? ["Default"] : initial
         }
+    }
+    
+    /// Explicit user reset to automatically include all available browser profiles
+    public func resetSlotsToAllDiscovered() {
+        let all = Array(profiles.prefix(Self.maxProfileSlots).map { $0.dir })
+        self.selectedProfileDirs = all.isEmpty ? ["Default"] : all
     }
     
     // MARK: - Profile Focus & Activation
@@ -535,6 +569,7 @@ public final class ChromeProfileEngine: ObservableObject {
     }
     
     public func focusProfile(_ profile: ChromeProfile) {
+        self.currentActiveProfileDir = profile.dir
         let bundleID = self.browserBundleID
         let runningApps = NSWorkspace.shared.runningApplications
         guard let chromeApp = runningApps.first(where: { $0.bundleIdentifier == bundleID }) else {

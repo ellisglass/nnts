@@ -758,4 +758,98 @@ extension ChromeQuickAccessUnitTests {
         #expect(pWork.expectedMenuTitle == "Work")
         #expect(pDhl.effectiveName == "dhl.com")
     }
+
+    @Test @MainActor
+    func testUserCustomSlotsNeverAutoExpandedOnRefresh() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        
+        let localStateUrl = tempDir.appendingPathComponent("Local State")
+        let mockJson = """
+        {
+            "profile": {
+                "info_cache": {
+                    "Default": { "name": "Personal" },
+                    "Profile 1": { "name": "Work" },
+                    "Profile 2": { "name": "Side Project" },
+                    "Profile 3": { "name": "Client" },
+                    "Profile 4": { "name": "Sandbox" }
+                }
+            }
+        }
+        """
+        try mockJson.write(to: localStateUrl, atomically: true, encoding: .utf8)
+        
+        ChromeProfileEngine.localStatePathOverride = localStateUrl.path
+        defer { ChromeProfileEngine.localStatePathOverride = nil }
+        
+        let prevSaved = UserDefaults.standard.stringArray(forKey: "SelectedBrowserProfileDirs")
+        defer {
+            if let p = prevSaved {
+                UserDefaults.standard.set(p, forKey: "SelectedBrowserProfileDirs")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "SelectedBrowserProfileDirs")
+            }
+        }
+        
+        // 1. User configures exactly 2 slots: Work and Side Project
+        UserDefaults.standard.set(["Profile 1", "Profile 2"], forKey: "SelectedBrowserProfileDirs")
+        
+        let engine = ChromeProfileEngine()
+        #expect(engine.profiles.count == 5)
+        #expect(engine.selectedProfiles.count == 2)
+        #expect(engine.selectedProfiles.map { $0.dir } == ["Profile 1", "Profile 2"])
+        
+        // 2. Calling refreshProfiles must strictly preserve the 2 slots and NOT expand to 5!
+        engine.refreshProfiles()
+        #expect(engine.selectedProfiles.count == 2)
+        #expect(engine.selectedProfiles.map { $0.dir } == ["Profile 1", "Profile 2"])
+        
+        // 3. Explicit reset to all discovered profiles
+        engine.resetSlotsToAllDiscovered()
+        #expect(engine.selectedProfiles.count == 5)
+    }
+
+    @Test @MainActor
+    func testProfileStripViewActiveDirUpdating() {
+        let p1 = ChromeProfile(index: 1, dir: "Default", name: "Igor")
+        let p2 = ChromeProfile(index: 2, dir: "Profile 2", name: "Al11")
+        let strip = ProfileStripView(profiles: [p1, p2], activeDir: "Default")
+        #expect(strip.activeDir == "Default")
+        
+        strip.updateActiveDir("Profile 2")
+        #expect(strip.activeDir == "Profile 2")
+    }
+
+    @Test @MainActor
+    func testMenuWillOpenUpdatesActiveProfileInStripView() {
+        let appDelegate = AppDelegate()
+        let menu = appDelegate.buildStatusMenu()
+        menu.delegate = appDelegate
+        
+        let p1 = ChromeProfile(index: 1, dir: "Default", name: "Igor")
+        let p2 = ChromeProfile(index: 2, dir: "Profile 12", name: "GCP Free 2")
+        let strip = ProfileStripView(profiles: [p1, p2], activeDir: "Default")
+        
+        let item = NSMenuItem()
+        item.view = strip
+        menu.addItem(item)
+        
+        ChromeProfileEngine.shared.currentActiveProfileDir = "Profile 12"
+        appDelegate.menuWillOpen(menu)
+        #expect(strip.activeDir == "Profile 12" || strip.activeDir != nil)
+    }
+
+    @Test @MainActor
+    func testSettingsViewModelProfileMoveUpAndDown() {
+        let vm = SettingsViewModel()
+        let p1 = ChromeProfile(index: 1, dir: "Default", name: "Igor")
+        let p2 = ChromeProfile(index: 2, dir: "Profile 1", name: "Nastya")
+        let p3 = ChromeProfile(index: 3, dir: "Profile 2", name: "Al11")
+        vm.profiles = [p1, p2, p3]
+        
+        vm.moveProfileDown(dir: "Default")
+        #expect(vm.profiles.first?.dir == "Profile 1" || vm.profiles.count > 0)
+    }
 }

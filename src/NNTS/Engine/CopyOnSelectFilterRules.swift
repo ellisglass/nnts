@@ -8,11 +8,12 @@ import os
 // MARK: - Copy on Select Filter Rules & Protective Heuristics
 extension CopyOnSelectEngine {
     
-    /// Blacklisted applications where automated copy-on-select must NEVER trigger (Security & UX protection)
-    public static let sensitiveBundleIDs: Set<String> = [
-        // Password Managers & Vaults
+    /// Inviolable password managers, vaults, and authenticators where automated copy-on-select
+    /// must NEVER trigger under ANY circumstances, even if allowEverywhere is enabled.
+    public static let immutableVaultBundleIDs: Set<String> = [
         "com.apple.keychainaccess",
         "com.apple.Passwords",
+        "com.apple.PasskeysCredentialProvider",
         "com.1password.1password",
         "com.agilebits.onepassword7",
         "com.bitwarden.desktop",
@@ -23,8 +24,19 @@ extension CopyOnSelectEngine {
         "com.nordpass.macos",
         "com.roboform.mac",
         "com.lastpass.LastPass",
-        "org.whispersystems.signal-desktop",
-        // Terminal Emulators (Sudo, SSH, Private Keys, Secret Environment Variables)
+        "me.proton.pass",
+        "com.proton.pass",
+        "com.yubico.authenticator",
+        "com.authy",
+        "com.authy.authy-mac",
+        "com.2fas.desktop",
+        "com.strongbox.mac",
+        "com.elpass.app",
+        "org.whispersystems.signal-desktop"
+    ]
+    
+    /// Terminal emulators where copy is disabled by default, but allowed if the user explicitly enables allowEverywhere.
+    public static let developerTerminalBundleIDs: Set<String> = [
         "com.apple.Terminal",
         "com.googlecode.iterm2",
         "dev.warp.Warp-Stable",
@@ -35,6 +47,11 @@ extension CopyOnSelectEngine {
         "com.github.wez.wezterm",
         "co.zeit.hyper"
     ]
+    
+    /// Combined blacklisted applications where automated copy-on-select is restricted.
+    public static var sensitiveBundleIDs: Set<String> {
+        return immutableVaultBundleIDs.union(developerTerminalBundleIDs)
+    }
     
     /// Native creative, CAD, DAW, design, whiteboard, and 3D applications where mouse dragging
     /// is primarily drawing, sculpting, timeline scrubbing, or canvas navigation — never text selection.
@@ -49,6 +66,8 @@ extension CopyOnSelectEngine {
         "com.seriflabs.affinitydesigner",
         "com.seriflabs.affinityphoto2",
         "com.seriflabs.affinityphoto",
+        "com.seriflabs.affinitypublisher2",
+        "com.seriflabs.affinitypublisher",
         "com.pixelmatorteam.pixelmator.x",
         "org.inkscape.Inkscape",
         "com.canva.CanvaDesktop",
@@ -59,6 +78,7 @@ extension CopyOnSelectEngine {
         "com.gingerlabs.Notability",
         // 3D, CAD & Animation
         "org.blenderfoundation.blender",
+        "org.blender.blender",
         "com.autodesk.Fusion360",
         "com.shapr3d.shapr",
         "com.maxon.cinema4d",

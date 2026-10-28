@@ -19,9 +19,9 @@ internal struct SettingsSectionBox<Content: View>: View {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color.accentColor)
+                    .foregroundColor(NNTSColors.cadmiumYellow)
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(NNTSFont.display(size: 13))
                     .foregroundColor(Color(nsColor: .labelColor))
             }
             content()
@@ -29,12 +29,12 @@ internal struct SettingsSectionBox<Content: View>: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.65))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.48))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.40), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 0.75)
         )
     }
 }
@@ -63,8 +63,18 @@ internal struct GeneralTabContent: View {
                             Button("Restore System Default") {
                                 viewModel.restoreDefaultCapsLock()
                             }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
+                            .buttonStyle(.plain)
+                            .font(.system(size: 11.5, weight: .medium))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4.5)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white.opacity(0.08))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.white.opacity(0.12), lineWidth: 0.75)
+                                    )
+                            )
                         } else {
                             Button("Apply Remapping") {
                                 viewModel.reapplyCapsLockRemapping()
@@ -96,8 +106,18 @@ internal struct GeneralTabContent: View {
                             Button("Check Again") {
                                 viewModel.refreshGeneral()
                             }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
+                            .buttonStyle(.plain)
+                            .font(.system(size: 11.5, weight: .medium))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4.5)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white.opacity(0.08))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.white.opacity(0.12), lineWidth: 0.75)
+                                    )
+                            )
                         }
                     }
                 }

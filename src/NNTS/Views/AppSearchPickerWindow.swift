@@ -609,7 +609,11 @@ public final class AppSearchPickerWindow: NSPanel {
     }
     
     private func centerOnScreen() {
-        if let screen = NSScreen.main {
+        let mouseLoc = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first(where: { NSMouseInRect(mouseLoc, $0.frame, false) })
+            ?? NSScreen.main
+            ?? NSScreen.screens.first
+        if let screen = screen {
             let screenRect = screen.visibleFrame
             let x = screenRect.midX - (frame.width / 2)
             let y = screenRect.midY - (frame.height / 2) + 60

@@ -770,6 +770,44 @@ extension ChromeQuickAccessUnitTests {
         #expect(CopyOnSelectEngine.sensitiveBundleIDs.contains("com.nordpass.macos"))
         #expect(CopyOnSelectEngine.sensitiveBundleIDs.contains("org.keepassxc.keepassxc"))
         #expect(CopyOnSelectEngine.sensitiveBundleIDs.contains("org.whispersystems.signal-desktop"))
+        #expect(CopyOnSelectEngine.sensitiveBundleIDs.contains("me.proton.pass"))
+        #expect(CopyOnSelectEngine.sensitiveBundleIDs.contains("com.yubico.authenticator"))
+        #expect(CopyOnSelectEngine.sensitiveBundleIDs.contains("com.authy"))
+        #expect(CopyOnSelectEngine.sensitiveBundleIDs.contains("com.2fas.desktop"))
+        #expect(CopyOnSelectEngine.sensitiveBundleIDs.contains("com.strongbox.mac"))
+        #expect(CopyOnSelectEngine.sensitiveBundleIDs.contains("com.elpass.app"))
+    }
+
+    @Test @MainActor
+    func testCopyOnSelectInviolableVaultsNeverBypassedEvenWithAllowEverywhere() {
+        let engine = CopyOnSelectEngine()
+        let originalEverywhere = engine.allowEverywhere
+        let originalMockFrontmost = CopyOnSelectEngine.mockFrontmostBundleID
+        defer {
+            engine.allowEverywhere = originalEverywhere
+            CopyOnSelectEngine.mockFrontmostBundleID = originalMockFrontmost
+        }
+        
+        // When allowEverywhere is true, Terminal is permitted
+        engine.allowEverywhere = true
+        CopyOnSelectEngine.mockFrontmostBundleID = "com.apple.Terminal"
+        let terminalAllowed = engine.shouldTriggerCopy(start: CGPoint(x: 10, y: 10), end: CGPoint(x: 30, y: 10), clickCount: 1)
+        #expect(terminalAllowed == true)
+        
+        // BUT password vaults and authenticators MUST strictly remain blocked
+        let vaultIDs = [
+            "com.1password.1password",
+            "com.apple.Passwords",
+            "me.proton.pass",
+            "com.bitwarden.desktop",
+            "com.yubico.authenticator"
+        ]
+        
+        for vaultID in vaultIDs {
+            CopyOnSelectEngine.mockFrontmostBundleID = vaultID
+            let vaultBlocked = engine.shouldTriggerCopy(start: CGPoint(x: 10, y: 10), end: CGPoint(x: 30, y: 10), clickCount: 1)
+            #expect(vaultBlocked == false, "Vault \(vaultID) must be blocked even when allowEverywhere is enabled.")
+        }
     }
 
 

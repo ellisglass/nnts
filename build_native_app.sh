@@ -81,7 +81,9 @@ if [ "${FAST_DEV}" = true ]; then
 
     if [ -f "src/NNTS/Resources/AppIcon.icns" ]; then
         cp "src/NNTS/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
-        
+    fi
+    if [ -f "src/NNTS/Resources/SpaceGrotesk-Bold.ttf" ]; then
+        cp "src/NNTS/Resources/SpaceGrotesk-Bold.ttf" "${RESOURCES_DIR}/SpaceGrotesk-Bold.ttf"
     fi
     codesign --force --sign - --identifier "com.almosteleven.nnts" -r="designated => identifier \"com.almosteleven.nnts\"" "${APP_BUNDLE}"
 
@@ -138,7 +140,9 @@ cp "src/NNTS/Info.plist" "${CONTENTS_DIR}/Info.plist"
 
 if [ -f "src/NNTS/Resources/AppIcon.icns" ]; then
     cp "src/NNTS/Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
-        
+fi
+if [ -f "src/NNTS/Resources/SpaceGrotesk-Bold.ttf" ]; then
+    cp "src/NNTS/Resources/SpaceGrotesk-Bold.ttf" "${RESOURCES_DIR}/SpaceGrotesk-Bold.ttf"
 fi
 if [ -f "src/NNTS/Resources/dmg_background.png" ]; then
     cp "src/NNTS/Resources/dmg_background.png" "${RESOURCES_DIR}/dmg_background.png"

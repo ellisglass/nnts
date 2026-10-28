@@ -9,11 +9,13 @@ extension ChromeProfileEngine {
     public func saveCachedProfiles(_ profiles: [ChromeProfile], bundleID: String) {
         guard !profiles.isEmpty else { return }
         let records: [[String: Any]] = profiles.map { p in
-            [
+            var dict: [String: Any] = [
                 "index": p.index,
                 "dir": p.dir,
                 "name": p.name
             ]
+            if let given = p.gaiaGivenName { dict["gaiaGivenName"] = given }
+            return dict
         }
         UserDefaults.standard.set(records, forKey: "CachedProfiles_\(bundleID)")
     }
@@ -26,11 +28,15 @@ extension ChromeProfileEngine {
         return records.compactMap { dict in
             guard let index = dict["index"] as? Int,
                   let dir = dict["dir"] as? String,
-                  let name = dict["name"] as? String else {
+                  let rawName = dict["name"] as? String else {
                 return nil
             }
+            let parsed = Self.parseMenuProfileTitle(rawName)
+            let name = dict["gaiaGivenName"] != nil ? rawName : parsed.cleanName
+            let gaiaGivenName = (dict["gaiaGivenName"] as? String) ?? parsed.gaiaGivenName
+            
             let avatar: NSImage
-            if let customImg = Self.loadStoredAvatar(dirKey: dir, name: name) {
+            if let customImg = Self.loadStoredAvatar(dirKey: dir, name: name) ?? Self.loadStoredAvatar(dirKey: dir, name: rawName) {
                 avatar = makeCircularImage(image: customImg)
             } else {
                 avatar = makeMonogramImage(name: name, colorSeed: index)
@@ -41,7 +47,7 @@ extension ChromeProfileEngine {
                 name: name,
                 email: nil,
                 gaiaName: nil,
-                gaiaGivenName: nil,
+                gaiaGivenName: gaiaGivenName,
                 avatarImage: avatar
             )
         }
@@ -59,24 +65,93 @@ extension ChromeProfileEngine {
         return nntsDir
     }
     
+    /// Generates priority ordered candidate filenames to resolve a profile's avatar.
+    /// Named profile keys are strictly prioritized over generic directory keys like "Profile 1".
+    nonisolated public static func candidateAvatarKeys(dirKey: String, name: String) -> [String] {
+        var keys: [String] = []
+        let parsed = parseMenuProfileTitle(name)
+        let cleanName = parsed.cleanName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rawName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 1. Clean profile name (e.g. "Al11", "GCP Free 2", "Nastya")
+        if !cleanName.isEmpty {
+            keys.append(cleanName)
+            let safeClean = cleanName.replacingOccurrences(of: "/", with: "-")
+            if safeClean != cleanName { keys.append(safeClean) }
+        }
+        
+        // 2. Full raw name if different (e.g. "Igor (Al11)")
+        if !rawName.isEmpty && rawName != cleanName {
+            keys.append(rawName)
+            let safeRaw = rawName.replacingOccurrences(of: "/", with: "-")
+            if safeRaw != rawName { keys.append(safeRaw) }
+        }
+        
+        // 3. Domain or tag without extension if e.g. "dhl.com" -> "dhl"
+        if cleanName.contains(".") {
+            let withoutExt = (cleanName as NSString).deletingPathExtension
+            if !withoutExt.isEmpty && withoutExt != cleanName {
+                keys.append(withoutExt)
+            }
+        }
+        
+        // 4. Stable directory key: "Default" is stable for personal profile.
+        if dirKey == "Default" {
+            keys.append("Default")
+        } else if !dirKey.isEmpty && !dirKey.hasPrefix("Profile ") {
+            keys.append(dirKey)
+        }
+        
+        return keys
+    }
+    
     public static func loadStoredAvatar(dirKey: String, name: String) -> NSImage? {
         let storage = localAvatarStorageURL
-        let safeName = name.replacingOccurrences(of: "/", with: "-")
-        var candidatePaths: [String] = []
+        let keys = candidateAvatarKeys(dirKey: dirKey, name: name)
         let extensions = ["png", "jpg", "jpeg", "heic", "webp"]
-        for ext in extensions {
-            candidatePaths.append(storage.appendingPathComponent("\(dirKey).\(ext)").path)
-            candidatePaths.append(storage.appendingPathComponent("\(name).\(ext)").path)
-            if safeName != name {
-                candidatePaths.append(storage.appendingPathComponent("\(safeName).\(ext)").path)
+        
+        // Phase 1: Search specific named candidates
+        for key in keys {
+            for ext in extensions {
+                let path = storage.appendingPathComponent("\(key).\(ext)").path
+                if FileManager.default.fileExists(atPath: path),
+                   let img = NSImage(contentsOfFile: path) {
+                    return img
+                }
             }
         }
-        for path in candidatePaths {
-            if FileManager.default.fileExists(atPath: path),
-               let img = NSImage(contentsOfFile: path) {
-                return img
+        
+        // Phase 2: Fallback to generic dirKey (e.g. Profile 1) ONLY if no specific candidate was found,
+        // and only if the dirKey file does not belong to another known named avatar (prevent cross-hijacking)
+        if !keys.contains(dirKey) && !dirKey.isEmpty {
+            for ext in extensions {
+                let path = storage.appendingPathComponent("\(dirKey).\(ext)").path
+                if FileManager.default.fileExists(atPath: path) {
+                    if dirKey.hasPrefix("Profile ") {
+                        let genericData = try? Data(contentsOf: URL(fileURLWithPath: path))
+                        var isAliasedToDifferentProfile = false
+                        if let genericData = genericData, let files = try? FileManager.default.contentsOfDirectory(atPath: storage.path) {
+                            for f in files {
+                                guard !f.hasPrefix("Profile "), !f.hasPrefix("."), f != "\(dirKey).\(ext)" else { continue }
+                                let otherPath = storage.appendingPathComponent(f).path
+                                if let otherData = try? Data(contentsOf: URL(fileURLWithPath: otherPath)),
+                                   otherData == genericData {
+                                    isAliasedToDifferentProfile = true
+                                    break
+                                }
+                            }
+                        }
+                        if isAliasedToDifferentProfile {
+                            continue
+                        }
+                    }
+                    if let img = NSImage(contentsOfFile: path) {
+                        return img
+                    }
+                }
             }
         }
+        
         return nil
     }
     
@@ -234,21 +309,36 @@ extension ChromeProfileEngine {
               let pngData = rep.representation(using: .png, properties: [:]) else {
             return false
         }
-        let dest1 = Self.localAvatarStorageURL.appendingPathComponent("\(dirKey).png")
-        let safeName = name.replacingOccurrences(of: "/", with: "-")
-        let dest2 = Self.localAvatarStorageURL.appendingPathComponent("\(safeName).png")
+        let parsed = Self.parseMenuProfileTitle(name)
+        let cleanName = parsed.cleanName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let safeClean = cleanName.replacingOccurrences(of: "/", with: "-")
+        let safeRaw = name.replacingOccurrences(of: "/", with: "-")
+        
         do {
-            try pngData.write(to: dest1)
-            if safeName != dirKey {
-                try pngData.write(to: dest2)
+            // Save by clean name
+            let destClean = Self.localAvatarStorageURL.appendingPathComponent("\(safeClean).png")
+            try pngData.write(to: destClean)
+            
+            // If raw name is different, also save raw
+            if safeRaw != safeClean {
+                let destRaw = Self.localAvatarStorageURL.appendingPathComponent("\(safeRaw).png")
+                try? pngData.write(to: destRaw)
             }
+            
+            // Only write dirKey if non-generic
+            if !dirKey.hasPrefix("Profile ") {
+                let destDir = Self.localAvatarStorageURL.appendingPathComponent("\(dirKey).png")
+                try? pngData.write(to: destDir)
+            }
+            
             cachedAvatars[dirKey] = circular
             cachedAvatars[name] = circular
-            if safeName != name {
-                cachedAvatars[safeName] = circular
+            cachedAvatars[cleanName] = circular
+            if safeClean != cleanName {
+                cachedAvatars[safeClean] = circular
             }
             refreshProfiles()
-            logger.info("Saved user-captured avatar for profile '\(name)' (\(dirKey)).")
+            logger.info("Saved user-captured avatar for profile '\(cleanName)' (\(dirKey)).")
             return true
         } catch {
             logger.error("Failed to save captured avatar: \(error.localizedDescription)")
@@ -284,10 +374,34 @@ extension ChromeProfileEngine {
     }
     
     @MainActor
-    public func deleteCustomAvatar(profileDir: String) {
-        let dest = Self.localAvatarStorageURL.appendingPathComponent("\(profileDir).png")
-        try? FileManager.default.removeItem(at: dest)
-        cachedAvatars.removeValue(forKey: profileDir)
+    public func deleteCustomAvatar(profileDir: String, name: String? = nil, effectiveName: String? = nil) {
+        let storage = Self.localAvatarStorageURL
+        var keysToDelete = [profileDir]
+        if let n = name, !n.isEmpty {
+            keysToDelete.append(n)
+            let parsed = Self.parseMenuProfileTitle(n)
+            if !parsed.cleanName.isEmpty { keysToDelete.append(parsed.cleanName) }
+        }
+        if let eff = effectiveName, !eff.isEmpty {
+            keysToDelete.append(eff)
+            let parsed = Self.parseMenuProfileTitle(eff)
+            if !parsed.cleanName.isEmpty { keysToDelete.append(parsed.cleanName) }
+        }
+        
+        let extensions = ["png", "jpg", "jpeg", "heic", "webp"]
+        for key in keysToDelete {
+            let safe = key.replacingOccurrences(of: "/", with: "-")
+            for ext in extensions {
+                let p1 = storage.appendingPathComponent("\(key).\(ext)")
+                let p2 = storage.appendingPathComponent("\(safe).\(ext)")
+                try? FileManager.default.removeItem(at: p1)
+                if p1 != p2 {
+                    try? FileManager.default.removeItem(at: p2)
+                }
+            }
+            cachedAvatars.removeValue(forKey: key)
+            cachedAvatars.removeValue(forKey: safe)
+        }
         refreshProfiles()
     }
     
@@ -359,28 +473,25 @@ extension ChromeProfileEngine {
             }
         }
         
-        let hasAuthorizedFolder = UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") != nil
-        if hasAuthorizedFolder || Self.bypassLaunchInTests {
-            let canonicalBase = URL(fileURLWithPath: profileDir).resolvingSymlinksInPath().path
-            for picPath in candidatePics {
-                let canonicalPic = URL(fileURLWithPath: picPath).resolvingSymlinksInPath().path
-                guard canonicalPic.hasPrefix(canonicalBase) else { continue }
-                if FileManager.default.fileExists(atPath: canonicalPic),
-                   let image = NSImage(contentsOfFile: canonicalPic) {
-                    let circular = makeCircularImage(image: image)
-                    cachedAvatars[dirKey] = circular
-                    if let tiff = circular.tiffRepresentation,
-                       let bitmap = NSBitmapImageRep(data: tiff),
-                       let pngData = bitmap.representation(using: .png, properties: [:]) {
-                        let dest = Self.localAvatarStorageURL.appendingPathComponent("\(dirKey).png")
-                        try? pngData.write(to: dest)
-                        let safeName = name.replacingOccurrences(of: "/", with: "-")
-                        if safeName != dirKey {
-                            try? pngData.write(to: Self.localAvatarStorageURL.appendingPathComponent("\(safeName).png"))
-                        }
+        let canonicalBase = URL(fileURLWithPath: profileDir).resolvingSymlinksInPath().path
+        for picPath in candidatePics {
+            let canonicalPic = URL(fileURLWithPath: picPath).resolvingSymlinksInPath().path
+            guard canonicalPic.hasPrefix(canonicalBase) else { continue }
+            if FileManager.default.fileExists(atPath: canonicalPic),
+               let image = NSImage(contentsOfFile: canonicalPic) {
+                let circular = makeCircularImage(image: image)
+                cachedAvatars[dirKey] = circular
+                if let tiff = circular.tiffRepresentation,
+                   let bitmap = NSBitmapImageRep(data: tiff),
+                   let pngData = bitmap.representation(using: .png, properties: [:]) {
+                    let dest = Self.localAvatarStorageURL.appendingPathComponent("\(dirKey).png")
+                    try? pngData.write(to: dest)
+                    let safeName = name.replacingOccurrences(of: "/", with: "-")
+                    if safeName != dirKey {
+                        try? pngData.write(to: Self.localAvatarStorageURL.appendingPathComponent("\(safeName).png"))
                     }
-                    return circular
                 }
+                return circular
             }
         }
         
@@ -421,21 +532,25 @@ extension ChromeProfileEngine {
         let output = NSImage(size: size)
         output.lockFocus()
         
-        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parsed = Self.parseMenuProfileTitle(name)
+        let cleanName = parsed.cleanName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rawLower = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let lower = cleanName.lowercased()
         
         // 1. Check for parenthesized tag e.g. "Igor (Al11)" -> "Al11", "Igor (GCP Free 2)" -> "GCP Free 2"
-        var tag: String? = nil
-        if let openParen = cleanName.firstIndex(of: "("),
-           let closeParen = cleanName.lastIndex(of: ")"),
-           openParen < closeParen {
-            let inner = String(cleanName[cleanName.index(after: openParen)..<closeParen]).trimmingCharacters(in: .whitespacesAndNewlines)
-            if !inner.isEmpty {
-                tag = inner
+        var tag: String? = (cleanName != name) ? cleanName : nil
+        if tag == nil {
+            if let openParen = name.firstIndex(of: "("),
+               let closeParen = name.lastIndex(of: ")"),
+               openParen < closeParen {
+                let inner = String(name[name.index(after: openParen)..<closeParen]).trimmingCharacters(in: .whitespacesAndNewlines)
+                if !inner.isEmpty {
+                    tag = inner
+                }
             }
         }
         
-        let tagLower = tag?.lowercased() ?? ""
+        let tagLower = tag?.lowercased() ?? lower
         
         // 2. Determine contextual gradient colors and distinct token badge
         let bgGradient: (top: NSColor, bottom: NSColor)
@@ -471,6 +586,13 @@ extension ChromeProfileEngine {
                 bottom: NSColor(red: 0.82, green: 0.18, blue: 0.38, alpha: 1.0)
             )
             badgeText = "NA"
+        } else if lower.contains("dhl") || tagLower.contains("dhl") {
+            // Logistics / DHL: Crimson to Gold
+            bgGradient = (
+                top: NSColor(red: 0.88, green: 0.15, blue: 0.15, alpha: 1.0),
+                bottom: NSColor(red: 0.95, green: 0.65, blue: 0.05, alpha: 1.0)
+            )
+            badgeText = "DHL"
         } else if lower.contains("work") || tagLower.contains("work") || lower.contains("corp") || tagLower.contains("corp") || lower.contains("office") {
             // Corporate / Work: Slate Purple to Deep Indigo
             bgGradient = (
@@ -492,8 +614,8 @@ extension ChromeProfileEngine {
                 bottom: NSColor(red: 0.80, green: 0.35, blue: 0.10, alpha: 1.0)
             )
             badgeText = "QA"
-        } else if lower.contains("igor") || lower == "personal" || lower == "default" || lower == "default profile" {
-            // Igor / Primary Personal: Vibrant Royal Blue
+        } else if lower == "igor" || tagLower == "igor" || rawLower == "igor" || lower == "personal" || lower == "default" || lower == "default profile" {
+            // Primary Personal: Vibrant Royal Blue
             bgGradient = (
                 top: NSColor(red: 0.25, green: 0.55, blue: 0.98, alpha: 1.0),
                 bottom: NSColor(red: 0.12, green: 0.38, blue: 0.85, alpha: 1.0)
@@ -516,7 +638,7 @@ extension ChromeProfileEngine {
             if let tag = tag, !tag.isEmpty, tag.count <= 3 {
                 badgeText = tag.uppercased()
             } else {
-                let parts = cleanName.components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "()-"))).filter { !$0.isEmpty }
+                let parts = cleanName.components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "().-"))).filter { !$0.isEmpty }
                 if parts.count >= 2 {
                     let first = parts[0].prefix(1).uppercased()
                     let second = parts[1].prefix(1).uppercased()
@@ -559,5 +681,56 @@ extension ChromeProfileEngine {
         str.draw(in: strRect)
         output.unlockFocus()
         return output
+    }
+    
+    // MARK: - Direct Image Picking & Link Status
+    
+    public var isChromeFolderLinked: Bool {
+        if UserDefaults.standard.data(forKey: "ChromeFolderSecurityScopedBookmark") != nil {
+            return true
+        }
+        let storage = Self.localAvatarStorageURL
+        if let files = try? FileManager.default.contentsOfDirectory(atPath: storage.path),
+           files.contains(where: { !$0.hasPrefix(".") && ($0.hasSuffix(".png") || $0.hasSuffix(".jpg")) }) {
+            return true
+        }
+        return false
+    }
+    
+    @MainActor
+    public func chooseCustomAvatarImage(forProfileDir dirKey: String, name: String) {
+        NSApp.activate(ignoringOtherApps: true)
+        let panel = NSOpenPanel()
+        panel.title = "Select Avatar Image for \(name)"
+        panel.prompt = "Choose Image"
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        if #available(macOS 11.0, *) {
+            panel.allowedContentTypes = [.image, .png, .jpeg, .webP]
+        } else {
+            panel.allowedFileTypes = ["png", "jpg", "jpeg", "webp", "heic"]
+        }
+        
+        let response = panel.runModal()
+        guard response == .OK, let selectedURL = panel.url else { return }
+        
+        if let image = NSImage(contentsOf: selectedURL) {
+            _ = saveCapturedAvatar(image: image, forProfileDir: dirKey, name: name)
+            AppDelegate.shared?.updateDynamicShortcuts()
+            AppDelegate.shared?.updateMenu()
+        }
+    }
+    
+    @discardableResult
+    @MainActor
+    public func setCustomAvatarFromURL(_ url: URL, forProfileDir dirKey: String, name: String) -> Bool {
+        guard let image = NSImage(contentsOf: url) else { return false }
+        let saved = saveCapturedAvatar(image: image, forProfileDir: dirKey, name: name)
+        if saved {
+            AppDelegate.shared?.updateDynamicShortcuts()
+            AppDelegate.shared?.updateMenu()
+        }
+        return saved
     }
 }

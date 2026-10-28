@@ -274,8 +274,8 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
             let clicks = Int(event.getIntegerValueField(.mouseEventClickState))
             let duration = startTimestamp > 0 ? (ProcessInfo.processInfo.systemUptime - startTimestamp) : 1.0
             if shouldTriggerCopy(start: start, end: end, clickCount: clicks, duration: duration) {
-                let screenHeight = NSScreen.screens.first?.frame.height ?? 1080
-                let anchor = CGPoint(x: end.x, y: screenHeight - end.y)
+                // Use Cocoa global mouseLocation directly to avoid multi-monitor coordinate inversion errors
+                let anchor = NSEvent.mouseLocation
                 scheduleCopy(start: start, end: end, clickCount: clicks, anchor: anchor)
             }
         }
@@ -296,12 +296,20 @@ public final class CopyOnSelectEngine: @unchecked Sendable {
             return false
         }
         
-        // Level 2: Frontmost application sensitive blacklist (Password managers, terminals, creative/canvas tools)
+        // Level 2A: Inviolable Password Managers & Vaults (NEVER bypassed, even under allowEverywhere)
+        let frontmostID = Self.mockFrontmostBundleID ?? NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        if let frontID = frontmostID {
+            if Self.immutableVaultBundleIDs.contains(frontID) {
+                logger.debug("Copy skipped: Frontmost app '\(frontID)' is an immutable security vault.")
+                return false
+            }
+        }
+        
+        // Level 2B: Frontmost application developer terminal and canvas tools (governed by allowEverywhere)
         if !allowEverywhere {
-            let frontmostID = Self.mockFrontmostBundleID ?? NSWorkspace.shared.frontmostApplication?.bundleIdentifier
             if let frontID = frontmostID {
-                if Self.sensitiveBundleIDs.contains(frontID) {
-                    logger.debug("Copy skipped: Frontmost app '\(frontID)' is sensitive.")
+                if Self.developerTerminalBundleIDs.contains(frontID) || Self.sensitiveBundleIDs.contains(frontID) {
+                    logger.debug("Copy skipped: Frontmost app '\(frontID)' is sensitive terminal/app.")
                     return false
                 }
                 if Self.canvasAndDrawingBundleIDs.contains(frontID) {

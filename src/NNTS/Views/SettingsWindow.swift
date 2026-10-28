@@ -94,7 +94,7 @@ public final class SettingsWindow: NSWindow {
         let contentRect = NSRect(x: 0, y: 0, width: 600, height: 480)
         super.init(
             contentRect: contentRect,
-            styleMask: [.titled, .closable, .miniaturizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )

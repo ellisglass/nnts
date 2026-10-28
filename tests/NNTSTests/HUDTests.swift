@@ -201,9 +201,9 @@ extension ChromeQuickAccessUnitTests {
 
     @Test @MainActor
     func testRetroCRTChannelSwitcherHUDInvariants() {
-        // 1. Deterministic size invariance: HUD must always be fixed 320pt x 270pt
-        #expect(MinimalHUDView.hudWidth == 320)
-        #expect(MinimalHUDView.hudHeight == 270)
+        // 1. Deterministic size invariance: HUD matches 2026 Master Design
+        #expect(MinimalHUDView.hudWidth == 400)
+        #expect(MinimalHUDView.hudHeight == 280)
         
         let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
         let appItem = AntigravityItem(name: "Telegram", bundleID: "ru.keepcoder.Telegram", path: "/Applications/Telegram.app", icon: dummyIcon, index: 1)
@@ -270,6 +270,34 @@ extension ChromeQuickAccessUnitTests {
     }
 
     @Test @MainActor
+    func testFocusedProfileSwitcherHUDInvariants() {
+        // 1. Proportions & Dimensions: Compact HUD (400x280)
+        #expect(MinimalHUDView.hudWidth == 400)
+        #expect(MinimalHUDView.hudHeight == 280)
+        
+        // 2. ProfileAvatarView defaults to showBadge == false (no intimidating numbers)
+        let sampleProfile = ChromeProfile(index: 1, dir: "Default", name: "Nastya")
+        let avatarView = ProfileAvatarView(profile: sampleProfile, isSelected: true, slotIndex: 1, isLarge: true)
+        #expect(avatarView.showBadge == false)
+        #expect(avatarView.isLarge == true)
+        #expect(avatarView.isSelected == true)
+        
+        // 3. Switcher state profile mode selection
+        let state = ChromeSwitcherState()
+        state.mode = .chrome
+        state.profiles = [
+            sampleProfile,
+            ChromeProfile(index: 2, dir: "Profile 1", name: "Igor")
+        ]
+        state.selectedIndex = 0
+        state.selectedProfileIndex = 0
+        
+        #expect(state.selectedProfile?.effectiveName == "Nastya")
+        state.selectNext()
+        #expect(state.selectedProfile?.effectiveName == "Igor")
+    }
+
+    @Test @MainActor
     func testMacNativeLiquidGlassInvariants() {
         // 1. Verify MacNativeLiquidGlassBackground initialization and parameters
         let glassDefault = MacNativeLiquidGlassBackground()
@@ -287,8 +315,8 @@ extension ChromeQuickAccessUnitTests {
         #expect(blur.state == .active)
         
         // 3. Verify MinimalHUDView fixed dimensions and glass integration
-        #expect(MinimalHUDView.hudWidth == 320)
-        #expect(MinimalHUDView.hudHeight == 270)
+        #expect(MinimalHUDView.hudWidth == 400)
+        #expect(MinimalHUDView.hudHeight == 280)
         
         // 4. Verify CopyToastView integration
         let toastView = CopyToastView(isVisible: true)

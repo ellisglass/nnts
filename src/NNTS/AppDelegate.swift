@@ -155,10 +155,24 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     public func updateMenu() {
         let menu = buildStatusMenu()
+        menu.delegate = self
         statusItem?.menu = menu
     }
     
     internal var feedbackWindow: NSWindow?
+}
+
+// MARK: - NSMenuDelegate
+
+extension AppDelegate: NSMenuDelegate {
+    public func menuWillOpen(_ menu: NSMenu) {
+        let activeDir = ChromeProfileEngine.shared.getActiveProfileDir()
+        for item in menu.items {
+            if let stripView = item.view as? ProfileStripView {
+                stripView.updateActiveDir(activeDir)
+            }
+        }
+    }
 }
 
 // MARK: - NSMenuItem macOS 27 Compatibility Extension

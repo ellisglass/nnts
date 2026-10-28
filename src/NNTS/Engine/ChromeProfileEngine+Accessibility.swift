@@ -45,8 +45,17 @@ extension ChromeProfileEngine {
         
         var discovered: [ChromeProfile] = []
         var usedDirs = Set<String>()
-        for (idx, name) in profileNames.enumerated() {
-            var candidateDir = self.profiles.first(where: { $0.name == name || $0.effectiveName == name })?.dir
+        for (idx, rawTitle) in profileNames.enumerated() {
+            let parsed = Self.parseMenuProfileTitle(rawTitle)
+            let cleanName = parsed.cleanName
+            let gaiaGivenName = parsed.gaiaGivenName
+            
+            var candidateDir = self.profiles.first(where: {
+                $0.name == cleanName ||
+                $0.effectiveName == cleanName ||
+                $0.name == rawTitle ||
+                $0.expectedMenuTitle == rawTitle
+            })?.dir
             if let c = candidateDir, usedDirs.contains(c) {
                 candidateDir = nil
             }
@@ -59,19 +68,19 @@ extension ChromeProfileEngine {
             }
             usedDirs.insert(dir)
             let avatar: NSImage
-            if let customImg = Self.loadStoredAvatar(dirKey: dir, name: name) {
+            if let customImg = Self.loadStoredAvatar(dirKey: dir, name: cleanName) ?? Self.loadStoredAvatar(dirKey: dir, name: rawTitle) {
                 avatar = makeCircularImage(image: customImg)
             } else {
-                avatar = makeMonogramImage(name: name, colorSeed: idx + 1)
+                avatar = makeMonogramImage(name: cleanName, colorSeed: idx + 1)
             }
             discovered.append(
                 ChromeProfile(
                     index: idx + 1,
                     dir: dir,
-                    name: name,
+                    name: cleanName,
                     email: nil,
                     gaiaName: nil,
-                    gaiaGivenName: nil,
+                    gaiaGivenName: gaiaGivenName,
                     avatarImage: avatar
                 )
             )
@@ -208,6 +217,11 @@ extension ChromeProfileEngine {
     }
     
     public func getActiveProfileDir() -> String? {
+        let runningApps = NSWorkspace.shared.runningApplications
+        guard runningApps.contains(where: { $0.bundleIdentifier == self.browserBundleID }) else {
+            return nil
+        }
+        
         let filtered = getFilteredProfileMenuItems(bundleID: self.browserBundleID)
         if let activeItem = filtered.first(where: { $0.isMarked }) {
             let activeTitleNorm = activeItem.title.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -222,15 +236,17 @@ extension ChromeProfileEngine {
             }
             
             if let dir = matchInProfiles(self.profiles) {
+                self.currentActiveProfileDir = dir
                 return dir
             }
             
             if syncProfilesFromRunningBrowser() {
                 if let dir = matchInProfiles(self.profiles) {
+                    self.currentActiveProfileDir = dir
                     return dir
                 }
             }
         }
-        return nil
+        return self.currentActiveProfileDir ?? self.profiles.first?.dir
     }
 }

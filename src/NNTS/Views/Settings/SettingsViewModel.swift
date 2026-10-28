@@ -223,6 +223,35 @@ public final class SettingsViewModel: ObservableObject {
         refreshShortcuts()
     }
     
+    public var isChromeFolderLinked: Bool {
+        ChromeProfileEngine.shared.isChromeFolderLinked
+    }
+    
+    public func linkChromeFolder() {
+        AppDelegate.shared?.handleLinkChromeAvatars()
+        refreshShortcuts()
+    }
+    
+    public func chooseAvatarFile(dir: String) {
+        let prof = profiles.first(where: { $0.dir == dir }) ?? allDiscoveredProfiles.first(where: { $0.dir == dir })
+        let name = prof?.effectiveName ?? prof?.name ?? dir
+        ChromeProfileEngine.shared.chooseCustomAvatarImage(forProfileDir: dir, name: name)
+        refreshShortcuts()
+    }
+    
+    public func setAvatarFromImageURL(url: URL, dir: String) {
+        let prof = profiles.first(where: { $0.dir == dir }) ?? allDiscoveredProfiles.first(where: { $0.dir == dir })
+        let name = prof?.effectiveName ?? prof?.name ?? dir
+        ChromeProfileEngine.shared.setCustomAvatarFromURL(url, forProfileDir: dir, name: name)
+        refreshShortcuts()
+    }
+    
+    public func resetSlotsToAllDiscovered() {
+        ChromeProfileEngine.shared.resetSlotsToAllDiscovered()
+        AppDelegate.shared?.updateMenu()
+        refreshShortcuts()
+    }
+    
     public func pasteProfileAvatar(dir: String) {
         let fakeItem = NSMenuItem()
         fakeItem.representedObject = dir
@@ -231,7 +260,8 @@ public final class SettingsViewModel: ObservableObject {
     }
     
     public func resetProfileAvatar(dir: String) {
-        ChromeProfileEngine.shared.deleteCustomAvatar(profileDir: dir)
+        let prof = profiles.first(where: { $0.dir == dir }) ?? allDiscoveredProfiles.first(where: { $0.dir == dir })
+        ChromeProfileEngine.shared.deleteCustomAvatar(profileDir: dir, name: prof?.name, effectiveName: prof?.effectiveName)
         AppDelegate.shared?.updateMenu()
         refreshShortcuts()
     }

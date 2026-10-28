@@ -9,6 +9,7 @@ public struct ProfileAvatarView: View {
     public let slotIndex: Int
     public let isLarge: Bool
     public let isCompact: Bool
+    public let showBadge: Bool
     public var namespace: Namespace.ID?
     
     public init(
@@ -17,6 +18,7 @@ public struct ProfileAvatarView: View {
         slotIndex: Int = 0,
         isLarge: Bool = false,
         isCompact: Bool = false,
+        showBadge: Bool = false,
         namespace: Namespace.ID? = nil
     ) {
         self.profile = profile
@@ -24,15 +26,16 @@ public struct ProfileAvatarView: View {
         self.slotIndex = slotIndex > 0 ? slotIndex : profile.index
         self.isLarge = isLarge
         self.isCompact = isCompact
+        self.showBadge = showBadge
         self.namespace = namespace
     }
     
     public var body: some View {
-        let avatarSize: CGFloat = isLarge ? 42 : (isCompact ? 24 : 34)
-        let ringSize: CGFloat = isLarge ? 48 : (isCompact ? 29 : 40)
-        let colWidth: CGFloat = isLarge ? 48 : (isCompact ? 30 : 40)
+        let avatarSize: CGFloat = isLarge ? 64 : (isCompact ? 40 : 50)
+        let ringSize: CGFloat = isLarge ? 72 : (isCompact ? 46 : 56)
+        let colWidth: CGFloat = isLarge ? 72 : (isCompact ? 46 : 56)
         
-        VStack(spacing: isCompact ? 2 : 3) {
+        VStack(spacing: 0) {
             ZStack {
                 Circle()
                     .fill(.ultraThinMaterial)
@@ -59,14 +62,14 @@ public struct ProfileAvatarView: View {
                 } else {
                     Circle()
                         .fill(LinearGradient(
-                            colors: [Color(red: 0.35, green: 0.55, blue: 0.95), Color(red: 0.55, green: 0.35, blue: 0.85)],
+                            colors: [NNTSColors.cobaltBlue, Color(red: 0.55, green: 0.35, blue: 0.85)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
                         .frame(width: avatarSize, height: avatarSize)
                         .overlay(
-                            Text(String(profile.effectiveName.prefix(1)).uppercased())
-                                .font(.system(size: isLarge ? 15 : (isCompact ? 10 : 12), weight: .bold))
+                            Text(String(profile.effectiveName.prefix(profile.effectiveName.count > 2 ? 2 : 1)).uppercased())
+                                .font(NNTSFont.display(size: isLarge ? 20 : (isCompact ? 13 : 16)))
                                 .foregroundColor(.white)
                         )
                 }
@@ -74,27 +77,38 @@ public struct ProfileAvatarView: View {
                 // Active liquid glass selection ring
                 if isSelected {
                     Circle()
-                        .strokeBorder(Color.white, lineWidth: 2.0)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color.white, NNTSColors.cadmiumYellow],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isLarge ? 2.8 : 2.2
+                        )
                         .frame(width: ringSize, height: ringSize)
-                        .shadow(color: Color.white.opacity(0.95), radius: 5, x: 0, y: 0)
-                        .shadow(color: Color(red: 0.40, green: 0.80, blue: 1.0).opacity(0.60), radius: 8, x: 0, y: 0)
+                        .shadow(color: NNTSColors.cadmiumYellow.opacity(0.85), radius: 8, x: 0, y: 0)
+                        .shadow(color: NNTSColors.cobaltBlue.opacity(0.40), radius: 10, x: 0, y: 0)
                 } else {
                     Circle()
-                        .stroke(Color.white.opacity(0.32), lineWidth: 0.75)
+                        .stroke(Color.white.opacity(0.24), lineWidth: 1.0)
                         .frame(width: ringSize - 2, height: ringSize - 2)
                 }
             }
             .frame(width: ringSize, height: ringSize)
             
-            Text("\(slotIndex)")
-                .font(.system(size: isLarge ? 12 : (isCompact ? 9 : 10), weight: isSelected ? .bold : .medium, design: .monospaced))
-                .foregroundColor(isSelected ? .white : .white.opacity(0.75))
-                .shadow(color: Color.black.opacity(0.40), radius: 1.5, y: 1)
+            if showBadge {
+                Text("\(slotIndex)")
+                    .font(NNTSFont.slotDigit(size: isLarge ? 13 : (isCompact ? 11.5 : 12.5)))
+                    .foregroundColor(isSelected ? NNTSColors.cadmiumYellow : NNTSColors.warmCream.opacity(0.85))
+                    .shadow(color: Color.black.opacity(0.45), radius: 1.5, y: 1)
+                    .padding(.top, 3)
+            }
         }
         .frame(width: colWidth)
-        .padding(.vertical, isCompact ? 1.5 : 2.5)
-        .scaleEffect(isSelected ? 1.05 : 0.96)
-        .animation(NNTSMotion.magneticGlide, value: isSelected)
+        .padding(.vertical, isCompact ? 2 : 3)
+        .scaleEffect(isSelected ? 1.08 : 0.94)
+        .opacity(isSelected ? 1.0 : 0.82)
+        .animation(NNTSMotion.interactiveSnap, value: isSelected)
     }
 }
 

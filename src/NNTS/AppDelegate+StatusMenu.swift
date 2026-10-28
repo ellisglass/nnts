@@ -136,6 +136,20 @@ extension AppDelegate {
             stripItem.title = "Profiles"
             stripItem.view = ProfileStripView(profiles: displayProfiles, activeDir: profileEngine.getActiveProfileDir())
             menu.addItem(stripItem)
+            
+            if !profileEngine.isChromeFolderLinked {
+                let linkItem = makeAlignedMenuItem(
+                    title: "Sync Real Profile Photos...",
+                    keyEquivalent: "",
+                    isHeader: false,
+                    icon: NSImage(systemSymbolName: "photo.badge.arrow.forward", accessibilityDescription: nil),
+                    accessibilityLabel: "Sync Real Profile Photos",
+                    accessibilityHelp: "Link your Google Chrome folder to display real account photos",
+                    action: #selector(handleLinkChromeAvatars(_:)),
+                    target: self
+                )
+                menu.addItem(linkItem)
+            }
         }
     }
     

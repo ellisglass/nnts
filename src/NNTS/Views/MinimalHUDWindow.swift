@@ -162,9 +162,9 @@ public struct MinimalHUDView: View {
     @ObservedObject var state = ChromeSwitcherState.shared
     @Namespace private var selectionNamespace
     
-    /// Deterministic size-invariant CRT screen frame
-    public static let hudWidth: CGFloat = 320
-    public static let hudHeight: CGFloat = 270
+    /// Deterministic size-invariant screen frame matching 2026 Master Design
+    public static let hudWidth: CGFloat = NNTSGeometry.hudWidth
+    public static let hudHeight: CGFloat = NNTSGeometry.hudHeight
     
     public init() {}
     
@@ -214,8 +214,8 @@ public struct MinimalHUDView: View {
         state.antigravityItems.count > 1
     }
     
-    private var showProfilesRow: Bool {
-        (state.mode == .chrome || isCurrentBrowser) && state.profiles.count > 1
+    private var isProfileMode: Bool {
+        state.mode == .chrome || (isCurrentBrowser && !state.profiles.isEmpty)
     }
     
     private var cycleIndicator: String? {
@@ -234,120 +234,158 @@ public struct MinimalHUDView: View {
     
     public var body: some View {
         ZStack {
-            VStack(spacing: 0) {
-                // 1. Top Apps Row (Clear indicator of what's on this hotkey)
-                if hasMultipleApps {
-                    HStack(spacing: 12) {
-                        ForEach(Array(state.antigravityItems.enumerated()), id: \.element.id) { idx, item in
-                            let isCurrent = idx == state.selectedIndex
-                            Image(nsImage: item.icon)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: isCurrent ? 28 : 22, height: isCurrent ? 28 : 22)
-                                .opacity(isCurrent ? 1.0 : 0.40)
-                                .shadow(color: Color.black.opacity(isCurrent ? 0.25 : 0), radius: 2, y: 1)
-                                .background(
-                                    isCurrent ?
-                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                            .fill(Color.white.opacity(0.28))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                                    .strokeBorder(Color.white.opacity(0.55), lineWidth: 0.75)
-                                            )
-                                            .frame(width: 38, height: 38)
-                                        : nil
-                                )
-                        }
+            if isProfileMode {
+                // Profile Switcher View (Focused on large avatars and prominent profile identity)
+                VStack(spacing: 0) {
+                    // 1. Browser context header
+                    HStack(spacing: 7) {
+                        Image(nsImage: activeIcon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 18, height: 18)
+                            .shadow(color: Color.black.opacity(0.30), radius: 2, y: 1)
+                        
+                        Text(activeName)
+                            .font(NNTSFont.display(size: 13))
+                            .foregroundColor(NNTSColors.warmCream.opacity(0.70))
+                            .shadow(color: Color.black.opacity(0.40), radius: 2, y: 1)
                     }
-                    .padding(.top, 16)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                } else {
-                    Color.clear.frame(height: 16)
-                }
-                
-                Spacer()
-                
-                // 2. Center Hero Display (Large App Icon + Title)
-                VStack(spacing: 6) {
-                    Image(nsImage: activeIcon)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: showProfilesRow ? 62 : 76, height: showProfilesRow ? 62 : 76)
-                        .shadow(color: Color.black.opacity(0.30), radius: 12, y: 6)
+                    .padding(.top, 22)
                     
-                    Text(activeName)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .shadow(color: Color.black.opacity(0.40), radius: 3, y: 1.5)
-                        .lineLimit(1)
+                    Spacer(minLength: 10)
                     
-                    // Chrome active profile pill (if applicable)
-                    if showProfilesRow, let prof = activeProfile {
-                        HStack(spacing: 5) {
-                            Circle()
-                                .fill(Color(red: 0.25, green: 0.90, blue: 0.55))
-                                .frame(width: 5, height: 5)
-                                .shadow(color: Color(red: 0.25, green: 0.90, blue: 0.55).opacity(0.85), radius: 3)
-                            Text(prof.effectiveName)
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                                .frame(maxWidth: 180)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3.5)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.24))
-                                .overlay(
-                                    Capsule()
-                                        .strokeBorder(
-                                            LinearGradient(
-                                                colors: [Color.white.opacity(0.75), Color.white.opacity(0.25)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 0.75
-                                        )
-                                )
-                                .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
-                        )
-                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                    }
-                }
-                
-                Spacer()
-                
-                // 3. Bottom Presets Row (Chrome Profiles)
-                if showProfilesRow {
-                    let useCompact = state.profiles.count > 4
-                    HStack(spacing: useCompact ? 4 : 8) {
+                    // 2. Large Profile Avatars (Big, vibrant icons front and center)
+                    let count = state.profiles.count
+                    let useCompact = count > 6
+                    let spacing: CGFloat = useCompact ? 6 : (count <= 4 ? 14 : 8)
+                    
+                    HStack(spacing: spacing) {
                         ForEach(Array(state.profiles.enumerated()), id: \.element.id) { idx, profile in
                             ProfileAvatarView(
                                 profile: profile,
                                 isSelected: idx == state.selectedProfileIndex,
                                 slotIndex: idx + 1,
-                                isLarge: false,
+                                isLarge: !useCompact && count <= 4,
                                 isCompact: useCompact,
+                                showBadge: false,
                                 namespace: selectionNamespace
                             )
                         }
                     }
-                    .padding(.bottom, 18)
-                } else {
-                    Color.clear
-                        .frame(height: 18)
+                    .id("profiles_strip_\(count)")
+                    
+                    Spacer(minLength: 10)
+                    
+                    // 3. Prominent Selected Profile Name (Space Grotesk Bold 24pt, warm cream)
+                    VStack(spacing: 3) {
+                        if let prof = activeProfile {
+                            Text(prof.effectiveName)
+                                .font(NNTSFont.display(size: 24))
+                                .foregroundColor(NNTSColors.warmCream)
+                                .shadow(color: Color.black.opacity(0.60), radius: 6, y: 2)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .frame(maxWidth: 340)
+                                .id("profile_name_\(prof.effectiveName)")
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .scale(scale: 0.96)),
+                                    removal: .opacity.animation(.easeOut(duration: 0.05))
+                                ))
+                            
+                            if count > 1 {
+                                Text("\(state.selectedProfileIndex + 1) of \(count)")
+                                    .font(NNTSFont.display(size: 11.5))
+                                    .foregroundColor(NNTSColors.warmCream.opacity(0.45))
+                            }
+                        } else {
+                            Text(activeName)
+                                .font(NNTSFont.display(size: 24))
+                                .foregroundColor(NNTSColors.warmCream)
+                                .shadow(color: Color.black.opacity(0.60), radius: 6, y: 2)
+                                .lineLimit(1)
+                        }
+                    }
+                    .padding(.bottom, 22)
+                }
+            } else {
+                // Application Switcher View
+                VStack(spacing: 0) {
+                    // 1. Top Apps Row (Clear indicator of apps assigned to the same key)
+                    if hasMultipleApps {
+                        HStack(spacing: 14) {
+                            ForEach(Array(state.antigravityItems.enumerated()), id: \.element.id) { idx, item in
+                                let isCurrent = idx == state.selectedIndex
+                                Image(nsImage: item.icon)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: isCurrent ? 32 : 24, height: isCurrent ? 32 : 24)
+                                    .opacity(isCurrent ? 1.0 : 0.45)
+                                    .shadow(color: Color.black.opacity(isCurrent ? 0.30 : 0), radius: 3, y: 1.5)
+                                    .background(
+                                        isCurrent ?
+                                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                .fill(Color.white.opacity(0.24))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                        .strokeBorder(Color.white.opacity(0.55), lineWidth: 1.0)
+                                                )
+                                                .frame(width: 42, height: 42)
+                                            : nil
+                                    )
+                            }
+                        }
+                        .padding(.top, 18)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    } else {
+                        Color.clear.frame(height: 18)
+                    }
+                    
+                    Spacer()
+                    
+                    // 2. Center Hero Display (Large App Icon + Zero-Overlap Space Grotesk Title)
+                    VStack(spacing: 8) {
+                        Image(nsImage: activeIcon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 96, height: 96)
+                            .id("hero_icon_\(activeName)")
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.94).combined(with: .opacity),
+                                removal: .opacity.animation(.easeOut(duration: 0.05))
+                            ))
+                            .shadow(color: Color.black.opacity(0.35), radius: 14, x: 0, y: 7)
+                        
+                        Text(activeName)
+                            .font(NNTSFont.display(size: 22))
+                            .foregroundColor(NNTSColors.warmCream)
+                            .shadow(color: Color.black.opacity(0.45), radius: 4, y: 2)
+                            .lineLimit(1)
+                            .id("hero_title_\(activeName)")
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .scale(scale: 0.96)),
+                                removal: .opacity.animation(.easeOut(duration: 0.04))
+                            ))
+                        
+                        if let cycle = cycleIndicator {
+                            Text(cycle)
+                                .font(NNTSFont.display(size: 11.5))
+                                .foregroundColor(NNTSColors.warmCream.opacity(0.45))
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Color.clear.frame(height: 18)
                 }
             }
-            .frame(width: Self.hudWidth, height: Self.hudHeight)
-            .background(
-                MacNativeLiquidGlassBackground(cornerRadius: 28, material: .popover)
-            )
-            .scaleEffect(state.isVisible ? 1.0 : 0.95)
-            .opacity(state.isVisible ? 1.0 : 0.0)
-            .animation(nil, value: state.isVisible)
         }
+        .frame(width: Self.hudWidth, height: Self.hudHeight)
+        .background(
+            MacNativeLiquidGlassBackground(cornerRadius: NNTSGeometry.hudCornerRadius, material: .popover)
+        )
+        .scaleEffect(state.isVisible ? 1.0 : 0.95)
+        .opacity(state.isVisible ? 1.0 : 0.0)
+        .animation(nil, value: state.isVisible)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .preferredColorScheme(.dark)
     }
