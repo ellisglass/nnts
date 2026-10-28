@@ -583,7 +583,7 @@ extension ChromeQuickAccessUnitTests {
         AppGroupEngine.selectedBundleIDs = Set(mockPinned)
         
         let appDelegate = AppDelegate()
-        let menu = appDelegate.buildStatusMenu()
+        _ = appDelegate.buildStatusMenu()
         
         let pinnedS = AppGroupEngine.pinnedAppItems().filter { item in
             (item.name.first(where: { $0.isLetter }) ?? "A").uppercased() == "S"

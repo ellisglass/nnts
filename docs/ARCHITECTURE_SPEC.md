@@ -112,15 +112,23 @@ nnts/
 │       ├── AppDelegate.swift                 # Application lifecycle coordinator
 │       ├── AppDelegate+Mascot.swift          # Menu bar mascot animation & eye gaze
 │       ├── AppDelegate+Hotkeys.swift         # Dynamic hotkeys & modifier event routing
-│       ├── AppDelegate+StatusMenu.swift      # Menu bar status menu & action handlers
+│       ├── AppDelegate+StatusMenu.swift      # Menu bar status menu builder & section layout
+│       ├── AppDelegate+Dialogs.swift         # Dialogs, alerts, modal prompts & update flows
 │       ├── Info.plist                        # macOS application bundle metadata
 │       ├── Resources/                        # AppIcon & DMG background
 │       ├── Engine/
 │       │   ├── KeyCodes.swift                # Carbon/AppKit keycode mappings
 │       │   ├── CapsLockEngine.swift          # hidutil remapping & event tap modifier router
 │       │   ├── AppGroupEngine.swift          # Universal pinned apps & dynamic letter cycling
-│       │   ├── ChromeProfileEngine.swift     # Chromium Local State parser & AX switcher
-│       │   ├── CopyOnSelectEngine.swift      # Drag & multi-click copy engine
+│       │   ├── AppGroupEngine+Predefined.swift # Curated app registries (terminals, IDEs, browsers)
+│       │   ├── AppGroupEngine+PinnedApps.swift # Pinned slots, persistence & limit rules
+│       │   ├── AppGroupEngine+ActiveAppTracking.swift # Workspace frontmost app tracking & cycling
+│       │   ├── AppGroupEngine+Scanner.swift  # Installed applications scanner & search
+│       │   ├── ChromeProfileEngine.swift     # Chromium Local State parser & profile models
+│       │   ├── ChromeProfileEngine+Accessibility.swift # AXUIElement menu bar profile switching
+│       │   ├── ChromeProfileEngine+Avatars.swift # Monograms, disk caching & pasteboard import
+│       │   ├── CopyOnSelectEngine.swift      # Drag & multi-click copy event tap
+│       │   ├── CopyOnSelectFilterRules.swift # Sensitive input & password manager filters
 │       │   ├── FinderTidyEngine.swift        # Finder window ceiling enforcement
 │       │   ├── AntigravityEngine.swift       # Antigravity app discovery & switcher
 │       │   ├── LicenseEngine.swift           # Polar.sh license verification & Keychain storage
@@ -132,7 +140,12 @@ nnts/
 │           ├── MinimalHUDWindow.swift        # Floating bezel HUD overlay
 │           ├── RetroHUDComponents.swift      # CRT / Kinescope / Liquid Glass visuals
 │           ├── HUDCardView.swift             # App channel & profile card subviews
-│           ├── SettingsWindow.swift          # Native SwiftUI multi-tab settings panel
+│           ├── SettingsWindow.swift          # Native SwiftUI settings panel host
+│           ├── Settings/
+│           │   ├── SettingsViewModel.swift   # Settings state, tab bindings & Polar actions
+│           │   ├── GeneralSettingsTab.swift  # Caps lock, copy-on-select & Finder tidy options
+│           │   ├── ShortcutsSettingsTab.swift# Quick apps & browser profile reordering
+│           │   └── LicenseSettingsTab.swift  # Pro edition status & key activation
 │           ├── CopyToastWindow.swift         # Non-intrusive cursor-following copy confirmation
 │           ├── ProfileStripView.swift        # 8-slot draggable profile strip
 │           ├── FeedbackWindow.swift          # Bug report & telemetry exporter
@@ -150,5 +163,15 @@ nnts/
 │       └── generate_media_assets.py          # Media asset compiler
 └── tests/
     ├── run_tests.sh                          # Headless test runner
-    └── NNTSTests/                            # Swift Testing unit test suites
+    └── NNTSTests/                            # Swift Testing domain test suites (9 suites, 156 tests)
+        ├── AppGroupEngineTests.swift         # Universal pinned apps & cycling tests (28 tests)
+        ├── CapsLockAndKeyCodesTests.swift    # Keycodes & HID mapping tests (10 tests)
+        ├── ChromeProfileEngineTests.swift    # Chromium profile detection & avatars (25 tests)
+        ├── CopyOnSelectEngineTests.swift     # Copy-on-select & clipboard filters (36 tests)
+        ├── FinderTidyEngineTests.swift       # Finder window ceiling enforcement (7 tests)
+        ├── HUDTests.swift                    # Minimal HUD, kinescope & motion (12 tests)
+        ├── LicenseAndUpdateTests.swift       # Polar licensing & update checks (20 tests)
+        ├── NNTSTests.swift                   # Serialized test suite declaration
+        ├── SettingsAndFeedbackTests.swift    # Settings window, feedback & migrations (12 tests)
+        └── StatusMenuTests.swift             # Menu bar layout & cyclic badges (6 tests)
 ```

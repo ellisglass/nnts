@@ -22,13 +22,10 @@ extension ChromeQuickAccessUnitTests {
     @Test @MainActor
     func testCopyOnSelectUserDefaultsPersistence() {
         let engine = CopyOnSelectEngine()
-        let originalEnabled = engine.isEnabled
-        let originalToast = engine.isToastEnabled
-        let originalEverywhere = engine.allowEverywhere
         defer {
-            engine.isEnabled = originalEnabled
-            engine.isToastEnabled = originalToast
-            engine.allowEverywhere = originalEverywhere
+            engine.isEnabled = true
+            engine.isToastEnabled = false
+            engine.allowEverywhere = true
         }
         
         engine.isEnabled = false
@@ -149,6 +146,8 @@ extension ChromeQuickAccessUnitTests {
     @Test @MainActor
     func testCopyOnSelectDisabledState() {
         let engine = CopyOnSelectEngine()
+        let previous = engine.isEnabled
+        defer { engine.isEnabled = previous }
         engine.isEnabled = false
         
         // Exceeding drag threshold must be ignored when disabled
@@ -160,14 +159,18 @@ extension ChromeQuickAccessUnitTests {
     
 
     @Test @MainActor
-    func testCopyOnSelectPostKeystrokeCallback() {
+    func testCopyOnSelectPostKeystrokeCallback() async throws {
         let engine = CopyOnSelectEngine()
+        let previous = engine.isEnabled
+        defer { engine.isEnabled = previous }
+        engine.isEnabled = true
         var callbackFired = false
         engine.onCopyKeystrokePosted = {
             callbackFired = true
         }
         
         engine.postCopyKeystroke()
+        try await Task.sleep(nanoseconds: 35_000_000)
         #expect(callbackFired == true)
     }
     
@@ -175,6 +178,9 @@ extension ChromeQuickAccessUnitTests {
     @Test @MainActor
     func testCopyOnSelectLifecycleAndToggle() {
         let engine = CopyOnSelectEngine()
+        let previous = engine.isEnabled
+        defer { engine.isEnabled = previous }
+        engine.isEnabled = true
         #expect(engine.isEnabled == true)
         
         engine.isEnabled.toggle()
@@ -662,6 +668,9 @@ extension ChromeQuickAccessUnitTests {
     @Test @MainActor
     func testCopyOnSelectTapDisablementRecovery() {
         let engine = CopyOnSelectEngine()
+        let previous = engine.isEnabled
+        defer { engine.isEnabled = previous }
+        engine.isEnabled = true
         let dummy = CGEvent(source: nil)!
         
         // Must handle disabled by timeout without throwing or crashing
@@ -674,6 +683,16 @@ extension ChromeQuickAccessUnitTests {
     @Test @MainActor
     func testCopyOnSelectPendingCopyCancellation() async throws {
         let engine = CopyOnSelectEngine()
+        let previous = engine.isEnabled
+        let previousEverywhere = engine.allowEverywhere
+        defer {
+            engine.isEnabled = previous
+            engine.allowEverywhere = previousEverywhere
+            CopyOnSelectEngine.mockFrontmostBundleID = nil
+        }
+        engine.isEnabled = true
+        engine.allowEverywhere = true
+        CopyOnSelectEngine.mockFrontmostBundleID = "com.apple.Safari"
         var copyKeystrokes = 0
         engine.onCopyKeystrokePosted = {
             copyKeystrokes += 1

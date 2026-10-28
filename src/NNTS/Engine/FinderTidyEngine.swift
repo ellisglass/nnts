@@ -51,7 +51,7 @@ public struct FinderWindowInfo: Identifiable, Equatable, @unchecked Sendable {
 public final class FinderTidyEngine: ObservableObject, @unchecked Sendable {
     public static let shared = FinderTidyEngine()
     
-    public static let finderBundleID = "com.apple.finder"
+    nonisolated public static let finderBundleID = "com.apple.finder"
     private let logger = Logger(subsystem: "com.almosteleven.nnts", category: "finder-tidy")
     
     // MARK: - Test Hooks
@@ -179,10 +179,12 @@ public final class FinderTidyEngine: ObservableObject, @unchecked Sendable {
             object: nil,
             queue: .main
         ) { [weak self] notif in
+            guard let self = self else { return }
+            let app = notif.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            let isFinder = app?.bundleIdentifier == Self.finderBundleID
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
-                guard let app = notif.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
-                if app.bundleIdentifier == Self.finderBundleID {
+                if isFinder {
                     self.updateActiveWindowTracking()
                 } else {
                     self.evaluateWindows()
