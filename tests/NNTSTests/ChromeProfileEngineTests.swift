@@ -852,4 +852,130 @@ extension ChromeQuickAccessUnitTests {
         vm.moveProfileDown(dir: "Default")
         #expect(vm.profiles.first?.dir == "Profile 1" || vm.profiles.count > 0)
     }
+
+    @Test @MainActor
+    func testProfileStripViewQuickAppsPreservesAll7AppsWithoutCollapsing() {
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let a1 = AntigravityItem(name: "Antigravity", bundleID: "com.google.antigravity", path: "/Applications/Antigravity.app", icon: dummyIcon, index: 1)
+        let a2 = AntigravityItem(name: "Antigravity IDE", bundleID: "com.google.antigravity-ide", path: "/Applications/Antigravity IDE.app", icon: dummyIcon, index: 2)
+        let a3 = AntigravityItem(name: "Activity Monitor", bundleID: "com.apple.ActivityMonitor", path: "/System/Applications/Utilities/Activity Monitor.app", icon: dummyIcon, index: 3)
+        let f1 = AntigravityItem(name: "Freeform", bundleID: "com.apple.freeform", path: "/System/Applications/Freeform.app", icon: dummyIcon, index: 1)
+        let f2 = AntigravityItem(name: "Finder", bundleID: "com.apple.finder", path: "/System/Library/CoreServices/Finder.app", icon: dummyIcon, index: 2)
+        let m1 = AntigravityItem(name: "Messages", bundleID: "com.apple.MobileSMS", path: "/System/Applications/Messages.app", icon: dummyIcon, index: 1)
+        let m2 = AntigravityItem(name: "Music", bundleID: "com.apple.Music", path: "/System/Applications/Music.app", icon: dummyIcon, index: 2)
+        
+        let groups: [(letter: Character, items: [AntigravityItem])] = [
+            ("A", [a1, a2, a3]),
+            ("F", [f1, f2]),
+            ("M", [m1, m2])
+        ]
+        
+        let strip = ProfileStripView(
+            profiles: [ChromeProfile(index: 1, dir: "Default", name: "Igor")],
+            letterGroups: groups
+        )
+        
+        // Invariant: All 7 quick apps must be preserved in cheat sheet (never collapsed to 3)
+        #expect(strip.quickAppTiles.count == 7)
+        #expect(strip.hasQuickApps == true)
+        
+        // Invariant: Geometry must fit within width and avoid gigantic 50pt gaps
+        for i in 0..<7 {
+            let r = strip.appTileRect(for: i)
+            #expect(r.width > 0)
+            #expect(r.maxX <= strip.bounds.width)
+        }
+        
+        let r0 = strip.appTileRect(for: 0)
+        let r1 = strip.appTileRect(for: 1)
+        let spacing = r1.minX - r0.maxX
+        #expect(spacing < 20.0, "Spacing must be bounded and never exceed normal gap (\(spacing)pt)")
+    }
+
+    @Test @MainActor
+    func testProfileStripViewMultiRowGridSupports13PinnedApps() {
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let items: [AntigravityItem] = (1...13).map { i in
+            AntigravityItem(
+                name: "App \(i)",
+                bundleID: "com.test.app\(i)",
+                path: "/Applications/App\(i).app",
+                icon: dummyIcon,
+                index: i
+            )
+        }
+        
+        let groups: [(letter: Character, items: [AntigravityItem])] = [
+            ("A", Array(items[0..<5])),
+            ("B", Array(items[5..<10])),
+            ("C", Array(items[10..<13]))
+        ]
+        
+        let strip = ProfileStripView(
+            profiles: [ChromeProfile(index: 1, dir: "Default", name: "Work")],
+            letterGroups: groups
+        )
+        
+        // 1. All 13 quick apps must be preserved in quickAppTiles without dropping
+        #expect(strip.quickAppTiles.count == 13)
+        #expect(strip.hasQuickApps == true)
+        #expect(ProfileStripView.appColumns(for: 13) == 5)
+        
+        // 2. View height adjusts dynamically to accommodate multiple rows
+        #expect(strip.bounds.height >= 240.0, "Multi-row grid height must expand dynamically for 13 apps (\(strip.bounds.height)pt)")
+        
+        // 3. Every single app tile fits within view bounds
+        for i in 0..<13 {
+            let r = strip.appTileRect(for: i)
+            #expect(r.width > 0)
+            #expect(r.maxX <= strip.bounds.width)
+            #expect(r.maxY <= strip.bounds.height, "Tile \(i) must not exceed view bounds height")
+        }
+        
+        // 4. Column alignment: Tile 0 (row 0, col 0) and Tile 5 (row 1, col 0) must align horizontally
+        let r0 = strip.appTileRect(for: 0)
+        let r5 = strip.appTileRect(for: 5)
+        let r10 = strip.appTileRect(for: 10)
+        #expect(r0.minX == r5.minX, "Column 0 tiles must align vertically")
+        #expect(r0.minX == r10.minX, "Column 0 tiles must align vertically across all rows")
+        
+        // Row 1 must sit below Row 0
+        #expect(r5.minY > r0.maxY, "Row 1 must be positioned below Row 0")
+        #expect(r10.minY > r5.maxY, "Row 2 must be positioned below Row 1")
+        
+        // 5. Accessibility elements include all 13 apps + 1 profile = 14 elements
+        let children = strip.accessibilityChildren() ?? []
+        #expect(children.count == 14)
+        
+        // 6. Caching display succeeds
+        let rep = strip.bitmapImageRepForCachingDisplay(in: strip.bounds)
+        #expect(rep != nil)
+    }
+
+    @Test @MainActor
+    func testProfileStripViewActiveProfileAndCornerKeycaps() {
+        let p1 = ChromeProfile(index: 1, dir: "Default", name: "Personal")
+        let p2 = ChromeProfile(index: 2, dir: "Profile 1", name: "Work")
+        let strip = ProfileStripView(profiles: [p1, p2], activeDir: "Default")
+        
+        #expect(strip.activeDir == "Default")
+        let r0 = strip.tileRect(for: 0)
+        let r1 = strip.tileRect(for: 1)
+        #expect(r0.width > 0)
+        #expect(r1.width > 0)
+        
+        // Tooltip checks
+        let tip0 = strip.view(strip, stringForToolTip: 0, point: NSPoint(x: r0.midX, y: r0.midY), userData: nil)
+        let tip1 = strip.view(strip, stringForToolTip: 0, point: NSPoint(x: r1.midX, y: r1.midY), userData: nil)
+        #expect(tip0.contains("Active Now"))
+        #expect(tip0.contains("caps lock + 1"))
+        #expect(tip1.contains("Inactive"))
+        #expect(tip1.contains("caps lock + 2"))
+        
+        // Update active dir to Profile 1
+        strip.updateActiveDir("Profile 1")
+        #expect(strip.activeDir == "Profile 1")
+        let updatedTip1 = strip.view(strip, stringForToolTip: 0, point: NSPoint(x: r1.midX, y: r1.midY), userData: nil)
+        #expect(updatedTip1.contains("Active Now"))
+    }
 }

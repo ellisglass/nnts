@@ -91,7 +91,7 @@
 ```
 nnts/
 ├── Package.swift                             # Swift Package Manager manifest
-├── VERSION.txt                               # Semantic version tracking (2.0.3)
+├── VERSION.txt                               # Semantic version tracking (2.0.4)
 ├── BUILD.txt                                 # Build increment counter
 ├── Makefile                                  # Developer inner loop & CI automation targets
 ├── build_native_app.sh                       # Universal Mach-O binary & DMG build pipeline

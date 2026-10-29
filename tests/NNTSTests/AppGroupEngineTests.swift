@@ -553,6 +553,7 @@ extension ChromeQuickAccessUnitTests {
     func testCrossEngineDuplicateLetterCycling() async {
         let prevSelected = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
         AppGroupEngine.resetActiveAppTrackingForTesting()
+        AppGroupEngine.mockFrontmostBundleID = "com.apple.Terminal"
         UserDefaults.standard.removeObject(forKey: "LastActiveApp_S")
         AppGroupEngine.testOpenWindowsOverride = [
             "com.tinyspeck.slackmacgap": false,
@@ -594,6 +595,17 @@ extension ChromeQuickAccessUnitTests {
         appDelegate.updateDynamicShortcuts()
         let sTrigger = CapsLockEngine.shared.dynamicKeyTriggers[KeyCodes.kVK_ANSI_S]
         #expect(sTrigger != nil, "Trigger for 'S' must be registered")
+        
+        AppGroupEngine.resetActiveAppTrackingForTesting()
+        AppGroupEngine.mockFrontmostBundleID = "com.apple.Terminal"
+        UserDefaults.standard.removeObject(forKey: "LastActiveApp_S")
+        AppGroupEngine.testOpenWindowsOverride = [
+            "com.tinyspeck.slackmacgap": false,
+            "com.spotify.client": false
+        ]
+        
+        MinimalHUDWindow.shared.hideImmediate()
+        ChromeSwitcherState.shared.selectedIndex = 0
         
         sTrigger?()
         try? await Task.sleep(nanoseconds: 50_000_000)

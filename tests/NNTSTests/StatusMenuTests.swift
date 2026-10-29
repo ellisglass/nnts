@@ -53,21 +53,15 @@ extension ChromeQuickAccessUnitTests {
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
         
-        // 1. Browsers & Profiles section header present and strictly non-clickable
+        // 1. Browsers & Profiles section header removed for clean HUD layout
         let browserSectionHeader = menu.items.first(where: { $0.title.contains("Browsers & Profiles") })
-        #expect(browserSectionHeader != nil)
-        #expect(browserSectionHeader?.isSectionHeader == true)
-        #expect(browserSectionHeader?.isEnabled == false)
-        #expect(browserSectionHeader?.action == nil)
+        #expect(browserSectionHeader == nil, "Browsers & Profiles header must be removed")
         
-        let chromeItem = menu.items.first(where: { $0.title.hasPrefix("Chrome") })
+        let chromeItem = menu.items.first(where: { $0.title.contains("Chrome") })
         #expect(chromeItem != nil)
         #expect(chromeItem?.keyEquivalent == "c")
         #expect(chromeItem?.action != nil)
-        
-        // Profile Strip View custom view present
-        let profileStripItem = menu.items.first(where: { $0.view is ProfileStripView })
-        #expect(profileStripItem != nil, "Profile strip custom view should exist for compact horizontal layout")
+        #expect(chromeItem?.view is ProfileStripView, "Chrome item hosts the unified HUD-style ProfileStripView")
         
         // 2. Preferences: Copy on Select & Settings...
         let copyItem = menu.items.first(where: { $0.title.hasPrefix("Copy on Select") })
@@ -93,9 +87,13 @@ extension ChromeQuickAccessUnitTests {
         #expect(quitItem?.keyEquivalent == "q")
         #expect(quitItem?.keyEquivalentModifierMask == [.command])
         
-        // 4. Quick Apps are streamlined into Settings and NOT cluttering the root status menu
-        let quickAppsHeader = menu.items.first(where: { $0.title.contains("Quick Apps") })
+        // 4. Quick Apps are streamlined into a compact Cheat Sheet submenu and NOT cluttering the root status menu
+        let quickAppsHeader = menu.items.first(where: { $0.isSectionHeader && $0.title.contains("Quick Apps") })
         #expect(quickAppsHeader == nil, "Quick Apps section header must not be in root menu")
+        
+        let cheatSheetItem = menu.items.first(where: { $0.title.contains("Quick Apps Cheat Sheet") })
+        #expect(cheatSheetItem != nil, "Quick Apps Cheat Sheet submenu must be present in menu")
+        #expect(cheatSheetItem?.hasSubmenu == true, "Cheat sheet must host a dropdown submenu")
         
         let changeAppItem = menu.items.first(where: { $0.title == "Manage Quick Apps..." })
         #expect(changeAppItem == nil, "Manage Quick Apps must not be in root menu")
@@ -106,7 +104,6 @@ extension ChromeQuickAccessUnitTests {
         let appDelegate = AppDelegate()
         let menu = appDelegate.buildStatusMenu()
         
-        let browserHeaderIdx = menu.items.firstIndex(where: { $0.title.contains("Browsers & Profiles") })
         let profileStripIdx = menu.items.firstIndex(where: { $0.view is ProfileStripView })
         let copyIdx = menu.items.firstIndex(where: { $0.title.hasPrefix("Copy on Select") })
         let settingsIdx = menu.items.firstIndex(where: { $0.title == "Settings..." })
@@ -114,7 +111,6 @@ extension ChromeQuickAccessUnitTests {
         let reportIdx = menu.items.firstIndex(where: { $0.title.contains("Report an Issue") })
         let quitIdx = menu.items.firstIndex(where: { $0.title.contains("Quit NNTS") })
         
-        #expect(browserHeaderIdx != nil, "Browsers & Profiles header must exist")
         #expect(profileStripIdx != nil, "ProfileStripView must exist")
         #expect(copyIdx != nil, "Copy on Select must exist")
         #expect(settingsIdx != nil, "Settings... must exist")
@@ -122,9 +118,8 @@ extension ChromeQuickAccessUnitTests {
         #expect(reportIdx != nil, "Report an Issue must exist")
         #expect(quitIdx != nil, "Quit NNTS must exist")
         
-        if let bIdx = browserHeaderIdx, let pIdx = profileStripIdx, let cIdx = copyIdx,
+        if let pIdx = profileStripIdx, let cIdx = copyIdx,
            let sIdx = settingsIdx, let aIdx = aboutIdx, let rIdx = reportIdx, let qIdx = quitIdx {
-            #expect(bIdx < pIdx)
             #expect(pIdx < cIdx)
             #expect(cIdx < sIdx)
             #expect(sIdx < aIdx)
@@ -214,7 +209,7 @@ extension ChromeQuickAccessUnitTests {
         let appDelegate = AppDelegate()
         let menuWithC = appDelegate.buildStatusMenu()
         
-        let chromeItem = menuWithC.items.first(where: { $0.title.hasPrefix("Chrome") || $0.attributedTitle?.string.hasPrefix("Chrome") == true })
+        let chromeItem = menuWithC.items.first(where: { $0.view is ProfileStripView || $0.title.contains("Chrome") })
         #expect(chromeItem != nil)
         let chromeTitle = chromeItem?.attributedTitle?.string ?? chromeItem?.title ?? ""
         #expect(chromeTitle.contains("· 1/2 ↻"), "Chrome must display 1/2 cyclic badge when Calculator shares letter C")
@@ -226,7 +221,7 @@ extension ChromeQuickAccessUnitTests {
         // 2. Without any app sharing letter 'C'
         UserDefaults.standard.set(["com.apple.Notes", "com.apple.Terminal"], forKey: "SelectedAppBundleIDs")
         let menuWithoutC = appDelegate.buildStatusMenu()
-        let soloChromeItem = menuWithoutC.items.first(where: { $0.title.hasPrefix("Chrome") || $0.attributedTitle?.string.hasPrefix("Chrome") == true })
+        let soloChromeItem = menuWithoutC.items.first(where: { $0.view is ProfileStripView || $0.title.contains("Chrome") })
         let soloChromeTitle = soloChromeItem?.attributedTitle?.string ?? soloChromeItem?.title ?? ""
         #expect(!soloChromeTitle.contains("↻"), "Solo Chrome must NOT display cyclic badge when no pinned apps share letter C")
     }
@@ -252,16 +247,44 @@ extension ChromeQuickAccessUnitTests {
         let sectionHeaders = menu.items.filter { $0.isSectionHeader }
         let headerTitles = sectionHeaders.map { $0.title }
         
-        // Section headers must strictly contain ONLY Browsers & Profiles
-        #expect(headerTitles.contains(where: { $0.contains("Browsers & Profiles") }))
+        // Root menu must have no distracting category split headers
         #expect(!headerTitles.contains(where: { $0.contains("Quick Apps") }))
-        #expect(sectionHeaders.count == 1, "There should be exactly 1 section header in the root menu")
+        #expect(sectionHeaders.count == 0, "There should be 0 category section headers in the unified card layout")
         
         // Strictly forbidden legacy category header titles
         let forbiddenHeaders = ["Core Toolset", "Toolkit", "Toolset Shortcuts", "Quick Shortcuts"]
         for forbidden in forbiddenHeaders {
             #expect(!headerTitles.contains(where: { $0.contains(forbidden) }), "Header must not contain '\(forbidden)'")
         }
+    }
+
+    @Test @MainActor
+    func testQuickAppsCheatSheetSubmenuStructureAndReadOnlyInvariants() {
+        let appDelegate = AppDelegate()
+        let menu = appDelegate.buildStatusMenu()
+        
+        let cheatSheetItem = menu.items.first(where: { $0.title.contains("Quick Apps Cheat Sheet") })
+        #expect(cheatSheetItem != nil, "Quick Apps Cheat Sheet item must exist in root menu")
+        guard let submenu = cheatSheetItem?.submenu else {
+            Issue.record("Submenu missing on cheat sheet item")
+            return
+        }
+        
+        // Invariant 1: Root menu does NOT contain individual app launch buttons
+        #expect(menu.items.first(where: { $0.action == #selector(AppDelegate.handleCoreAppClick(_:)) }) == nil)
+        
+        // Invariant 2: Cheat sheet entries are read-only reference rows (action is nil)
+        let referenceRows = submenu.items.filter { !$0.isSeparatorItem && $0.action != #selector(AppDelegate.handleOpenShortcutsSettings) }
+        for row in referenceRows {
+            #expect(row.action == nil, "Cheat sheet entries must be strictly read-only without launch actions")
+            #expect(row.isEnabled == false, "Cheat sheet entries must be disabled from mouse click actions")
+            #expect(row.attributedTitle != nil, "Cheat sheet entries must provide formatted keycap badges")
+        }
+        
+        // Invariant 3: Submenu contains direct shortcut to Settings Shortcuts tab
+        let configItem = submenu.items.first(where: { $0.title.contains("Configure Quick Apps") })
+        #expect(configItem != nil, "Configure Quick Apps entry must exist in cheat sheet submenu")
+        #expect(configItem?.action == #selector(AppDelegate.handleOpenShortcutsSettings))
     }
 
     @Test @MainActor

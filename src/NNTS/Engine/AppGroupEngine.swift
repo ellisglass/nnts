@@ -13,6 +13,7 @@ public final class AppGroupEngine: ObservableObject, @unchecked Sendable {
     /// Test hooks
     public var customItemsOverride: [AntigravityItem]? = nil
     public var mockFrontmostBundleID: String? = nil
+    public static var mockFrontmostBundleID: String? = nil
     
     @Published public var items: [AntigravityItem] = []
     public var lastActiveIndex: Int = 0

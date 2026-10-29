@@ -279,12 +279,31 @@ extension ChromeQuickAccessUnitTests {
         let sampleProfile = ChromeProfile(index: 1, dir: "Default", name: "Nastya")
         let avatarView = ProfileAvatarView(profile: sampleProfile, isSelected: true, slotIndex: 1, isLarge: true)
         #expect(avatarView.showBadge == false)
+        #expect(avatarView.isCurrentActive == false)
         #expect(avatarView.isLarge == true)
         #expect(avatarView.isSelected == true)
         
-        // 3. Switcher state profile mode selection
+        // 3. ProfileAvatarView with tactile keycap badges and emerald live pip
+        let activeAvatarView = ProfileAvatarView(
+            profile: sampleProfile,
+            isSelected: true,
+            slotIndex: 1,
+            isLarge: true,
+            showBadge: true,
+            isCurrentActive: true
+        )
+        #expect(activeAvatarView.showBadge == true)
+        #expect(activeAvatarView.isCurrentActive == true)
+        #expect(activeAvatarView.slotIndex == 1)
+        
+        // 4. Deterministic Profile Color Palette for fallback monograms
+        _ = ProfileColorPalette.gradient(for: "DefaultNastya")
+        _ = ProfileColorPalette.gradient(for: "Profile 1Work")
+        
+        // 5. Switcher state profile mode selection and active directory synchronization
         let state = ChromeSwitcherState()
         state.mode = .chrome
+        state.activeProfileDir = "Default"
         state.profiles = [
             sampleProfile,
             ChromeProfile(index: 2, dir: "Profile 1", name: "Igor")
@@ -293,6 +312,7 @@ extension ChromeQuickAccessUnitTests {
         state.selectedProfileIndex = 0
         
         #expect(state.selectedProfile?.effectiveName == "Nastya")
+        #expect(state.activeProfileDir == "Default")
         state.selectNext()
         #expect(state.selectedProfile?.effectiveName == "Igor")
     }

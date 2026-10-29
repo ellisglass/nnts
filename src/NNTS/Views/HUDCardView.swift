@@ -2,6 +2,23 @@ import Cocoa
 import AppKit
 import SwiftUI
 
+// MARK: - Profile Color Palette
+public enum ProfileColorPalette {
+    public static func gradient(for key: String) -> LinearGradient {
+        let palettes: [[Color]] = [
+            [NNTSColors.cobaltBlue, Color(red: 0.40, green: 0.25, blue: 0.75)], // Cobalt / Violet
+            [Color(red: 0.08, green: 0.45, blue: 0.42), Color(red: 0.15, green: 0.65, blue: 0.55)], // Deep Teal / Emerald
+            [Color(red: 0.82, green: 0.35, blue: 0.15), Color(red: 0.95, green: 0.55, blue: 0.20)], // Vermilion / Amber
+            [Color(red: 0.18, green: 0.28, blue: 0.58), Color(red: 0.22, green: 0.52, blue: 0.85)], // Indigo / Sky
+            [Color(red: 0.58, green: 0.15, blue: 0.45), Color(red: 0.82, green: 0.25, blue: 0.55)], // Plum / Rose
+            [Color(red: 0.25, green: 0.45, blue: 0.20), Color(red: 0.42, green: 0.68, blue: 0.32)]  // Forest / Lime
+        ]
+        let hash = abs(key.unicodeScalars.reduce(0) { ($0 << 5) &+ $0 &+ Int($1.value) })
+        let palette = palettes[hash % palettes.count]
+        return LinearGradient(colors: palette, startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+}
+
 // MARK: - Profile Avatar View
 public struct ProfileAvatarView: View {
     public let profile: ChromeProfile
@@ -10,6 +27,7 @@ public struct ProfileAvatarView: View {
     public let isLarge: Bool
     public let isCompact: Bool
     public let showBadge: Bool
+    public let isCurrentActive: Bool
     public var namespace: Namespace.ID?
     
     public init(
@@ -19,6 +37,7 @@ public struct ProfileAvatarView: View {
         isLarge: Bool = false,
         isCompact: Bool = false,
         showBadge: Bool = false,
+        isCurrentActive: Bool = false,
         namespace: Namespace.ID? = nil
     ) {
         self.profile = profile
@@ -27,16 +46,21 @@ public struct ProfileAvatarView: View {
         self.isLarge = isLarge
         self.isCompact = isCompact
         self.showBadge = showBadge
+        self.isCurrentActive = isCurrentActive
         self.namespace = namespace
     }
     
     public var body: some View {
-        let avatarSize: CGFloat = isLarge ? 64 : (isCompact ? 40 : 50)
-        let ringSize: CGFloat = isLarge ? 72 : (isCompact ? 46 : 56)
-        let colWidth: CGFloat = isLarge ? 72 : (isCompact ? 46 : 56)
+        let avatarSize: CGFloat = isLarge ? 62 : (isCompact ? 36 : 48)
+        let ringSize: CGFloat = isLarge ? 70 : (isCompact ? 42 : 54)
+        let colWidth: CGFloat = isLarge ? 70 : (isCompact ? 42 : 54)
+        
+        let badgeSize: CGFloat = isLarge ? 20 : (isCompact ? 16 : 18)
+        let pipSize: CGFloat = isLarge ? 8 : (isCompact ? 6 : 7)
         
         VStack(spacing: 0) {
             ZStack {
+                // 1. Soft depth backing
                 Circle()
                     .fill(.ultraThinMaterial)
                     .frame(width: avatarSize, height: avatarSize)
@@ -53,6 +77,7 @@ public struct ProfileAvatarView: View {
                     )
                     .frame(width: avatarSize, height: avatarSize)
                 
+                // 2. Avatar Image or Deterministic Monogram
                 if let avatar = profile.avatarImage {
                     Image(nsImage: avatar)
                         .resizable()
@@ -61,52 +86,91 @@ public struct ProfileAvatarView: View {
                         .clipShape(Circle())
                 } else {
                     Circle()
-                        .fill(LinearGradient(
-                            colors: [NNTSColors.cobaltBlue, Color(red: 0.55, green: 0.35, blue: 0.85)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
+                        .fill(ProfileColorPalette.gradient(for: profile.dir + profile.effectiveName))
                         .frame(width: avatarSize, height: avatarSize)
                         .overlay(
                             Text(String(profile.effectiveName.prefix(profile.effectiveName.count > 2 ? 2 : 1)).uppercased())
-                                .font(NNTSFont.display(size: isLarge ? 20 : (isCompact ? 13 : 16)))
+                                .font(NNTSFont.display(size: isLarge ? 20 : (isCompact ? 12 : 15)))
                                 .foregroundColor(.white)
+                                .shadow(color: Color.black.opacity(0.4), radius: 2, y: 1)
                         )
                 }
                 
-                // Active liquid glass selection ring
+                // 3. Selection Ring (Matched Geometry or Static Fallback)
                 if isSelected {
-                    Circle()
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [Color.white, NNTSColors.cadmiumYellow],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: isLarge ? 2.8 : 2.2
-                        )
-                        .frame(width: ringSize, height: ringSize)
-                        .shadow(color: NNTSColors.cadmiumYellow.opacity(0.85), radius: 8, x: 0, y: 0)
-                        .shadow(color: NNTSColors.cobaltBlue.opacity(0.40), radius: 10, x: 0, y: 0)
+                    if let ns = namespace {
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.white, NNTSColors.cadmiumYellow],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: isLarge ? 2.8 : 2.2
+                            )
+                            .frame(width: ringSize, height: ringSize)
+                            .shadow(color: NNTSColors.cadmiumYellow.opacity(0.85), radius: 8, x: 0, y: 0)
+                            .shadow(color: NNTSColors.cobaltBlue.opacity(0.40), radius: 10, x: 0, y: 0)
+                            .matchedGeometryEffect(id: "active_profile_cursor", in: ns)
+                    } else {
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.white, NNTSColors.cadmiumYellow],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: isLarge ? 2.8 : 2.2
+                            )
+                            .frame(width: ringSize, height: ringSize)
+                            .shadow(color: NNTSColors.cadmiumYellow.opacity(0.85), radius: 8, x: 0, y: 0)
+                            .shadow(color: NNTSColors.cobaltBlue.opacity(0.40), radius: 10, x: 0, y: 0)
+                    }
                 } else {
                     Circle()
-                        .stroke(Color.white.opacity(0.24), lineWidth: 1.0)
+                        .stroke(Color.white.opacity(0.20), lineWidth: 1.0)
                         .frame(width: ringSize - 2, height: ringSize - 2)
+                }
+                
+                // 4. Current Window Status Pip (Apple Emerald LED at Top-Right)
+                if isCurrentActive {
+                    Circle()
+                        .fill(NNTSColors.appleEmerald)
+                        .frame(width: pipSize, height: pipSize)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color.black.opacity(0.7), lineWidth: 1.0)
+                        )
+                        .shadow(color: NNTSColors.appleEmerald.opacity(0.9), radius: 3, x: 0, y: 0)
+                        .offset(x: (ringSize / 2) - (pipSize * 0.6), y: -((ringSize / 2) - (pipSize * 0.6)))
+                }
+                
+                // 5. Hotkey Slot Keycap Badge (at Bottom-Right)
+                if showBadge {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: badgeSize * 0.35, style: .continuous)
+                            .fill(isSelected ? NNTSColors.cadmiumYellow : Color(red: 0.12, green: 0.13, blue: 0.17).opacity(0.92))
+                        
+                        RoundedRectangle(cornerRadius: badgeSize * 0.35, style: .continuous)
+                            .strokeBorder(
+                                isSelected ? Color.white.opacity(0.8) : Color.white.opacity(0.35),
+                                lineWidth: 0.8
+                            )
+                        
+                        Text("\(slotIndex)")
+                            .font(NNTSFont.slotDigit(size: isLarge ? 11.5 : (isCompact ? 9.5 : 10.5)))
+                            .foregroundColor(isSelected ? NNTSColors.obsidianBase : NNTSColors.warmCream)
+                    }
+                    .frame(width: badgeSize, height: badgeSize)
+                    .shadow(color: Color.black.opacity(0.45), radius: 2, y: 1)
+                    .offset(x: (ringSize / 2) - (badgeSize * 0.45), y: (ringSize / 2) - (badgeSize * 0.45))
                 }
             }
             .frame(width: ringSize, height: ringSize)
-            
-            if showBadge {
-                Text("\(slotIndex)")
-                    .font(NNTSFont.slotDigit(size: isLarge ? 13 : (isCompact ? 11.5 : 12.5)))
-                    .foregroundColor(isSelected ? NNTSColors.cadmiumYellow : NNTSColors.warmCream.opacity(0.85))
-                    .shadow(color: Color.black.opacity(0.45), radius: 1.5, y: 1)
-                    .padding(.top, 3)
-            }
         }
         .frame(width: colWidth)
         .padding(.vertical, isCompact ? 2 : 3)
-        .scaleEffect(isSelected ? 1.08 : 0.94)
+        .scaleEffect(isSelected ? 1.06 : 0.95)
         .opacity(isSelected ? 1.0 : 0.82)
         .animation(NNTSMotion.interactiveSnap, value: isSelected)
     }

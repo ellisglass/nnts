@@ -94,7 +94,26 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
             return
         }
         
-        // 1. Try reading unified bundle from macOS Keychain (1 single access)
+        // 1. Fast path: Check verified cryptographic receipt in UserDefaults first.
+        // This avoids touching macOS Keychain on application startup and completely eliminates
+        // the "NNTS wants to access key in your keychain" dialog across builds and updates.
+        if let fallbackKey = Self.storage.string(forKey: "NNTSProLicenseKey"),
+           validateLicenseKey(fallbackKey),
+           let fallbackAid = Self.storage.string(forKey: "NNTSProActivationId"),
+           !fallbackAid.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let savedReceipt = Self.storage.string(forKey: "NNTSProReceiptToken")
+            let expectedReceipt = Self.computeReceiptToken(key: fallbackKey, activationId: fallbackAid)
+            if savedReceipt == expectedReceipt || (Self.isRunningTests && Self.testIgnoreReceiptCheckInTests) {
+                self.internalIsPro = true
+                self.activeLicenseKey = fallbackKey
+                self.activeActivationId = fallbackAid
+                return
+            } else {
+                logger.warning("Tampered or unverified UserDefaults license detected; ignoring.")
+            }
+        }
+        
+        // 2. Fallback: Try reading unified bundle from macOS Keychain (only if UserDefaults is empty)
         if let bundle = readKeychainBundle(),
            validateLicenseKey(bundle.key),
            !bundle.activationId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -103,13 +122,17 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
                 self.internalIsPro = true
                 self.activeLicenseKey = bundle.key
                 self.activeActivationId = bundle.activationId
+                // Sync to UserDefaults so future launches never need to hit Keychain
+                Self.storage.set(bundle.key, forKey: "NNTSProLicenseKey")
+                Self.storage.set(bundle.activationId, forKey: "NNTSProActivationId")
+                Self.storage.set(bundle.receipt, forKey: "NNTSProReceiptToken")
                 return
             } else {
                 logger.warning("Tampered or unverified Keychain license bundle detected; ignoring.")
             }
         }
         
-        // 2. Migration fallback: Check legacy separate Keychain items if unified bundle is absent
+        // 3. Migration fallback: Check legacy separate Keychain items if unified bundle is absent
         if let key = readKeychainLicense(),
            validateLicenseKey(key),
            let aid = readKeychainActivationId() ?? Self.storage.string(forKey: "NNTSProActivationId"),
@@ -129,29 +152,13 @@ public final class LicenseEngine: ObservableObject, @unchecked Sendable {
                     deleteKeychainReceipt()
                     logger.info("Successfully migrated legacy Keychain license to unified bundle.")
                 }
+                // Sync to UserDefaults so future launches never need to hit Keychain
+                Self.storage.set(key, forKey: "NNTSProLicenseKey")
+                Self.storage.set(aid, forKey: "NNTSProActivationId")
+                Self.storage.set(savedReceipt ?? expectedReceipt, forKey: "NNTSProReceiptToken")
                 return
             } else {
                 logger.warning("Tampered or unverified Keychain license detected; ignoring.")
-            }
-        }
-        
-        // 3. Fallback to UserDefaults (Requires valid activationId and cryptographic receipt verification)
-        if let fallbackKey = Self.storage.string(forKey: "NNTSProLicenseKey"),
-           validateLicenseKey(fallbackKey),
-           let fallbackAid = Self.storage.string(forKey: "NNTSProActivationId"),
-           !fallbackAid.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let savedReceipt = Self.storage.string(forKey: "NNTSProReceiptToken")
-            let expectedReceipt = Self.computeReceiptToken(key: fallbackKey, activationId: fallbackAid)
-            if savedReceipt == expectedReceipt || (Self.isRunningTests && Self.testIgnoreReceiptCheckInTests) {
-                self.internalIsPro = true
-                self.activeLicenseKey = fallbackKey
-                self.activeActivationId = fallbackAid
-                // Promote UserDefaults license to unified Keychain bundle
-                let promotedBundle = LicenseBundle(key: fallbackKey, activationId: fallbackAid, receipt: savedReceipt ?? expectedReceipt)
-                _ = saveKeychainBundle(promotedBundle)
-                return
-            } else {
-                logger.warning("Tampered or unverified UserDefaults license detected; ignoring.")
             }
         }
         

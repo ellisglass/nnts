@@ -5,6 +5,7 @@ import SwiftUI
 // MARK: - Hotkey Engine Callbacks & Dynamic Shortcut Routing
 extension AppDelegate {
     internal func handleAppLetterTrigger(char: Character, items: [AntigravityItem]) {
+        statusItem?.menu?.cancelTracking()
         logger.info("Caps-Lock + \(char) triggered for \(items.map { $0.name }).")
         TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Caps-Lock + \(char) letter cycle.")
         guard !items.isEmpty else { return }
@@ -29,7 +30,7 @@ extension AppDelegate {
                 initialProfIdx = profiles.firstIndex(where: { $0.dir == activeDir }) ?? 0
             }
             
-            let frontBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            let frontBundleID = AppGroupEngine.mockFrontmostBundleID ?? NSWorkspace.shared.frontmostApplication?.bundleIdentifier
             initialIdx = AppGroupEngine.prioritizedItemIndex(for: items, letter: char, frontmostBundleID: frontBundleID)
             
             MinimalHUDWindow.shared.showAppGroup(mode: .antigravity, items: items, selectedIndex: initialIdx, profileIndex: initialProfIdx)
@@ -81,6 +82,7 @@ extension AppDelegate {
     }
     
     internal func handleChromeTrigger() {
+        statusItem?.menu?.cancelTracking()
         let profileEngine = ChromeProfileEngine.shared
         logger.info("Caps-Lock + C triggered.")
         TelemetryBuffer.shared.append(category: "switcher", level: "INFO", message: "Caps-Lock + C triggered.")

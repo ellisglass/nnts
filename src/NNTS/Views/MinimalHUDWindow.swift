@@ -36,6 +36,7 @@ public final class ChromeSwitcherState: ObservableObject {
     @Published public var mode: SwitcherMode = .chrome
     @Published public var profiles: [ChromeProfile] = []
     @Published public var antigravityItems: [AntigravityItem] = []
+    @Published public var activeProfileDir: String? = nil
     @Published public var selectedIndex: Int = 0 {
         didSet {
             if mode == .chrome {
@@ -233,9 +234,14 @@ public struct MinimalHUDView: View {
     }
     
     public var body: some View {
-        ZStack {
+        Group {
             if isProfileMode {
                 // Profile Switcher View (Focused on large avatars and prominent profile identity)
+                let activeDir = state.activeProfileDir ?? ChromeProfileEngine.shared.getActiveProfileDir()
+                let count = state.profiles.count
+                let useCompact = count > 6
+                let spacing: CGFloat = useCompact ? 5 : (count <= 4 ? 14 : 8)
+                
                 VStack(spacing: 0) {
                     // 1. Browser context header
                     HStack(spacing: 7) {
@@ -249,16 +255,24 @@ public struct MinimalHUDView: View {
                             .font(NNTSFont.display(size: 13))
                             .foregroundColor(NNTSColors.warmCream.opacity(0.70))
                             .shadow(color: Color.black.opacity(0.40), radius: 2, y: 1)
+                        
+                        if hasMultipleApps, let cycle = cycleIndicator {
+                            Text(cycle)
+                                .font(NNTSFont.display(size: 10.5))
+                                .foregroundColor(NNTSColors.cadmiumYellow)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.12))
+                                )
+                        }
                     }
-                    .padding(.top, 22)
+                    .padding(.top, 20)
                     
-                    Spacer(minLength: 10)
+                    Spacer(minLength: 8)
                     
                     // 2. Large Profile Avatars (Big, vibrant icons front and center)
-                    let count = state.profiles.count
-                    let useCompact = count > 6
-                    let spacing: CGFloat = useCompact ? 6 : (count <= 4 ? 14 : 8)
-                    
                     HStack(spacing: spacing) {
                         ForEach(Array(state.profiles.enumerated()), id: \.element.id) { idx, profile in
                             ProfileAvatarView(
@@ -267,17 +281,18 @@ public struct MinimalHUDView: View {
                                 slotIndex: idx + 1,
                                 isLarge: !useCompact && count <= 4,
                                 isCompact: useCompact,
-                                showBadge: false,
+                                showBadge: true,
+                                isCurrentActive: profile.dir == activeDir,
                                 namespace: selectionNamespace
                             )
                         }
                     }
                     .id("profiles_strip_\(count)")
                     
-                    Spacer(minLength: 10)
+                    Spacer(minLength: 8)
                     
-                    // 3. Prominent Selected Profile Name (Space Grotesk Bold 24pt, warm cream)
-                    VStack(spacing: 3) {
+                    // 3. Prominent Selected Profile Name & Contextual Subtitle
+                    VStack(spacing: 4) {
                         if let prof = activeProfile {
                             Text(prof.effectiveName)
                                 .font(NNTSFont.display(size: 24))
@@ -287,15 +302,22 @@ public struct MinimalHUDView: View {
                                 .truncationMode(.middle)
                                 .frame(maxWidth: 340)
                                 .id("profile_name_\(prof.effectiveName)")
-                                .transition(.asymmetric(
-                                    insertion: .opacity.combined(with: .scale(scale: 0.96)),
-                                    removal: .opacity.animation(.easeOut(duration: 0.05))
-                                ))
+                                .transition(.identity)
                             
-                            if count > 1 {
-                                Text("\(state.selectedProfileIndex + 1) of \(count)")
-                                    .font(NNTSFont.display(size: 11.5))
-                                    .foregroundColor(NNTSColors.warmCream.opacity(0.45))
+                            HStack(spacing: 5) {
+                                if prof.dir == activeDir {
+                                    Circle()
+                                        .fill(NNTSColors.appleEmerald)
+                                        .frame(width: 5, height: 5)
+                                        .shadow(color: NNTSColors.appleEmerald.opacity(0.8), radius: 2)
+                                    Text("Active Now • caps lock + \(prof.index)")
+                                        .font(NNTSFont.display(size: 11.5))
+                                        .foregroundColor(NNTSColors.appleEmerald.opacity(0.90))
+                                } else {
+                                    Text("caps lock + \(prof.index) • release to switch")
+                                        .font(NNTSFont.display(size: 11.5))
+                                        .foregroundColor(NNTSColors.warmCream.opacity(0.50))
+                                }
                             }
                         } else {
                             Text(activeName)
@@ -305,8 +327,62 @@ public struct MinimalHUDView: View {
                                 .lineLimit(1)
                         }
                     }
-                    .padding(.bottom, 22)
+                    
+                    Spacer(minLength: 6)
+                    
+                    // 4. Subtle Bauhaus Navigation Hints Footer
+                    HStack(spacing: 12) {
+                        if count > 1 {
+                            HStack(spacing: 4) {
+                                Text("1–\(count)")
+                                    .font(NNTSFont.slotDigit(size: 10))
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 1)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 3)
+                                            .fill(Color.white.opacity(0.10))
+                                    )
+                                Text("jump")
+                                    .font(NNTSFont.display(size: 10))
+                            }
+                            
+                            Text("•")
+                                .opacity(0.3)
+                            
+                            HStack(spacing: 4) {
+                                Text("⇥ / →")
+                                    .font(NNTSFont.slotDigit(size: 10))
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 1)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 3)
+                                            .fill(Color.white.opacity(0.10))
+                                    )
+                                Text("cycle")
+                                    .font(NNTSFont.display(size: 10))
+                            }
+                            
+                            Text("•")
+                                .opacity(0.3)
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Text("esc")
+                                .font(NNTSFont.slotDigit(size: 10))
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .fill(Color.white.opacity(0.10))
+                                )
+                            Text("cancel")
+                                .font(NNTSFont.display(size: 10))
+                        }
+                    }
+                    .foregroundColor(NNTSColors.warmCream.opacity(0.40))
+                    .padding(.bottom, 16)
                 }
+                .transition(.identity)
             } else {
                 // Application Switcher View
                 VStack(spacing: 0) {
@@ -335,7 +411,7 @@ public struct MinimalHUDView: View {
                             }
                         }
                         .padding(.top, 18)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .transition(.identity)
                     } else {
                         Color.clear.frame(height: 18)
                     }
@@ -349,10 +425,7 @@ public struct MinimalHUDView: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 96, height: 96)
                             .id("hero_icon_\(activeName)")
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.94).combined(with: .opacity),
-                                removal: .opacity.animation(.easeOut(duration: 0.05))
-                            ))
+                            .transition(.identity)
                             .shadow(color: Color.black.opacity(0.35), radius: 14, x: 0, y: 7)
                         
                         Text(activeName)
@@ -361,10 +434,7 @@ public struct MinimalHUDView: View {
                             .shadow(color: Color.black.opacity(0.45), radius: 4, y: 2)
                             .lineLimit(1)
                             .id("hero_title_\(activeName)")
-                            .transition(.asymmetric(
-                                insertion: .opacity.combined(with: .scale(scale: 0.96)),
-                                removal: .opacity.animation(.easeOut(duration: 0.04))
-                            ))
+                            .transition(.identity)
                         
                         if let cycle = cycleIndicator {
                             Text(cycle)
@@ -377,8 +447,11 @@ public struct MinimalHUDView: View {
                     
                     Color.clear.frame(height: 18)
                 }
+                .transition(.identity)
             }
         }
+        .animation(nil, value: isProfileMode)
+        .transition(.identity)
         .frame(width: Self.hudWidth, height: Self.hudHeight)
         .background(
             MacNativeLiquidGlassBackground(cornerRadius: NNTSGeometry.hudCornerRadius, material: .popover)
@@ -423,16 +496,20 @@ public final class MinimalHUDWindow: NSPanel {
     }
     
     public func show(profiles: [ChromeProfile], selectedIndex: Int) {
-        withAnimation(NNTSMotion.interactiveSnap) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
             ChromeSwitcherState.shared.mode = .chrome
             ChromeSwitcherState.shared.profiles = profiles
             ChromeSwitcherState.shared.antigravityItems = []
+            ChromeSwitcherState.shared.activeProfileDir = ChromeProfileEngine.shared.getActiveProfileDir()
             let validIndex = profiles.isEmpty ? 0 : max(0, min(selectedIndex, profiles.count - 1))
             ChromeSwitcherState.shared.selectedIndex = validIndex
             ChromeSwitcherState.shared.selectedProfileIndex = validIndex
             ChromeSwitcherState.shared.isVisible = true
         }
         
+        AppDelegate.shared?.statusItem?.menu?.cancelTracking()
         reposition()
         self.alphaValue = 1.0
         self.orderFrontRegardless()
@@ -444,7 +521,9 @@ public final class MinimalHUDWindow: NSPanel {
     }
     
     public func showAppGroup(mode: SwitcherMode, items: [AntigravityItem], selectedIndex: Int, profileIndex: Int = 0) {
-        withAnimation(NNTSMotion.interactiveSnap) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
             ChromeSwitcherState.shared.mode = mode
             ChromeSwitcherState.shared.antigravityItems = items
             
@@ -455,8 +534,10 @@ public final class MinimalHUDWindow: NSPanel {
             })
             if containsBrowser {
                 ChromeSwitcherState.shared.profiles = profileEngine.selectedProfiles
+                ChromeSwitcherState.shared.activeProfileDir = profileEngine.getActiveProfileDir()
             } else {
                 ChromeSwitcherState.shared.profiles = []
+                ChromeSwitcherState.shared.activeProfileDir = nil
             }
             
             let validIndex = items.isEmpty ? 0 : max(0, min(selectedIndex, items.count - 1))
@@ -468,6 +549,7 @@ public final class MinimalHUDWindow: NSPanel {
             ChromeSwitcherState.shared.isVisible = true
         }
         
+        AppDelegate.shared?.statusItem?.menu?.cancelTracking()
         reposition()
         self.alphaValue = 1.0
         self.orderFrontRegardless()

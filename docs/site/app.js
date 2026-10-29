@@ -275,6 +275,7 @@
       if (turnOn) {
         this.isPowerOn = true;
         this.flashIr();
+        audio.playRelayClick();
         audio.playTvPowerOn();
 
         // Update TV Indicators
@@ -316,6 +317,7 @@
       } else {
         this.isPowerOn = false;
         this.flashIr();
+        audio.playRelayClick();
         audio.playTvPowerOff();
 
         if (this.osdOverlay) {
@@ -456,6 +458,15 @@
       }
       if (this.remoteChDown) {
         this.remoteChDown.addEventListener("click", () => this.nextChannel());
+      }
+
+      // Remote Prop Body Click Tactile Feedback
+      const remoteProp = document.getElementById("remote-prop-image");
+      if (remoteProp) {
+        remoteProp.addEventListener("click", () => {
+          this.flashIr();
+          audio.playRelayClick();
+        });
       }
 
       // TV Hardware Power Button
@@ -987,7 +998,7 @@
   // ==========================================================================
   // 6. INITIALIZATION & BINDINGS
   // ==========================================================================
-  document.addEventListener("DOMContentLoaded", () => {
+  function initApp() {
     // 1. Audio Button Toggle
     const audioBtn = document.getElementById("audio-toggle-btn");
     const updateAudioButtonUI = (enabled) => {
@@ -1039,5 +1050,11 @@
     // 4. Simulators & Proofs
     setupBentoLabInteractions();
     setupBrewInstallCopy();
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initApp);
+  } else {
+    initApp();
+  }
 })();

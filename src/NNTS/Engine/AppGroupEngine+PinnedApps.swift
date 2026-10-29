@@ -230,7 +230,6 @@ extension AppGroupEngine {
         }
         let capped = Array(list.prefix(maxPinnedQuickApps))
         UserDefaults.standard.set(capped, forKey: "SelectedAppBundleIDs")
-        selectedBundleIDs = Set(capped)
     }
     
     public static func isAppSelected(bundleID: String) -> Bool {
@@ -265,6 +264,60 @@ extension AppGroupEngine {
         } else {
             selectApp(bundleID: bundleID)
         }
+    }
+    
+    /// Moves a pinned application up within its letter group.
+    /// Swaps the app's position with the previous app sharing the same first letter.
+    @discardableResult
+    public static func movePinnedAppUp(bundleID: String) -> Bool {
+        let pinned = pinnedAppItems()
+        guard let currentItem = pinned.first(where: { $0.bundleID == bundleID }) else { return false }
+        let letter = currentItem.firstLetter
+        
+        var list = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs") ?? pinned.map { $0.bundleID }
+        guard let currentIdx = list.firstIndex(of: bundleID) else { return false }
+        
+        // Find preceding app in list with the same first letter
+        var prevIdx: Int? = nil
+        for i in stride(from: currentIdx - 1, through: 0, by: -1) {
+            let bID = list[i]
+            if let item = pinned.first(where: { $0.bundleID == bID }), item.firstLetter == letter {
+                prevIdx = i
+                break
+            }
+        }
+        guard let targetIdx = prevIdx else { return false }
+        list.swapAt(currentIdx, targetIdx)
+        let capped = Array(list.prefix(maxPinnedQuickApps))
+        UserDefaults.standard.set(capped, forKey: "SelectedAppBundleIDs")
+        return true
+    }
+    
+    /// Moves a pinned application down within its letter group.
+    /// Swaps the app's position with the next app sharing the same first letter.
+    @discardableResult
+    public static func movePinnedAppDown(bundleID: String) -> Bool {
+        let pinned = pinnedAppItems()
+        guard let currentItem = pinned.first(where: { $0.bundleID == bundleID }) else { return false }
+        let letter = currentItem.firstLetter
+        
+        var list = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs") ?? pinned.map { $0.bundleID }
+        guard let currentIdx = list.firstIndex(of: bundleID) else { return false }
+        
+        // Find succeeding app in list with the same first letter
+        var nextIdx: Int? = nil
+        for i in (currentIdx + 1)..<list.count {
+            let bID = list[i]
+            if let item = pinned.first(where: { $0.bundleID == bID }), item.firstLetter == letter {
+                nextIdx = i
+                break
+            }
+        }
+        guard let targetIdx = nextIdx else { return false }
+        list.swapAt(currentIdx, targetIdx)
+        let capped = Array(list.prefix(maxPinnedQuickApps))
+        UserDefaults.standard.set(capped, forKey: "SelectedAppBundleIDs")
+        return true
     }
     
     public static func allDiscoveredItems() -> [AntigravityItem] {
@@ -362,6 +415,74 @@ extension AppGroupEngine {
             }
         }
         
+        return result
+    }
+    
+    /// Groups registered and discovered applications by letter for the status menu.
+    /// Prioritizes letters with multiple applications (cyclic groups like A, S, T) and user-pinned apps.
+    public static func statusMenuLetterGroups() -> [(letter: Character, items: [AntigravityItem])] {
+        var letterMap: [Character: [AntigravityItem]] = [:]
+        var seenBundleIDs = Set<String>()
+        
+        // 1. Antigravity Engine (letter 'A' items: Antigravity, Antigravity IDE)
+        for item in AntigravityEngine.shared.items {
+            let char = item.firstLetter
+            if !seenBundleIDs.contains(item.bundleID) {
+                seenBundleIDs.insert(item.bundleID)
+                if letterMap[char] == nil { letterMap[char] = [] }
+                letterMap[char]!.append(item)
+            }
+        }
+        
+        // 2. User-Pinned Apps
+        for item in pinnedAppItems() {
+            let char = item.firstLetter
+            if !seenBundleIDs.contains(item.bundleID) {
+                seenBundleIDs.insert(item.bundleID)
+                if letterMap[char] == nil { letterMap[char] = [] }
+                letterMap[char]!.append(item)
+            }
+        }
+        
+        // 3. Multi-app discovered groups from pre-configured engines
+        let discovered = discoveredItemsByLetter()
+        for (char, items) in discovered {
+            for item in items {
+                if !seenBundleIDs.contains(item.bundleID) {
+                    seenBundleIDs.insert(item.bundleID)
+                    if letterMap[char] == nil { letterMap[char] = [] }
+                    letterMap[char]!.append(item)
+                }
+            }
+        }
+        
+        // Filter and sort:
+        // Prioritize letters with multiple applications (cyclic groups), then alphabetical
+        let sortedKeys = letterMap.keys.sorted { char1, char2 in
+            let count1 = letterMap[char1]?.count ?? 0
+            let count2 = letterMap[char2]?.count ?? 0
+            if count1 != count2 {
+                return count1 > count2
+            }
+            return char1 < char2
+        }
+        
+        var result: [(letter: Character, items: [AntigravityItem])] = []
+        for key in sortedKeys {
+            guard let rawItems = letterMap[key], !rawItems.isEmpty else { continue }
+            let reindexed = rawItems.enumerated().map { (idx, item) in
+                AntigravityItem(
+                    name: item.name,
+                    bundleID: item.bundleID,
+                    path: item.path,
+                    icon: item.icon,
+                    index: idx + 1
+                )
+            }
+            result.append((letter: key, items: reindexed))
+        }
+        
+        // Return all letter groups to ensure all pinned and discovered quick apps are displayed
         return result
     }
     

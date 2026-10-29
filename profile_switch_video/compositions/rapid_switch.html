@@ -1,0 +1,807 @@
+<template>
+  <style>
+    @font-face {
+      font-family: 'Space Grotesk';
+      src: url('assets/fonts/SpaceGrotesk-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
+    #rapid_switch {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', -apple-system, sans-serif;
+      color: #F8F5EE;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 30%, #161924 0%, #0c0e14 100%);
+    }
+    .scene-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 1560px;
+      position: relative;
+      z-index: 10;
+    }
+    .header-block {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .feature-tag {
+      display: inline-block;
+      background: rgba(30, 86, 160, 0.25);
+      border: 1.5px solid rgba(245, 186, 19, 0.50);
+      color: #F5BA13;
+      padding: 8px 24px;
+      border-radius: 9999px;
+      font-size: 28px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .feature-title {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      color: #F8F5EE;
+    }
+    .feature-desc {
+      font-size: 30px;
+      color: rgba(248, 245, 238, 0.70);
+      font-weight: 500;
+    }
+
+    /* Telemetry Hotkey Indicator Bar */
+    .telemetry-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(20, 23, 31, 0.85);
+      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      padding: 12px 32px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+    .key-btn {
+      background: linear-gradient(180deg, #2b303d 0%, #1a1d26 100%);
+      border: 1.5px solid #444b5c;
+      border-radius: 12px;
+      padding: 8px 20px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #F8F5EE;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    .key-btn.active-hold {
+      background: linear-gradient(180deg, #00E676 0%, #13396d 100%);
+      border-color: #00E676;
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
+    }
+    .key-btn.active-digit {
+      background: linear-gradient(180deg, #F5BA13 0%, #c49208 100%);
+      border-color: #ffffff;
+      color: #1E232D;
+      box-shadow: 0 0 24px rgba(245, 186, 19, 0.85);
+    }
+    .key-plus {
+      font-size: 28px;
+      color: rgba(248, 245, 238, 0.4);
+      font-weight: 700;
+    }
+
+    /* Stage Area: Windows Stack + Floating HUD */
+    .stage-container {
+      position: relative;
+      width: 1040px;
+      height: 480px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Background macOS Chrome Windows */
+    .chrome-window {
+      position: absolute;
+      width: 820px;
+      height: 400px;
+      background: #181b24;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      opacity: 0.20;
+      transform: scale(0.92) translateY(24px);
+      filter: blur(2px);
+    }
+    .chrome-window:not(.is-raised) .chrome-tab-pill {
+      opacity: 0;
+    }
+    .chrome-window.is-raised {
+      opacity: 1.0;
+      transform: scale(1.0) translateY(0);
+      border-color: rgba(245, 186, 19, 0.45);
+      box-shadow: 0 32px 85px rgba(0, 0, 0, 0.9), 0 0 32px rgba(245, 186, 19, 0.25);
+      filter: none;
+    }
+    .window-chrome-top {
+      height: 44px;
+      background: #151821;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .chrome-tab-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #252a37;
+      padding: 6px 18px;
+      border-radius: 10px 10px 0 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: #F8F5EE;
+    }
+    .window-body-mock {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: #11131a;
+    }
+    .mock-content-row {
+      height: 20px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Signature NNTS Minimal HUD Window */
+    .hud-window {
+      position: relative;
+      z-index: 50;
+      background: rgba(18, 20, 26, 0.94);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1.5px solid rgba(255, 255, 255, 0.18);
+      border-radius: 36px;
+      padding: 26px 36px;
+      box-shadow: 0 32px 75px rgba(0, 0, 0, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 580px;
+      height: 400px;
+    }
+
+    /* Context Header */
+    .hud-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .hud-browser-icon {
+      width: 26px;
+      height: 26px;
+    }
+    .hud-browser-name {
+      font-size: 28px;
+      font-weight: 700;
+      color: rgba(248, 245, 238, 0.75);
+    }
+
+    /* Avatars Row */
+    .hud-avatars-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      margin-bottom: 24px;
+      width: 100%;
+    }
+    .hud-avatar-item {
+      position: relative;
+      width: 86px;
+      height: 86px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hud-avatar-img {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Active Window Pip (Emerald LED) */
+    .hud-active-pip {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #00E676;
+      border: 2px solid #12141a;
+      box-shadow: 0 0 10px #00E676;
+      opacity: 0;
+    }
+    .hud-active-pip.is-live {
+      opacity: 1;
+    }
+
+    /* Slot Keycap Badge */
+    .hud-slot-badge {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(31, 35, 45, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .hud-slot-badge.selected-badge {
+      background: #F5BA13;
+      border-color: #ffffff;
+      color: #1E232D;
+      box-shadow: 0 0 10px rgba(245, 186, 19, 0.8);
+    }
+
+    /* Magnetic Floating Focus Ring */
+    .hud-focus-ring {
+      position: absolute;
+      width: 98px;
+      height: 98px;
+      border-radius: 50%;
+      border: 3.5px solid #F5BA13;
+      box-shadow: 0 0 18px rgba(245, 186, 19, 0.85), 0 0 28px rgba(30, 86, 160, 0.45);
+      pointer-events: none;
+      top: -6px;
+      left: 87px; /* Exactly centered on avatar 1 */
+    }
+
+    /* Profile Title & Subtitle */
+    .hud-profile-info {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+    .hud-profile-title {
+      font-size: 34px;
+      font-weight: 700;
+      color: #F8F5EE;
+      letter-spacing: -0.01em;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+    .hud-profile-sub {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 28px;
+      font-weight: 500;
+      color: rgba(248, 245, 238, 0.55);
+    }
+    .hud-sub-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00E676;
+      box-shadow: 0 0 8px #00E676;
+    }
+    .hud-profile-sub.active-now {
+      color: #00E676;
+      font-weight: 700;
+    }
+
+    /* Navigation Footer Hints */
+    .hud-nav-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(248, 245, 238, 0.45);
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .nav-pill {
+      background: rgba(255, 255, 255, 0.10);
+      border-radius: 6px;
+      padding: 2px 8px;
+      color: #F8F5EE;
+    }
+
+    /* Ambient Workstation Operator Character (Left) */
+    .ambient-operator {
+      position: absolute;
+      left: 70px;
+      bottom: 50px;
+      width: 360px;
+      height: 360px;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0.35;
+      filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.9));
+    }
+    .operator-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Authentic Sony Trinitron Remote Control Stage (Right) */
+    .remote-stage {
+      position: absolute;
+      right: 120px;
+      bottom: 55px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      z-index: 60;
+    }
+    .remote-header-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(20, 23, 31, 0.90);
+      border: 1.5px solid rgba(255, 255, 255, 0.16);
+      padding: 6px 18px;
+      border-radius: 9999px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+    .remote-model-text {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #F8F5EE;
+    }
+    .remote-led-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #00E676;
+      box-shadow: 0 0 10px #00E676;
+    }
+    .remote-chassis {
+      position: relative;
+      width: 140px;
+      height: 624px;
+      filter: drop-shadow(0 28px 50px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 20px rgba(0, 0, 0, 0.6));
+    }
+    .remote-bg-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: fill;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    /* IR Diode at top center of remote */
+    .remote-ir-diode {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 16px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ir-glow-halo {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #00E676;
+      box-shadow: 0 0 28px 14px #00E676, 0 0 56px 28px rgba(0, 230, 118, 0.75);
+      opacity: 0;
+      transform: scale(0.8);
+      pointer-events: none;
+    }
+    .ir-beam-ray {
+      position: absolute;
+      bottom: 8px;
+      width: 4px;
+      height: 52px;
+      background: linear-gradient(0deg, rgba(0, 230, 118, 0.95) 0%, rgba(0, 230, 118, 0) 100%);
+      border-radius: 2px;
+      box-shadow: 0 0 16px #00E676;
+      opacity: 0;
+      transform-origin: bottom center;
+      pointer-events: none;
+    }
+
+    /* Remote Button Hotspots corresponding to buttons 1, 2, 3 */
+    .remote-btn-hotspot {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      box-sizing: border-box;
+    }
+    .btn-cap-overlay {
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      border: 1.5px solid transparent;
+      box-sizing: border-box;
+      transform-origin: center center;
+    }
+    .btn-cap-overlay.is-depressed {
+      transform: scale(0.92) translateY(2px);
+      background: rgba(0, 230, 118, 0.32);
+      border: 1.5px solid #00E676;
+      box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.9), 0 0 16px rgba(0, 230, 118, 0.95);
+    }
+  </style>
+
+  <div id="rapid_switch" data-composition-id="rapid_switch" data-width="1920" data-height="1080">
+    <!-- Ambient Workstation Operator Character (Left) -->
+    <div class="ambient-operator" id="ambient-operator" data-layout-ignore="true">
+      <img src="assets/images/character.png" alt="Workstation Operator" class="operator-img" />
+    </div>
+
+    <!-- Center Content -->
+    <div class="scene-content">
+      <!-- Header -->
+      <div class="header-block" id="header-block">
+        <div class="feature-tag">Killer Feature #1</div>
+        <h1 class="feature-title">Instant Profile Switching</h1>
+        <p class="feature-desc">caps lock + 1..8 raises any Chromium window directly</p>
+      </div>
+
+      <!-- Telemetry Hotkey Indicator -->
+      <div class="telemetry-bar" id="telemetry-bar">
+        <div class="key-btn active-hold" id="key-caps">caps lock</div>
+        <div class="key-plus">+</div>
+        <div class="key-btn" id="key-digit">1</div>
+      </div>
+
+      <!-- Stage: Browser Windows + Minimal HUD Overlay -->
+      <div class="stage-container" id="stage-container">
+        <!-- Background Chrome Window 1 (Personal) -->
+        <div class="chrome-window is-raised" id="win-personal" style="z-index: 10;">
+          <div class="window-chrome-top">
+            <div class="traffic-lights" style="display: flex; gap: 8px;" data-layout-ignore="true">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57;"></div>
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e;"></div>
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #28c840;"></div>
+            </div>
+            <div class="chrome-tab-pill" data-layout-ignore="true">
+              <span style="display:inline-block; width:16px; height:16px; border-radius:50%; background:#00E676;" data-layout-ignore="true"></span>
+              <span data-layout-ignore="true">Personal — YouTube & Mail</span>
+            </div>
+          </div>
+          <div class="window-body-mock" data-layout-ignore="true">
+            <div class="mock-content-row" style="width: 45%;"></div>
+            <div class="mock-content-row" style="width: 70%;"></div>
+            <div class="mock-content-row" style="width: 35%;"></div>
+          </div>
+        </div>
+
+        <!-- Background Chrome Window 2 (Work) -->
+        <div class="chrome-window" id="win-work" style="z-index: 11;">
+          <div class="window-chrome-top">
+            <div class="traffic-lights" style="display: flex; gap: 8px;" data-layout-ignore="true">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57;"></div>
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e;"></div>
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #28c840;"></div>
+            </div>
+            <div class="chrome-tab-pill" data-layout-ignore="true">
+              <span style="display:inline-block; width:16px; height:16px; border-radius:50%; background:#F5BA13;" data-layout-ignore="true"></span>
+              <span data-layout-ignore="true">Work — GitHub & PR Reviews</span>
+            </div>
+          </div>
+          <div class="window-body-mock" data-layout-ignore="true">
+            <div class="mock-content-row" style="width: 60%;"></div>
+            <div class="mock-content-row" style="width: 80%;"></div>
+            <div class="mock-content-row" style="width: 50%;"></div>
+          </div>
+        </div>
+
+        <!-- Background Chrome Window 3 (Client) -->
+        <div class="chrome-window" id="win-client" style="z-index: 12;">
+          <div class="window-chrome-top">
+            <div class="traffic-lights" style="display: flex; gap: 8px;" data-layout-ignore="true">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57;"></div>
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e;"></div>
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #28c840;"></div>
+            </div>
+            <div class="chrome-tab-pill" data-layout-ignore="true">
+              <span style="display:inline-block; width:16px; height:16px; border-radius:50%; background:#00E676;" data-layout-ignore="true"></span>
+              <span data-layout-ignore="true">Client — Production Staging</span>
+            </div>
+          </div>
+          <div class="window-body-mock" data-layout-ignore="true">
+            <div class="mock-content-row" style="width: 55%;"></div>
+            <div class="mock-content-row" style="width: 75%;"></div>
+            <div class="mock-content-row" style="width: 40%;"></div>
+          </div>
+        </div>
+
+        <!-- Floating NNTS Minimal HUD -->
+        <div class="hud-window" id="hud-window">
+          <!-- Context Header -->
+          <div class="hud-header">
+            <img src="assets/images/icon_chrome.png" alt="Chrome" class="hud-browser-icon" />
+            <span class="hud-browser-name">Google Chrome</span>
+          </div>
+
+          <!-- Avatars Strip with Magnetic Focus Ring -->
+          <div class="hud-avatars-row" id="hud-avatars-row">
+            <!-- Focus Ring (positions: 103px -> 221px -> 339px) -->
+            <div class="hud-focus-ring" id="hud-focus-ring" data-layout-allow-overflow="true"></div>
+
+            <!-- Avatar 1 (Personal) -->
+            <div class="hud-avatar-item" id="item-personal">
+              <img src="assets/profiles/personal.png" alt="Personal" class="hud-avatar-img" />
+              <div class="hud-active-pip is-live" id="pip-personal" data-layout-ignore="true"></div>
+              <div class="hud-slot-badge selected-badge" id="badge-personal">1</div>
+            </div>
+
+            <!-- Avatar 2 (Work) -->
+            <div class="hud-avatar-item" id="item-work">
+              <img src="assets/profiles/work.png" alt="Work" class="hud-avatar-img" />
+              <div class="hud-active-pip" id="pip-work" data-layout-ignore="true"></div>
+              <div class="hud-slot-badge" id="badge-work">2</div>
+            </div>
+
+            <!-- Avatar 3 (Client) -->
+            <div class="hud-avatar-item" id="item-client">
+              <img src="assets/profiles/client.png" alt="Client" class="hud-avatar-img" />
+              <div class="hud-active-pip" id="pip-client" data-layout-ignore="true"></div>
+              <div class="hud-slot-badge" id="badge-client">3</div>
+            </div>
+          </div>
+
+          <!-- Profile Title & Contextual Subtitle -->
+          <div class="hud-profile-info">
+            <div class="hud-profile-title" id="hud-title">Personal</div>
+            <div class="hud-profile-sub active-now" id="hud-sub">
+              <div class="hud-sub-dot" id="hud-sub-dot"></div>
+              <span id="hud-sub-text">Active Now • caps lock + 1</span>
+            </div>
+          </div>
+
+          <!-- Footer Hints -->
+          <div class="hud-nav-footer">
+            <span class="nav-pill">1–3</span>
+            <span>jump</span>
+            <span>•</span>
+            <span class="nav-pill">⇥</span>
+            <span>cycle</span>
+            <span>•</span>
+            <span class="nav-pill">esc</span>
+            <span>cancel</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Authentic Sony Trinitron Remote Control (RM-NNTS) (Right) -->
+    <div class="remote-stage" id="remote-stage" data-layout-ignore="true">
+      <!-- Device Header Badge -->
+      <div class="remote-header-tag" data-layout-ignore="true">
+        <span class="remote-model-text">RM-NNTS</span>
+        <div class="remote-led-status-dot" id="remote-status-dot"></div>
+      </div>
+
+      <!-- Remote Chassis Body -->
+      <div class="remote-chassis" id="remote-chassis">
+        <img src="assets/images/remote.png" alt="RM-NNTS Remote" class="remote-bg-img" />
+
+        <!-- High-Intensity Emerald IR Diode Emitter (Top) -->
+        <div class="remote-ir-diode" id="remote-ir-diode" data-layout-ignore="true">
+          <div class="ir-glow-halo" id="ir-halo"></div>
+          <div class="ir-beam-ray" id="ir-beam"></div>
+        </div>
+
+        <!-- Button 1 Hotspot (left col, row 1) -->
+        <div class="remote-btn-hotspot" id="remote-btn-1" style="left: 10.06%; top: 17.06%; width: 18.99%; height: 4.52%;" data-layout-ignore="true">
+          <div class="btn-cap-overlay is-depressed" id="btn-cap-1"></div>
+        </div>
+
+        <!-- Button 2 Hotspot (center col, row 1) -->
+        <div class="remote-btn-hotspot" id="remote-btn-2" style="left: 40.22%; top: 17.06%; width: 18.99%; height: 4.52%;" data-layout-ignore="true">
+          <div class="btn-cap-overlay" id="btn-cap-2"></div>
+        </div>
+
+        <!-- Button 3 Hotspot (right col, row 1) -->
+        <div class="remote-btn-hotspot" id="remote-btn-3" style="left: 69.27%; top: 17.06%; width: 18.99%; height: 4.52%;" data-layout-ignore="true">
+          <div class="btn-cap-overlay" id="btn-cap-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.getElementById('rapid_switch');
+      const headerBlock = document.getElementById('header-block');
+      const telemetryBar = document.getElementById('telemetry-bar');
+      const keyDigit = document.getElementById('key-digit');
+      const hudWindow = document.getElementById('hud-window');
+      const focusRing = document.getElementById('hud-focus-ring');
+      const hudTitle = document.getElementById('hud-title');
+      const hudSub = document.getElementById('hud-sub');
+      const hudSubText = document.getElementById('hud-sub-text');
+      const hudSubDot = document.getElementById('hud-sub-dot');
+
+      const badgePersonal = document.getElementById('badge-personal');
+      const badgeWork = document.getElementById('badge-work');
+      const badgeClient = document.getElementById('badge-client');
+
+      const pipPersonal = document.getElementById('pip-personal');
+      const pipWork = document.getElementById('pip-work');
+      const pipClient = document.getElementById('pip-client');
+
+      const winPersonal = document.getElementById('win-personal');
+      const winWork = document.getElementById('win-work');
+      const winClient = document.getElementById('win-client');
+
+      const operator = document.getElementById('ambient-operator');
+      const remoteStage = document.getElementById('remote-stage');
+      const btnCap1 = document.getElementById('btn-cap-1');
+      const btnCap2 = document.getElementById('btn-cap-2');
+      const btnCap3 = document.getElementById('btn-cap-3');
+      const irHalo = document.getElementById('ir-halo');
+      const irBeam = document.getElementById('ir-beam');
+
+      function setRemoteButtonActive(slot) {
+        // slot: 1, 2, 3 or null
+        btnCap1.classList.toggle('is-depressed', slot === 1);
+        btnCap2.classList.toggle('is-depressed', slot === 2);
+        btnCap3.classList.toggle('is-depressed', slot === 3);
+      }
+
+      function addIRFlash(timeline, atTime) {
+        timeline.set([irHalo, irBeam], { opacity: 1, scale: 1.1 }, atTime);
+        timeline.to(irHalo, { scale: 2.2, opacity: 0, duration: 0.24, ease: 'power2.out' }, atTime);
+        timeline.to(irBeam, { scaleY: 1.8, opacity: 0, duration: 0.20, ease: 'power2.out' }, atTime);
+      }
+
+      // Static initial setups outside timeline (visible on frame 0 to avoid first_frame_empty)
+      gsap.set(headerBlock, { opacity: 1, y: 0 });
+      gsap.set(telemetryBar, { opacity: 1, scale: 1 });
+      gsap.set(hudWindow, { opacity: 1, scale: 1 });
+      gsap.set(focusRing, { x: 0 }); // At Avatar 1 (slot 1)
+      gsap.set(operator, { opacity: 0.35, y: 0 });
+      gsap.set(remoteStage, { opacity: 1, y: 0 });
+      setRemoteButtonActive(1);
+
+      const tl = gsap.timeline({ paused: true });
+
+      // Settle motion starting at 0s
+      tl.from(headerBlock, { y: -10, duration: 0.4, ease: 'power2.out' }, 0);
+      tl.from(telemetryBar, { scale: 0.96, duration: 0.4, ease: 'back.out(1.4)' }, 0);
+      tl.from(hudWindow, { scale: 0.98, duration: 0.5, ease: 'back.out(1.2)' }, 0);
+      tl.from(operator, { opacity: 0.1, y: 15, duration: 0.6, ease: 'power2.out' }, 0);
+      tl.from(remoteStage, { y: 20, opacity: 0.4, duration: 0.5, ease: 'back.out(1.3)' }, 0);
+
+      // State 1: Slot 1 (Personal) is active from start
+      tl.call(() => {
+        keyDigit.textContent = '1';
+        keyDigit.classList.add('active-digit');
+        setRemoteButtonActive(1);
+      }, null, 0.1);
+      addIRFlash(tl, 0.1);
+
+      // 0.9s: Start glide to Profile 2 (Work)
+      tl.to(focusRing, { x: 118, duration: 0.35, ease: 'back.out(1.5)' }, 0.9);
+      tl.call(() => {
+        keyDigit.textContent = '2';
+        keyDigit.classList.add('active-digit');
+
+        badgePersonal.classList.remove('selected-badge');
+        badgeWork.classList.add('selected-badge');
+        badgeClient.classList.remove('selected-badge');
+
+        pipPersonal.classList.remove('is-live');
+        pipWork.classList.add('is-live');
+        pipClient.classList.remove('is-live');
+
+        hudTitle.textContent = 'Work';
+        hudSub.className = 'hud-profile-sub active-now';
+        hudSubText.textContent = 'Active Now • caps lock + 2';
+        hudSubDot.style.display = 'block';
+
+        // Remote Button 2 visibly depresses (scale down 0.92 + shadow shift)
+        setRemoteButtonActive(2);
+
+        // Window stack swap: Work rises to front
+        winPersonal.className = 'chrome-window';
+        winPersonal.style.zIndex = '10';
+        winWork.className = 'chrome-window is-raised';
+        winWork.style.zIndex = '15';
+        winClient.className = 'chrome-window';
+        winClient.style.zIndex = '11';
+      }, null, 0.95);
+      addIRFlash(tl, 0.95);
+
+      // 2.6s: Start glide to Profile 3 (Client)
+      tl.to(focusRing, { x: 236, duration: 0.35, ease: 'back.out(1.5)' }, 2.6);
+      tl.call(() => {
+        keyDigit.textContent = '3';
+        keyDigit.classList.add('active-digit');
+
+        badgePersonal.classList.remove('selected-badge');
+        badgeWork.classList.remove('selected-badge');
+        badgeClient.classList.add('selected-badge');
+
+        pipPersonal.classList.remove('is-live');
+        pipWork.classList.remove('is-live');
+        pipClient.classList.add('is-live');
+
+        hudTitle.textContent = 'Client';
+        hudSub.className = 'hud-profile-sub active-now';
+        hudSubText.textContent = 'Active Now • caps lock + 3';
+        hudSubDot.style.display = 'block';
+
+        // Remote Button 3 visibly depresses (scale down 0.92 + shadow shift)
+        setRemoteButtonActive(3);
+
+        // Window stack swap: Client rises to front
+        winPersonal.className = 'chrome-window';
+        winPersonal.style.zIndex = '10';
+        winWork.className = 'chrome-window';
+        winWork.style.zIndex = '11';
+        winClient.className = 'chrome-window is-raised';
+        winClient.style.zIndex = '16';
+      }, null, 2.65);
+      addIRFlash(tl, 2.65);
+
+      // 4.6s: Modifier released! HUD & Telemetry bar hide immediately (as in MinimalHUDWindow.shared.hideImmediate())
+      tl.to([hudWindow, telemetryBar], { opacity: 0, scale: 0.96, duration: 0.25, ease: 'power2.in' }, 4.6);
+      tl.call(() => {
+        // Physical remote button releases upon modifier release
+        setRemoteButtonActive(null);
+      }, null, 4.6);
+
+      // Client window remains proudly raised and focused on screen
+      tl.to(winClient, { scale: 1.02, duration: 0.4, ease: 'power2.out' }, 4.9);
+
+      // 6.2s - 7.0s: Out transition
+      tl.to([headerBlock, winPersonal, winWork, winClient, remoteStage, operator], {
+        opacity: 0,
+        y: -15,
+        duration: 0.5,
+        ease: 'power2.in'
+      }, 6.3);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["rapid_switch"] = tl;
+      if (window.__registerTimeline) {
+        window.__registerTimeline('rapid_switch', tl);
+      }
+    })();
+  </script>
+</template>

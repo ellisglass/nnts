@@ -1,0 +1,195 @@
+<template>
+  <style>
+    @font-face {
+      font-family: 'Space Grotesk';
+      src: url('assets/fonts/SpaceGrotesk-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
+    :root {
+      --ground: #0d0f14;
+      --ink: #F8F5EE;
+      --ink-muted: rgba(248, 245, 238, 0.70);
+      --cadmium-yellow: #F5BA13;
+      --cobalt-blue: #00E676;
+      --apple-emerald: #00E676;
+    }
+    #outro {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 35%, #181c28 0%, #0d0f14 100%);
+    }
+    .clip {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .outro-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 1400px;
+      position: relative;
+    }
+    .hero-visual-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+      margin-bottom: 24px;
+    }
+    .app-icon-img {
+      width: 110px;
+      height: 110px;
+      border-radius: 26px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 32px rgba(245, 186, 19, 0.35);
+    }
+    .character-hero-img {
+      height: 130px;
+      width: 130px;
+      object-fit: contain;
+      filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.8));
+    }
+    .outro-title {
+      font-size: 68px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 12px;
+      color: var(--ink);
+    }
+    .outro-title span {
+      color: var(--cadmium-yellow);
+    }
+    .outro-subtitle {
+      font-size: 30px;
+      color: var(--ink-muted);
+      font-weight: 500;
+      margin-bottom: 32px;
+    }
+    .features-summary-row {
+      display: flex;
+      gap: 18px;
+      margin-bottom: 36px;
+    }
+    .summary-badge {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      padding: 12px 26px;
+      border-radius: 16px;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge-dot-yellow { color: var(--cadmium-yellow); }
+    .badge-dot-green { color: #00E676; }
+    .badge-dot-emerald { color: var(--apple-emerald); }
+
+    .cta-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .cta-button {
+      background: linear-gradient(135deg, #F5BA13 0%, #d89e08 100%);
+      color: #12141a;
+      padding: 18px 52px;
+      border-radius: 9999px;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      box-shadow: 0 12px 32px rgba(245, 186, 19, 0.45);
+      display: inline-block;
+    }
+    .brew-code {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: rgba(248, 245, 238, 0.85);
+      background: rgba(0, 0, 0, 0.55);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      padding: 10px 28px;
+      border-radius: 12px;
+    }
+    .brew-prefix {
+      color: var(--apple-emerald);
+      margin-right: 6px;
+    }
+  </style>
+
+  <div id="outro" data-composition-id="outro" data-width="1920" data-height="1080">
+    <div id="outro-clip" class="clip" data-start="0" data-duration="3.5" data-track-index="0">
+      <div class="outro-card">
+        <!-- Hero mascot and icon -->
+        <div id="outro-hero-row" class="hero-visual-row">
+          <img src="assets/images/AppIcon.png" alt="NNTS" class="app-icon-img" />
+          <img src="assets/images/character.png" alt="Operator" class="character-hero-img" />
+        </div>
+
+        <!-- Typography -->
+        <h1 id="outro-heading" class="outro-title">Pure Speed. <span>Zero Bloat.</span></h1>
+        <p id="outro-desc" class="outro-subtitle">The native macOS productivity suite for keyboard power users.</p>
+
+        <!-- Feature recap pills -->
+        <div id="outro-badges" class="features-summary-row">
+          <div class="summary-badge"><span class="badge-dot-yellow">●</span> caps lock + 1..8 Profiles</div>
+          <div class="summary-badge"><span class="badge-dot-green">●</span> caps lock + [a-z] Quick Apps</div>
+          <div class="summary-badge"><span class="badge-dot-emerald">●</span> Copy-on-Select Automation</div>
+        </div>
+
+        <!-- CTA & Brew -->
+        <div id="outro-cta-block" class="cta-container">
+          <div class="cta-button">Download Free · nnts.app</div>
+          <div class="brew-code"><span class="brew-prefix">$</span>brew install --cask nnts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const heroRow = document.getElementById('outro-hero-row');
+      const heading = document.getElementById('outro-heading');
+      const desc = document.getElementById('outro-desc');
+      const badges = document.getElementById('outro-badges');
+      const ctaBlock = document.getElementById('outro-cta-block');
+
+      // Static initial setups for non-empty frame 0
+      gsap.set(heroRow, { opacity: 1, scale: 1, y: 0 });
+      gsap.set(heading, { opacity: 1, y: 0 });
+      gsap.set(desc, { opacity: 1, y: 0 });
+      gsap.set(badges, { opacity: 1, y: 0 });
+      gsap.set(ctaBlock, { opacity: 1, scale: 1, y: 0 });
+
+      const tl = gsap.timeline({ paused: true });
+
+      tl.from(heroRow, { opacity: 0.2, scale: 0.9, y: 20, duration: 0.5, ease: 'back.out(1.4)' }, 0);
+      tl.from(heading, { opacity: 0.3, y: 15, duration: 0.45, ease: 'power2.out' }, 0.15);
+      tl.from(desc, { opacity: 0.3, y: 12, duration: 0.4, ease: 'power2.out' }, 0.3);
+      tl.from(badges, { opacity: 0.2, y: 15, duration: 0.4, ease: 'power2.out' }, 0.45);
+      tl.from(ctaBlock, { opacity: 0.2, scale: 0.94, y: 15, duration: 0.45, ease: 'back.out(1.5)' }, 0.6);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["outro"] = tl;
+      if (window.__registerTimeline) {
+        window.__registerTimeline('outro', tl);
+      }
+    })();
+  </script>
+</template>

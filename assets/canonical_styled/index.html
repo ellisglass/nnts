@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NNTS — Authentic Character & Remote Style Lab</title>
+  <style>
+    :root {
+      --bg: #0A0A0E;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #00E676;
+      --text: #F8F5EE;
+      --muted: rgba(248, 245, 238, 0.5);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+    header {
+      padding: 32px 48px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 10, 14, 0.85);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(0, 230, 118, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(0, 230, 118, 0.3);
+      font-weight: 600;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 40px auto;
+      padding: 0 32px;
+    }
+    h2 {
+      font-size: 20px;
+      margin: 36px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .card:hover {
+      border-color: rgba(0, 230, 118, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+    }
+    .card-label {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      color: var(--accent);
+      width: 100%;
+      text-align: left;
+    }
+    .preview-box {
+      width: 100%;
+      height: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.4) 100%);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .preview-box img {
+      max-width: 85%;
+      max-height: 85%;
+      object-fit: contain;
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,0.7));
+      transition: transform 0.3s ease;
+    }
+    .card:hover .preview-box img {
+      transform: scale(1.04);
+    }
+    .card-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 14px;
+      text-align: left;
+      width: 100%;
+      line-height: 1.5;
+    }
+
+    /* Interactive Remote Stage */
+    .interactive-section {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-top: 48px;
+      display: flex;
+      gap: 40px;
+      align-items: center;
+    }
+    .remote-stage {
+      position: relative;
+      width: 220px;
+      flex-shrink: 0;
+    }
+    .remote-stage img {
+      width: 100%;
+      display: block;
+      filter: drop-shadow(0 16px 32px rgba(0,0,0,0.8));
+    }
+    /* Hotspot buttons positioned exactly over authentic remote keys */
+    .hotspot {
+      position: absolute;
+      background: rgba(0, 230, 118, 0.2);
+      border: 1px solid rgba(0, 230, 118, 0.5);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .hotspot:hover {
+      background: rgba(0, 230, 118, 0.5);
+      box-shadow: 0 0 12px #00E676;
+    }
+    .hotspot-power {
+      top: 13.5%;
+      left: 17%;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+    }
+    .hotspot-num1 {
+      top: 26%;
+      left: 17%;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+    }
+    .hotspot-num2 {
+      top: 26%;
+      left: 55%;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+    }
+    .stage-info {
+      flex: 1;
+    }
+    .stage-info h3 {
+      font-size: 26px;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+    .stage-info p {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .status-monitor {
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-family: monospace;
+      font-size: 14px;
+      color: #00E676;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand-title">
+      <span>NNTS Canonical Style Lab</span>
+      <span class="badge">Authentic Assets Only</span>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- 1. AUTHENTIC REMOTE STYLES -->
+    <h2>01 // Твой пульт (Sony Trinitron RM-NNTS) в разных стилях</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">ORIGINAL SONY TRINITRON</div>
+        <div class="preview-box">
+          <img src="rc_remote.png" alt="Original Remote">
+        </div>
+        <div class="card-desc">Исходный пульт RM-NNTS из 90-х с оливково-серым пластиком и аутентичными кнопками.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">DARK TITANIUM / GRAPHITE</div>
+        <div class="preview-box">
+          <img src="rc_remote_graphite_titanium.png" alt="Graphite Titanium Remote">
+        </div>
+        <div class="card-desc">Притемненный матовый титан с глубоким контрастом и холодным металлическим отливом.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">CYBER NEON EMERALD</div>
+        <div class="preview-box">
+          <img src="rc_remote_cyber_neon.png" alt="Cyber Neon Remote">
+        </div>
+        <div class="card-desc">Темный титановый корпус с люминесцентной изумрудной подсветкой клавиш (#00E676).</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">LIQUID CHROME SPECULAR</div>
+        <div class="preview-box">
+          <img src="rc_remote_liquid_chrome.png" alt="Liquid Chrome Remote">
+        </div>
+        <div class="card-desc">Металлизированный зеркальный хром с яркими бликами на гранях и кнопках.</div>
+      </div>
+    </div>
+
+    <!-- 2. AUTHENTIC CHARACTER STYLES -->
+    <h2>02 // Твой персонаж в разных стилях</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">TRANSPARENT FIGURE CUTOUT</div>
+        <div class="preview-box">
+          <img src="figure_transparent.png" alt="Figure Transparent">
+        </div>
+        <div class="card-desc">Оригинальный полноростовой прозрачный вырез персонажа.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">NEON CATHODE CONTOUR</div>
+        <div class="preview-box">
+          <img src="character_neon_cathode.png" alt="Neon Cathode">
+        </div>
+        <div class="card-desc">Зеленый люминофорный контур (#39FF14), стилизованный под электронно-лучевую трубку CRT.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">LIQUID CHROME CONTOUR</div>
+        <div class="preview-box">
+          <img src="character_liquid_chrome.png" alt="Liquid Chrome">
+        </div>
+        <div class="card-desc">Жидкий зеркальный хром с переливающимися контурными линиями.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">BRUTALIST BAS-RELIEF</div>
+        <div class="preview-box">
+          <img src="character_brutalist_bas_relief.png" alt="Brutalist Bas-Relief">
+        </div>
+        <div class="card-desc">Монументальный барельеф из темного анодированного титана и матового камня.</div>
+      </div>
+    </div>
+
+    <!-- 3. INTERACTIVE TESTING STAGE -->
+    <div class="interactive-section">
+      <div class="remote-stage">
+        <img id="active-remote-img" src="rc_remote_cyber_neon.png" alt="Interactive Remote">
+        <button class="hotspot hotspot-power" onclick="triggerRemote('POWER', 'Toggle TV / HUD power')"></button>
+        <button class="hotspot hotspot-num1" onclick="triggerRemote('CH 1', 'Profiles & Quick Apps')"></button>
+        <button class="hotspot hotspot-num2" onclick="triggerRemote('CH 2', 'Linux Copy-on-Select')"></button>
+      </div>
+      <div class="stage-info">
+        <h3>Интерактивная проверка твоего пульта</h3>
+        <p>Кликай по кнопкам питания, 1 и 2 на пульте слева. Хотспоты, синтез звука реле и переключение каналов привязаны напрямую к координатам твоего пульта.</p>
+        <div class="status-monitor" id="remote-log">
+          STATUS: READY // RM-NNTS ONLINE
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playClickSound() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.04);
+    }
+    function triggerRemote(action, desc) {
+      playClickSound();
+      document.getElementById('remote-log').innerText = `[${new Date().toLocaleTimeString()}] ACTION: ${action} -> ${desc}`;
+    }
+  </script>
+</body>
+</html>

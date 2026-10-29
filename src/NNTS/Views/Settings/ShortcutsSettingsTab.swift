@@ -9,88 +9,91 @@ internal struct ShortcutsTabContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             // Quick Apps Section
-            SettingsSectionBox(title: "Quick Apps (caps lock + letter)", icon: "square.grid.2x2") {
+            SettingsSectionBox(
+                title: "Quick Apps (caps lock + letter)",
+                subtitle: "Apps are triggered with caps lock + letter. Apps sharing the same letter cycle on subsequent presses.",
+                icon: "square.grid.2x2",
+                iconColor: NNTSColors.cadmiumYellow
+            ) {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         let count = viewModel.pinnedApps.count
                         let maxSlots = AppGroupEngine.maxPinnedQuickApps
-                        Text(viewModel.isPro ? "\(count) apps pinned (Unlimited)" : "\(count) of \(maxSlots) slots pinned")
-                            .font(.system(size: 11.5, weight: .medium))
-                            .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                        
+                        HStack(spacing: 6) {
+                            Text(viewModel.isPro ? "\(count) apps pinned (Unlimited)" : "\(count) of \(maxSlots) slots pinned")
+                                .font(.system(size: 11.5, weight: .semibold))
+                                .foregroundColor(Color(nsColor: .labelColor))
+                            
+                            if !viewModel.isPro && count >= maxSlots {
+                                Text("MAX")
+                                    .font(.system(size: 9.5, weight: .bold))
+                                    .foregroundColor(NNTSColors.cadmiumYellow)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 1.5)
+                                    .background(
+                                        Capsule().fill(NNTSColors.cadmiumYellow.opacity(0.18))
+                                    )
+                            }
+                        }
                         
                         Spacer()
                     }
                     
-                    // Pinned list
+                    // Pinned list grouped by letter
                     if viewModel.pinnedApps.isEmpty {
                         Text("No apps pinned. Search and select apps below.")
                             .font(.system(size: 11.5))
                             .foregroundColor(Color(nsColor: .secondaryLabelColor))
                             .padding(.vertical, 4)
                     } else {
-                        VStack(spacing: 6) {
-                            ForEach(viewModel.pinnedApps) { app in
-                                HStack(spacing: 10) {
-                                    Image(nsImage: app.icon)
-                                        .resizable()
-                                        .frame(width: 24, height: 24)
-                                    
-                                    Text(app.name)
-                                        .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(Color(nsColor: .labelColor))
-                                    
-                                    Spacer()
-                                    
-                                    Text("caps lock + \(String(app.firstLetter).lowercased())")
-                                        .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(
-                                            Capsule().fill(Color(nsColor: .quaternaryLabelColor).opacity(0.4))
-                                        )
-                                    
-                                    Button(action: {
-                                        viewModel.unpinApp(bundleID: app.bundleID)
-                                    }) {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.system(size: 13))
-                                            .foregroundColor(Color(nsColor: .secondaryLabelColor))
-                                    }
-                                    .buttonStyle(.plain)
-                                    .help("Unpin app")
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(Color(nsColor: .controlBackgroundColor).opacity(0.45))
-                                )
+                        VStack(spacing: 8) {
+                            ForEach(viewModel.pinnedLetterGroups) { group in
+                                PinnedAppLetterGroupCard(group: group, viewModel: viewModel)
                             }
                         }
                     }
                     
                     // Search bar to add apps
-                    HStack {
+                    HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(Color(nsColor: .secondaryLabelColor))
-                            .font(.system(size: 11))
-                        TextField("Search apps to pin...", text: $viewModel.appSearchQuery)
+                            .font(.system(size: 11.5, weight: .medium))
+                        TextField("Search installed applications to pin...", text: $viewModel.appSearchQuery)
                             .textFieldStyle(.plain)
                             .font(.system(size: 11.5))
                             .onChange(of: viewModel.appSearchQuery) { _, _ in
                                 viewModel.refreshShortcuts()
                             }
+                        
+                        if !viewModel.appSearchQuery.isEmpty {
+                            Button {
+                                viewModel.appSearchQuery = ""
+                                viewModel.refreshShortcuts()
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 11.5))
+                                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                                    .frame(width: 18, height: 18)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .padding(7)
+                    .padding(8)
                     .background(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .fill(Color(nsColor: .textBackgroundColor))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Color(nsColor: .separatorColor).opacity(0.35), lineWidth: 0.75)
                     )
                     
                     // Search dropdown results if searching
                     if !viewModel.appSearchQuery.isEmpty && !viewModel.appSearchResults.isEmpty {
                         VStack(spacing: 4) {
-                            ForEach(viewModel.appSearchResults.prefix(4)) { app in
+                            ForEach(viewModel.appSearchResults.prefix(5)) { app in
                                 HStack {
                                     Image(nsImage: app.icon)
                                         .resizable()
@@ -102,7 +105,7 @@ internal struct ShortcutsTabContent: View {
                                     if isPinned {
                                         Text("Pinned")
                                             .font(.system(size: 10.5, weight: .medium))
-                                            .foregroundColor(.green)
+                                            .foregroundColor(NNTSColors.appleEmerald)
                                     } else {
                                         Button("Pin") {
                                             viewModel.pinApp(app: app)
@@ -119,23 +122,87 @@ internal struct ShortcutsTabContent: View {
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
                                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
                         )
+                    } else if viewModel.appSearchQuery.isEmpty {
+                        HStack {
+                            Button {
+                                viewModel.openAppPicker()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "square.grid.2x2")
+                                        .font(.system(size: 11, weight: .medium))
+                                    Text("Browse All Installed Applications...")
+                                        .font(.system(size: 11.5, weight: .medium))
+                                }
+                                .foregroundColor(Color(nsColor: .labelColor))
+                                .padding(.horizontal, 11)
+                                .padding(.vertical, 5.5)
+                                .background(
+                                    Capsule()
+                                        .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.35))
+                                        .overlay(
+                                            Capsule().stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 0.75)
+                                        )
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Spacer()
+                        }
+                        .padding(.top, 2)
+                    }
+                    
+                    // Slot Limit / Pro Notice Banner
+                    if viewModel.isSlotLimitReached {
+                        HStack(spacing: 8) {
+                            Image(systemName: "info.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(NNTSColors.cadmiumYellow)
+                            Text("Free edition is limited to 4 quick apps. Upgrade to Pro for unlimited apps, or click an app's 'x' to swap.")
+                                .font(.system(size: 10.5))
+                                .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                            Spacer()
+                            Button("Get Pro...") {
+                                viewModel.selectedTab = .license
+                            }
+                            .buttonStyle(.plain)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(NNTSColors.cadmiumYellow)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(NNTSColors.cadmiumYellow.opacity(0.10))
+                        )
                     }
                 }
             }
             
             // Browser Profiles Section
-            SettingsSectionBox(title: "Browser Profiles (caps lock + 1..8)", icon: "person.2") {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
-                        Picker("Browser:", selection: $viewModel.currentBrowserBundleID) {
-                            ForEach(viewModel.availableBrowsers) { b in
-                                Text(b.name).tag(b.bundleID)
+            SettingsSectionBox(
+                title: "Browser Profiles (caps lock + 1..8)",
+                subtitle: "Direct window raising for individual Chrome, Brave, and Chromium profiles",
+                icon: "person.2",
+                iconColor: NNTSColors.cobaltBlue
+            ) {
+                VStack(alignment: .leading, spacing: 14) {
+                    // Header Controls Bar
+                    HStack(spacing: 10) {
+                        HStack(spacing: 6) {
+                            Text("Browser:")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                            
+                            Picker("", selection: $viewModel.currentBrowserBundleID) {
+                                ForEach(viewModel.availableBrowsers) { b in
+                                    Text(b.name).tag(b.bundleID)
+                                }
                             }
-                        }
-                        .pickerStyle(.menu)
-                        .frame(maxWidth: 200)
-                        .onChange(of: viewModel.currentBrowserBundleID) { _, newID in
-                            viewModel.chooseBrowser(bundleID: newID)
+                            .pickerStyle(.menu)
+                            .frame(maxWidth: 180)
+                            .onChange(of: viewModel.currentBrowserBundleID) { _, newID in
+                                viewModel.chooseBrowser(bundleID: newID)
+                            }
                         }
                         
                         Spacer()
@@ -144,28 +211,29 @@ internal struct ShortcutsTabContent: View {
                         Button {
                             viewModel.linkChromeFolder()
                         } label: {
-                            HStack(spacing: 5) {
+                            HStack(spacing: 6) {
                                 Image(systemName: viewModel.isChromeFolderLinked ? "checkmark.circle.fill" : "photo.badge.arrow.forward")
                                     .font(.system(size: 11, weight: .semibold))
-                                    .foregroundColor(viewModel.isChromeFolderLinked ? NNTSColors.appleEmerald : Color.white)
+                                    .foregroundColor(viewModel.isChromeFolderLinked ? NNTSColors.appleEmerald : NNTSColors.cobaltBlue)
                                 Text(viewModel.isChromeFolderLinked ? "Real Photos Linked" : "Sync Real Photos")
                                     .font(.system(size: 11.5, weight: .medium))
-                                    .foregroundColor(viewModel.isChromeFolderLinked ? Color(nsColor: .labelColor) : Color.white)
+                                    .foregroundColor(Color(nsColor: .labelColor))
                             }
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(
                                 Capsule()
-                                    .fill(viewModel.isChromeFolderLinked ? Color.white.opacity(0.08) : NNTSColors.cobaltBlue)
+                                    .fill(viewModel.isChromeFolderLinked ? NNTSColors.appleEmerald.opacity(0.12) : Color(nsColor: .quaternaryLabelColor).opacity(0.35))
                                     .overlay(
                                         Capsule()
-                                            .stroke(viewModel.isChromeFolderLinked ? Color.white.opacity(0.14) : Color.clear, lineWidth: 0.75)
+                                            .stroke(viewModel.isChromeFolderLinked ? NNTSColors.appleEmerald.opacity(0.32) : Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 0.75)
                                     )
                             )
                         }
                         .buttonStyle(.plain)
-                        .help(viewModel.isChromeFolderLinked ? "Chrome folder connected. Click to re-sync or change folder." : "Click to connect your Google Chrome folder and display real Google account photos.")
+                        .help(viewModel.isChromeFolderLinked ? "Browser directory connected. Click to re-sync or change folder." : "Click to connect your Google Chrome folder and display real account photos.")
                         
+                        // Rescan Button
                         Button {
                             viewModel.refreshBrowserProfiles()
                         } label: {
@@ -176,20 +244,21 @@ internal struct ShortcutsTabContent: View {
                                     .font(.system(size: 11.5, weight: .medium))
                             }
                             .foregroundColor(Color(nsColor: .labelColor))
-                            .padding(.horizontal, 9)
+                            .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(
                                 Capsule()
-                                    .fill(Color.white.opacity(0.08))
+                                    .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.35))
                                     .overlay(
                                         Capsule()
-                                            .stroke(Color.white.opacity(0.12), lineWidth: 0.75)
+                                            .stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 0.75)
                                     )
                             )
                         }
                         .buttonStyle(.plain)
                         .help("Rescan browser profiles without altering your custom slots")
                         
+                        // Options Gear Menu
                         Menu {
                             Button("Populate All Discovered Profiles") {
                                 viewModel.resetSlotsToAllDiscovered()
@@ -200,12 +269,17 @@ internal struct ShortcutsTabContent: View {
                             }
                         } label: {
                             Image(systemName: "gearshape")
-                                .font(.system(size: 11))
+                                .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(Color(nsColor: .secondaryLabelColor))
-                                .padding(5)
+                                .frame(width: 26, height: 26)
+                                .background(
+                                    Circle()
+                                        .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.35))
+                                )
                         }
                         .menuStyle(.borderlessButton)
-                        .frame(width: 24, height: 24)
+                        .menuIndicator(.hidden)
+                        .frame(width: 26, height: 26)
                         .help("Advanced slot options")
                     }
                     
@@ -217,11 +291,11 @@ internal struct ShortcutsTabContent: View {
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("Quick Slots (caps lock + 1..\(viewModel.profiles.count))")
+                                Text("Active Slots (\(viewModel.profiles.count) of \(ChromeProfileEngine.maxProfileSlots))")
                                     .font(NNTSFont.display(size: 11.5))
                                     .foregroundColor(Color(nsColor: .secondaryLabelColor))
                                 Spacer()
-                                Text("Click avatar or drop photo to customize")
+                                Text("Click photo to change • Use arrows or drag to reorder")
                                     .font(.system(size: 10.5))
                                     .foregroundColor(Color(nsColor: .tertiaryLabelColor))
                             }
@@ -233,9 +307,15 @@ internal struct ShortcutsTabContent: View {
                                 Divider()
                                     .padding(.vertical, 8)
                                 
-                                Text("Available Profiles (\(viewModel.unassignedProfiles.count))")
-                                    .font(NNTSFont.display(size: 12))
-                                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                                HStack {
+                                    Text("Available Profiles (\(viewModel.unassignedProfiles.count))")
+                                        .font(NNTSFont.display(size: 12))
+                                        .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                                    Spacer()
+                                    Text("Click + to add to quick access slots")
+                                        .font(.system(size: 10.5))
+                                        .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+                                }
                                 
                                 VStack(spacing: 6) {
                                     ForEach(viewModel.unassignedProfiles) { p in
@@ -245,19 +325,24 @@ internal struct ShortcutsTabContent: View {
                                                     Image(nsImage: img)
                                                         .resizable()
                                                         .scaledToFill()
-                                                        .frame(width: 26, height: 26)
+                                                        .frame(width: 28, height: 28)
                                                         .clipShape(Circle())
+                                                        .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.5))
                                                 } else {
                                                     Circle()
-                                                        .fill(Color.gray.opacity(0.20))
-                                                        .frame(width: 26, height: 26)
+                                                        .fill(LinearGradient(
+                                                            colors: [Color.gray.opacity(0.25), Color.gray.opacity(0.40)],
+                                                            startPoint: .topLeading,
+                                                            endPoint: .bottomTrailing
+                                                        ))
+                                                        .frame(width: 28, height: 28)
                                                     let char = p.effectiveName.first(where: { $0.isLetter || $0.isNumber }) ?? "P"
                                                     Text(String(char).uppercased())
                                                         .font(NNTSFont.display(size: 11))
                                                         .foregroundColor(.secondary)
                                                 }
                                             }
-                                            .frame(width: 26, height: 26)
+                                            .frame(width: 28, height: 28)
                                             
                                             HStack(spacing: 6) {
                                                 Text(p.effectiveName)
@@ -266,9 +351,15 @@ internal struct ShortcutsTabContent: View {
                                                     .lineLimit(1)
                                                 
                                                 if let given = p.gaiaGivenName, !given.isEmpty, given.lowercased() != p.effectiveName.lowercased() {
-                                                    Text("(\(given))")
-                                                        .font(.system(size: 11))
+                                                    Text(given)
+                                                        .font(.system(size: 10, weight: .medium))
                                                         .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                                                        .padding(.horizontal, 6)
+                                                        .padding(.vertical, 1.5)
+                                                        .background(
+                                                            Capsule()
+                                                                .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.4))
+                                                        )
                                                         .lineLimit(1)
                                                 }
                                             }
@@ -278,25 +369,33 @@ internal struct ShortcutsTabContent: View {
                                             Button {
                                                 viewModel.addProfileToActiveSlots(dir: p.dir)
                                             } label: {
-                                                Text("+ Add to Slots")
-                                                    .font(.system(size: 11, weight: .medium))
-                                                    .foregroundColor(viewModel.profiles.count >= ChromeProfileEngine.maxProfileSlots ? Color.secondary : Color.white)
-                                                    .padding(.horizontal, 10)
-                                                    .padding(.vertical, 4.5)
-                                                    .background(
-                                                        Capsule()
-                                                            .fill(viewModel.profiles.count >= ChromeProfileEngine.maxProfileSlots ? Color.gray.opacity(0.15) : NNTSColors.cobaltBlue.opacity(0.85))
-                                                    )
+                                                HStack(spacing: 4) {
+                                                    Image(systemName: "plus")
+                                                        .font(.system(size: 10, weight: .bold))
+                                                    Text("Add to Slots")
+                                                        .font(.system(size: 11, weight: .medium))
+                                                }
+                                                .foregroundColor(viewModel.profiles.count >= ChromeProfileEngine.maxProfileSlots ? Color.secondary : Color.white)
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 4.5)
+                                                .background(
+                                                    Capsule()
+                                                        .fill(viewModel.profiles.count >= ChromeProfileEngine.maxProfileSlots ? Color.gray.opacity(0.15) : NNTSColors.cobaltBlue.opacity(0.85))
+                                                )
                                             }
                                             .buttonStyle(.plain)
                                             .disabled(viewModel.profiles.count >= ChromeProfileEngine.maxProfileSlots)
                                             .help(viewModel.profiles.count >= ChromeProfileEngine.maxProfileSlots ? "All 8 slots full" : "Add to quick access slots")
                                         }
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 7)
                                         .background(
                                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.35))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                        .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 0.5)
+                                                )
                                         )
                                     }
                                 }
@@ -309,72 +408,215 @@ internal struct ShortcutsTabContent: View {
     }
 }
 
-// MARK: - Zero-Lag Active Profiles State
+// MARK: - Grouped Pinned Apps Views
 
 @MainActor
-internal final class ProfilesReorderState: ObservableObject {
-    @Published var localProfiles: [ChromeProfile] = []
-    @Published var targetedDir: String? = nil
+internal final class PinnedAppRowState: ObservableObject {
+    @Published var isHoveringRow: Bool = false
+    @Published var isHoveringUnpin: Bool = false
+}
+
+internal struct PinnedAppLetterGroupCard: View {
+    let group: PinnedAppGroup
+    @ObservedObject var viewModel: SettingsViewModel
     
-    init(profiles: [ChromeProfile] = []) {
-        self.localProfiles = profiles
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Letter Group Header
+            HStack(spacing: 6) {
+                Text(String(group.letter))
+                    .font(NNTSFont.slotDigit(size: 10.5))
+                    .foregroundColor(Color(nsColor: .labelColor))
+                    .frame(width: 18, height: 18)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.55))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .stroke(Color(nsColor: .separatorColor).opacity(0.35), lineWidth: 0.5)
+                    )
+                
+                if group.items.count > 1 {
+                    HStack(spacing: 4) {
+                        Text("•")
+                            .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+                        Text("\(group.items.count) apps cycle")
+                            .font(.system(size: 10.5, weight: .semibold))
+                            .foregroundColor(NNTSColors.cadmiumYellow)
+                    }
+                }
+                
+                Spacer()
+            }
+            .padding(.horizontal, 2)
+            .padding(.top, 1)
+            
+            // App Rows in this group
+            VStack(spacing: 4) {
+                ForEach(Array(group.items.enumerated()), id: \.element.id) { indexInGroup, app in
+                    PinnedAppRow(
+                        app: app,
+                        indexInGroup: indexInGroup,
+                        totalInGroup: group.items.count,
+                        viewModel: viewModel
+                    )
+                }
+            }
+        }
+        .padding(8)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.35))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(group.items.count > 1 ? NNTSColors.cadmiumYellow.opacity(0.18) : Color(nsColor: .separatorColor).opacity(0.20), lineWidth: 0.75)
+        )
     }
+}
+
+internal struct PinnedAppRow: View {
+    let app: AntigravityItem
+    let indexInGroup: Int
+    let totalInGroup: Int
+    @ObservedObject var viewModel: SettingsViewModel
+    @ObservedObject private var rowState = PinnedAppRowState()
     
-    func sync(with profiles: [ChromeProfile]) {
-        if targetedDir == nil && localProfiles != profiles {
-            self.localProfiles = profiles
+    var body: some View {
+        HStack(spacing: 10) {
+            // 1. App Icon
+            Image(nsImage: app.icon)
+                .resizable()
+                .frame(width: 24, height: 24)
+            
+            // 2. App Name
+            Text(app.name)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color(nsColor: .labelColor))
+                .lineLimit(1)
+            
+            Spacer()
+            
+            // 3. Compact Keycap Badge (Zero "caps lock +" repetition, disciplined color)
+            HStack(spacing: 3.5) {
+                Text(String(app.firstLetter).uppercased())
+                    .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                    .foregroundColor(Color(nsColor: .labelColor))
+                
+                if totalInGroup > 1 {
+                    Text("·")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+                    
+                    Text("\(indexInGroup + 1)/\(totalInGroup) ↻")
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .foregroundColor(NNTSColors.cadmiumYellow)
+                }
+            }
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .shadow(color: Color.black.opacity(0.10), radius: 1, y: 0.5)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(
+                        totalInGroup > 1 ? NNTSColors.cadmiumYellow.opacity(0.35) : Color(nsColor: .separatorColor).opacity(0.35),
+                        lineWidth: 0.75
+                    )
+            )
+            .help(totalInGroup > 1 ? "Shortcut: caps lock + \(String(app.firstLetter).lowercased()) (cycle \(indexInGroup + 1) of \(totalInGroup))" : "Shortcut: caps lock + \(String(app.firstLetter).lowercased())")
+            
+            // 4. Subtle Cycle Reorder Stepper (for cyclic apps)
+            if totalInGroup > 1 {
+                HStack(spacing: 2) {
+                    Button {
+                        viewModel.movePinnedAppUp(bundleID: app.bundleID)
+                    } label: {
+                        Image(systemName: "chevron.up")
+                            .font(.system(size: 9.5, weight: .semibold))
+                            .foregroundColor(indexInGroup > 0 ? Color(nsColor: .labelColor) : Color(nsColor: .tertiaryLabelColor).opacity(0.30))
+                            .frame(width: 20, height: 20)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(indexInGroup <= 0)
+                    .help(indexInGroup > 0 ? "Move up in cycle order" : "First in cycle order")
+                    
+                    Button {
+                        viewModel.movePinnedAppDown(bundleID: app.bundleID)
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9.5, weight: .semibold))
+                            .foregroundColor(indexInGroup < totalInGroup - 1 ? Color(nsColor: .labelColor) : Color(nsColor: .tertiaryLabelColor).opacity(0.30))
+                            .frame(width: 20, height: 20)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(indexInGroup >= totalInGroup - 1)
+                    .help(indexInGroup < totalInGroup - 1 ? "Move down in cycle order" : "Last in cycle order")
+                }
+            }
+            
+            // 5. Accessible Unpin Button with generous hover target
+            Button {
+                viewModel.unpinApp(bundleID: app.bundleID)
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundColor(rowState.isHoveringUnpin ? NNTSColors.vermilion : Color(nsColor: .secondaryLabelColor))
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .onHover { h in
+                rowState.isHoveringUnpin = h
+            }
+            .help("Unpin app")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(rowState.isHoveringRow ? 0.70 : 0.45))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor).opacity(rowState.isHoveringRow ? 0.35 : 0.15), lineWidth: 0.5)
+        )
+        .onHover { h in
+            rowState.isHoveringRow = h
         }
     }
 }
 
-// MARK: - Smooth Ergonomic Active Profiles List View
+// MARK: - Fluid, Zero-Jump Active Profiles List View
 
 internal struct ActiveProfilesListView: View {
     @ObservedObject var viewModel: SettingsViewModel
-    @ObservedObject private var reorderState = ProfilesReorderState()
     
     var body: some View {
         VStack(spacing: 6) {
-            ForEach(reorderState.localProfiles) { p in
+            ForEach(viewModel.profiles) { p in
                 ModernProfileRow(
                     profile: p,
-                    totalCount: reorderState.localProfiles.count,
-                    isTargeted: reorderState.targetedDir == p.dir,
+                    totalCount: viewModel.profiles.count,
+                    isTargeted: viewModel.targetedProfileDir == p.dir,
                     viewModel: viewModel
                 )
                 .dropDestination(for: String.self) { items, _ in
-                    let targetDir = p.dir
-                    reorderState.targetedDir = nil
-                    guard let droppedDir = items.first, droppedDir != targetDir else { return false }
-                    reorderLocal(draggedDir: droppedDir, targetDir: targetDir)
+                    viewModel.targetedProfileDir = nil
+                    guard let droppedDir = items.first, droppedDir != p.dir else { return false }
+                    viewModel.reorderProfile(draggedDir: droppedDir, targetDir: p.dir)
                     return true
                 } isTargeted: { targeted in
-                    reorderState.targetedDir = targeted ? p.dir : nil
+                    viewModel.targetedProfileDir = targeted ? p.dir : nil
                 }
             }
         }
-        .onAppear {
-            reorderState.localProfiles = viewModel.profiles
-        }
-        .onChange(of: viewModel.profiles) { _, newProfiles in
-            reorderState.sync(with: newProfiles)
-        }
-    }
-    
-    private func reorderLocal(draggedDir: String, targetDir: String) {
-        guard let sourceIdx = reorderState.localProfiles.firstIndex(where: { $0.dir == draggedDir }),
-              let targetIdx = reorderState.localProfiles.firstIndex(where: { $0.dir == targetDir }),
-              sourceIdx != targetIdx else { return }
-        
-        withAnimation(NNTSMotion.interactiveSnap) {
-            let item = reorderState.localProfiles.remove(at: sourceIdx)
-            reorderState.localProfiles.insert(item, at: targetIdx)
-            for i in 0..<reorderState.localProfiles.count {
-                reorderState.localProfiles[i].index = i + 1
-            }
-        }
-        
-        viewModel.reorderProfile(draggedDir: draggedDir, targetDir: targetDir)
     }
 }
 
@@ -382,13 +624,12 @@ internal struct ActiveProfilesListView: View {
 
 @MainActor
 internal final class ProfileRowState: ObservableObject {
-    @Published var isHoveringAvatar: Bool = false
     @Published var isHoveringRow: Bool = false
-    @Published var justPastedAvatar: Bool = false
+    @Published var isHoveringAvatar: Bool = false
     @Published var isDropTargeted: Bool = false
 }
 
-// MARK: - Modern 2026 Profile Row with Interactive Avatar & Decluttered Controls
+// MARK: - Modern Streamlined Profile Row (Reorder + Avatar + Remove)
 
 internal struct ModernProfileRow: View {
     let profile: ChromeProfile
@@ -399,18 +640,18 @@ internal struct ModernProfileRow: View {
     
     var body: some View {
         HStack(spacing: 10) {
-            // 1. Native 6-dot drag grip handle
+            // 1. Reorder Grip Handle
             Image(systemName: "circle.grid.2x3.fill")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(rowState.isHoveringRow ? Color(nsColor: .secondaryLabelColor) : Color(nsColor: .tertiaryLabelColor).opacity(0.45))
-                .frame(width: 14, height: 28)
+                .foregroundColor(Color(nsColor: .secondaryLabelColor).opacity(rowState.isHoveringRow ? 0.90 : 0.40))
+                .frame(width: 14, height: 32)
                 .contentShape(Rectangle())
                 .draggable(profile.dir)
-                .help("Drag grip to reorder slot")
+                .help("Drag to reorder slot")
             
             // 2. Slot badge in Cobalt Blue
             Text("\(profile.index)")
-                .font(NNTSFont.slotDigit(size: 11.5))
+                .font(NNTSFont.slotDigit(size: 11))
                 .foregroundColor(.white)
                 .frame(width: 22, height: 22)
                 .background(
@@ -423,26 +664,11 @@ internal struct ModernProfileRow: View {
                             )
                         )
                 )
-                .shadow(color: Color.black.opacity(0.20), radius: 2, y: 1)
+                .shadow(color: Color.black.opacity(0.18), radius: 2, y: 1)
             
-            // 3. Interactive Direct-Manipulation Avatar
-            Menu {
-                Button {
-                    viewModel.chooseAvatarFile(dir: profile.dir)
-                } label: {
-                    Label("Choose Photo from Disk...", systemImage: "photo")
-                }
-                Button {
-                    viewModel.pasteProfileAvatar(dir: profile.dir)
-                } label: {
-                    Label("Paste from Clipboard (⌘⌃⇧4)", systemImage: "doc.on.clipboard")
-                }
-                Divider()
-                Button {
-                    viewModel.resetProfileAvatar(dir: profile.dir)
-                } label: {
-                    Label("Reset to Monogram", systemImage: "arrow.counterclockwise")
-                }
+            // 3. Avatar (1-Click Photo Picker, Drop Image, or Right-Click Context Menu)
+            Button {
+                viewModel.chooseAvatarFile(dir: profile.dir)
             } label: {
                 ZStack {
                     if let img = profile.avatarImage {
@@ -451,7 +677,7 @@ internal struct ModernProfileRow: View {
                             .scaledToFill()
                             .frame(width: 32, height: 32)
                             .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.75))
+                            .overlay(Circle().stroke(Color.white.opacity(0.20), lineWidth: 0.75))
                     } else {
                         Circle()
                             .fill(LinearGradient(
@@ -467,21 +693,20 @@ internal struct ModernProfileRow: View {
                     }
                     
                     // Hover Camera / Edit Action Overlay
-                    if rowState.isHoveringAvatar || rowState.justPastedAvatar || rowState.isDropTargeted {
+                    if rowState.isHoveringAvatar || rowState.isDropTargeted {
                         Circle()
-                            .fill(Color.black.opacity(0.60))
+                            .fill(Color.black.opacity(0.55))
                             .frame(width: 32, height: 32)
                         
-                        Image(systemName: rowState.justPastedAvatar ? "checkmark" : (rowState.isDropTargeted ? "plus" : "camera.fill"))
+                        Image(systemName: rowState.isDropTargeted ? "plus" : "camera.fill")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(rowState.justPastedAvatar ? NNTSColors.appleEmerald : .white)
+                            .foregroundColor(.white)
                     }
                 }
                 .frame(width: 32, height: 32)
+                .contentShape(Circle())
             }
-            .menuStyle(.borderlessButton)
-            .frame(width: 32, height: 32)
-            .contentShape(Circle())
+            .buttonStyle(.plain)
             .onHover { h in
                 rowState.isHoveringAvatar = h
             }
@@ -492,7 +717,24 @@ internal struct ModernProfileRow: View {
             } isTargeted: { targeted in
                 rowState.isDropTargeted = targeted
             }
-            .help("Click to change avatar photo, or drop image file here")
+            .help("Click to change photo, or drop image file here")
+            .contextMenu {
+                Button {
+                    viewModel.chooseAvatarFile(dir: profile.dir)
+                } label: {
+                    Label("Choose Photo from Disk...", systemImage: "photo")
+                }
+                Button {
+                    viewModel.pasteProfileAvatar(dir: profile.dir)
+                } label: {
+                    Label("Paste from Clipboard (⌘⌃⇧4)", systemImage: "doc.on.clipboard")
+                }
+                Button {
+                    viewModel.resetProfileAvatar(dir: profile.dir)
+                } label: {
+                    Label("Reset to Monogram", systemImage: "arrow.counterclockwise")
+                }
+            }
             
             // 4. Name & Secondary Account Info
             VStack(alignment: .leading, spacing: 2) {
@@ -503,9 +745,15 @@ internal struct ModernProfileRow: View {
                         .lineLimit(1)
                     
                     if let given = profile.gaiaGivenName, !given.isEmpty, given.lowercased() != profile.effectiveName.lowercased() {
-                        Text("(\(given))")
-                            .font(.system(size: 11, weight: .regular))
+                        Text(given)
+                            .font(.system(size: 10, weight: .medium))
                             .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1.5)
+                            .background(
+                                Capsule()
+                                    .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.45))
+                            )
                             .lineLimit(1)
                     }
                 }
@@ -517,15 +765,15 @@ internal struct ModernProfileRow: View {
             
             Spacer()
             
-            // 5. 1-Click Ergonomic Up / Down Reorder Arrows
+            // 5. Minimal Reorder Stepper [ ^ ] [ v ] (Zero Jump, 1-Click Swap)
             HStack(spacing: 2) {
                 Button {
                     viewModel.moveProfileUp(dir: profile.dir)
                 } label: {
                     Image(systemName: "chevron.up")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(profile.index > 1 && rowState.isHoveringRow ? Color(nsColor: .labelColor) : Color(nsColor: .tertiaryLabelColor).opacity(0.35))
-                        .frame(width: 18, height: 18)
+                        .foregroundColor(profile.index > 1 ? Color(nsColor: .labelColor) : Color(nsColor: .tertiaryLabelColor).opacity(0.35))
+                        .frame(width: 22, height: 22)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -537,68 +785,27 @@ internal struct ModernProfileRow: View {
                 } label: {
                     Image(systemName: "chevron.down")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(profile.index < totalCount && rowState.isHoveringRow ? Color(nsColor: .labelColor) : Color(nsColor: .tertiaryLabelColor).opacity(0.35))
-                        .frame(width: 18, height: 18)
+                        .foregroundColor(profile.index < totalCount ? Color(nsColor: .labelColor) : Color(nsColor: .tertiaryLabelColor).opacity(0.35))
+                        .frame(width: 22, height: 22)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(profile.index >= totalCount)
                 .help("Move slot down")
             }
-            .padding(.trailing, 4)
+            .padding(.trailing, 2)
             
-            // 6. Options Menu
-            Menu {
-                Button {
-                    viewModel.chooseAvatarFile(dir: profile.dir)
-                } label: {
-                    Label("Choose Photo from Disk...", systemImage: "photo")
-                }
-                Button {
-                    viewModel.pasteProfileAvatar(dir: profile.dir)
-                } label: {
-                    Label("Paste Avatar from Clipboard (⌘⌃⇧4)", systemImage: "doc.on.clipboard")
-                }
-                Button {
-                    viewModel.resetProfileAvatar(dir: profile.dir)
-                } label: {
-                    Label("Reset to Monogram", systemImage: "arrow.counterclockwise")
-                }
-                if totalCount > 1 {
-                    Divider()
-                    Button(role: .destructive) {
-                        viewModel.removeProfileFromActiveSlots(dir: profile.dir)
-                    } label: {
-                        Label("Remove Slot", systemImage: "trash")
-                    }
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
-                    .frame(width: 24, height: 24)
-                    .background(
-                        Circle()
-                            .fill(Color.white.opacity(rowState.isHoveringRow ? 0.08 : 0.02))
-                    )
-            }
-            .menuStyle(.borderlessButton)
-            .frame(width: 24, height: 24)
-            .help("Slot options")
-            
-            // 7. Delete Slot button (visible on hover)
+            // 6. Delete / Unpin Slot button (matches Quick Apps design)
             if totalCount > 1 {
                 Button {
                     viewModel.removeProfileFromActiveSlots(dir: profile.dir)
                 } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(rowState.isHoveringRow ? Color(nsColor: .tertiaryLabelColor) : Color.clear)
-                        .frame(width: 18, height: 18)
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(nsColor: .secondaryLabelColor))
                 }
                 .buttonStyle(.plain)
-                .disabled(!rowState.isHoveringRow)
-                .help("Remove slot")
+                .help("Remove from active slots")
             }
         }
         .padding(.horizontal, 12)
@@ -611,43 +818,18 @@ internal struct ModernProfileRow: View {
         .overlay(
             RoundedRectangle(cornerRadius: NNTSGeometry.settingsCardRadius, style: .continuous)
                 .strokeBorder(
-                    isTargeted ? NNTSColors.cobaltBlue : NNTSColors.cardBorder,
+                    isTargeted ? NNTSColors.cobaltBlue : Color(nsColor: .separatorColor).opacity(0.25),
                     lineWidth: 1.0
                 )
         )
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.12)) {
-                rowState.isHoveringRow = hovering
-            }
-        }
-        .contextMenu {
-            Button {
-                viewModel.chooseAvatarFile(dir: profile.dir)
-            } label: {
-                Label("Choose Photo from Disk...", systemImage: "photo")
-            }
-            Button {
-                viewModel.pasteProfileAvatar(dir: profile.dir)
-            } label: {
-                Label("Paste Avatar from Clipboard (⌘⌃⇧4)", systemImage: "doc.on.clipboard")
-            }
-            Button {
-                viewModel.resetProfileAvatar(dir: profile.dir)
-            } label: {
-                Label("Reset to Monogram", systemImage: "arrow.counterclockwise")
-            }
-            if totalCount > 1 {
-                Divider()
-                Button(role: .destructive) {
-                    viewModel.removeProfileFromActiveSlots(dir: profile.dir)
-                } label: {
-                    Label("Remove Slot", systemImage: "trash")
-                }
-            }
+            rowState.isHoveringRow = hovering
         }
     }
 }
 
 // Backwards compatibility alias
 internal typealias DraggableProfileRow = ModernProfileRow
+
+
 

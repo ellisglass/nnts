@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>NNTS — Chrome Profile Search & Rapid Switch</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: 'Space Grotesk';
+        src: url('assets/fonts/SpaceGrotesk-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+      }
+      :root {
+        --ground: #0d0f14;
+        --ink: #F8F5EE;
+        --ink-muted: rgba(248, 245, 238, 0.7);
+        --cadmium-yellow: #F5BA13;
+        --cobalt-blue: #00E676;
+        --apple-emerald: #00E676;
+        --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--ground);
+        font-family: var(--font-display);
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 35%, #161824 0%, #0d0e12 100%);
+      }
+      .scene-host {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="18"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- Scene 1: Profile Search & Filter (0.0s - 7.5s) -->
+      <div
+        id="search"
+        class="scene-host"
+        data-composition-id="search"
+        data-composition-src="compositions/search.html"
+        data-start="0"
+        data-duration="7.5"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Scene 2: Rapid Switching Between 3 Profiles (7.5s - 14.5s) -->
+      <div
+        id="rapid_switch"
+        class="scene-host"
+        data-composition-id="rapid_switch"
+        data-composition-src="compositions/rapid_switch.html"
+        data-start="7.5"
+        data-duration="7"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Scene 3: Outro & Call to Action (14.5s - 18.0s) -->
+      <div
+        id="outro"
+        class="scene-host"
+        data-composition-id="outro"
+        data-composition-src="compositions/outro.html"
+        data-start="14.5"
+        data-duration="3.5"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

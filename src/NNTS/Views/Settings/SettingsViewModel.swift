@@ -28,6 +28,19 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
     public static let finderTidy: SettingsTab = .general
 }
 
+// MARK: - Pinned App Letter Group
+
+public struct PinnedAppGroup: Identifiable, Sendable, Equatable {
+    public var id: String { String(letter) }
+    public let letter: Character
+    public var items: [AntigravityItem]
+    
+    public init(letter: Character, items: [AntigravityItem]) {
+        self.letter = letter
+        self.items = items
+    }
+}
+
 // MARK: - Settings View Model
 
 @MainActor
@@ -38,6 +51,21 @@ public final class SettingsViewModel: ObservableObject {
     @Published public var isCapsLockRemapped: Bool = false
     @Published public var isAccessibilityTrusted: Bool = false
     @Published public var statusMessage: String? = nil
+    @Published public var isStatusError: Bool = false
+    @Published public var testHighlightText: String = "Try highlighting this sentence to test automatic copy-on-select!"
+    
+    // Application Info
+    public var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0"
+    }
+    
+    public var installationSource: InstallationSource {
+        UpdateEngine.detectInstallationSource()
+    }
+    
+    public var isSlotLimitReached: Bool {
+        !isPro && pinnedApps.count >= AppGroupEngine.freePinnedAppsLimit
+    }
     
     // Copy on Select & Finder Tidy State
     @Published public var isCopyOnSelectEnabled: Bool = true
@@ -51,6 +79,20 @@ public final class SettingsViewModel: ObservableObject {
     @Published public var pinnedApps: [AntigravityItem] = []
     @Published public var appSearchQuery: String = ""
     @Published public var appSearchResults: [InstalledAppInfo] = []
+    
+    public var pinnedLetterGroups: [PinnedAppGroup] {
+        var letterMap: [Character: [AntigravityItem]] = [:]
+        for item in pinnedApps {
+            let char = item.firstLetter
+            if letterMap[char] == nil {
+                letterMap[char] = []
+            }
+            letterMap[char]!.append(item)
+        }
+        return letterMap.keys.sorted().map { char in
+            PinnedAppGroup(letter: char, items: letterMap[char]!)
+        }
+    }
     
     // Shortcuts Tab State: Profiles
     @Published public var currentBrowserBundleID: String = "com.google.Chrome"
@@ -74,6 +116,7 @@ public final class SettingsViewModel: ObservableObject {
     @Published public var isActivating: Bool = false
     @Published public var activationMessage: String? = nil
     @Published public var isActivationError: Bool = false
+    @Published public var showingDeactivateConfirm: Bool = false
     
     public init() {
         refreshAll()
@@ -126,8 +169,10 @@ public final class SettingsViewModel: ObservableObject {
                 CapsLockEngine.shared.start()
             }
             self.statusMessage = "caps lock hardware remapping applied."
+            self.isStatusError = false
         } else {
             self.statusMessage = "Failed to apply remapping."
+            self.isStatusError = true
         }
         refreshGeneral()
     }
@@ -137,10 +182,44 @@ public final class SettingsViewModel: ObservableObject {
         if success {
             CapsLockEngine.shared.stop()
             self.statusMessage = "Restored default system caps lock mapping."
+            self.isStatusError = false
         } else {
             self.statusMessage = "Failed to restore default mapping."
+            self.isStatusError = true
         }
         refreshGeneral()
+    }
+    
+    public func clearStatusMessage() {
+        self.statusMessage = nil
+    }
+    
+    public func tidyFinderWindowsNow() {
+        let limit = finderMaxWindows > 0 ? finderMaxWindows : 1
+        let closedCount = FinderTidyEngine.shared.enforceMaxWindows(limit: limit)
+        if closedCount > 0 {
+            self.statusMessage = "Tidied Finder: closed \(closedCount) background \(closedCount == 1 ? "window" : "windows")."
+            self.isStatusError = false
+        } else {
+            self.statusMessage = "Finder is already clean and organized."
+            self.isStatusError = false
+        }
+    }
+    
+    public func checkForUpdates() {
+        AppDelegate.shared?.handleCheckForUpdates()
+    }
+    
+    public func openAppPicker() {
+        AppSearchPickerWindow.shared.show()
+    }
+    
+    public func cycleBadge(for app: AntigravityItem) -> String? {
+        let sharing = pinnedApps.filter { $0.firstLetter.uppercased() == app.firstLetter.uppercased() }
+        guard sharing.count > 1, let idx = sharing.firstIndex(where: { $0.bundleID == app.bundleID }) else {
+            return nil
+        }
+        return "\(idx + 1)/\(sharing.count) ↻"
     }
     
     public func openAccessibilitySettings() {
@@ -194,6 +273,26 @@ public final class SettingsViewModel: ObservableObject {
         AppDelegate.shared?.updateDynamicShortcuts()
         AppDelegate.shared?.updateMenu()
         refreshShortcuts()
+    }
+    
+    public func movePinnedAppUp(bundleID: String) {
+        if AppGroupEngine.movePinnedAppUp(bundleID: bundleID) {
+            withAnimation(NNTSMotion.interactiveSnap) {
+                refreshShortcuts()
+            }
+            AppDelegate.shared?.updateDynamicShortcuts()
+            AppDelegate.shared?.updateMenu()
+        }
+    }
+    
+    public func movePinnedAppDown(bundleID: String) {
+        if AppGroupEngine.movePinnedAppDown(bundleID: bundleID) {
+            withAnimation(NNTSMotion.interactiveSnap) {
+                refreshShortcuts()
+            }
+            AppDelegate.shared?.updateDynamicShortcuts()
+            AppDelegate.shared?.updateMenu()
+        }
     }
     
     public func pinApp(app: InstalledAppInfo) {
@@ -267,45 +366,66 @@ public final class SettingsViewModel: ObservableObject {
     }
     
     public func reorderProfile(draggedDir: String, targetDir: String) {
-        var dirs = profiles.map { $0.dir }
-        guard let sourceIdx = dirs.firstIndex(of: draggedDir),
-              let targetIdx = dirs.firstIndex(of: targetDir),
+        var current = profiles
+        guard let sourceIdx = current.firstIndex(where: { $0.dir == draggedDir }),
+              let targetIdx = current.firstIndex(where: { $0.dir == targetDir }),
               sourceIdx != targetIdx else { return }
-        let item = dirs.remove(at: sourceIdx)
-        dirs.insert(item, at: targetIdx)
-        ChromeProfileEngine.shared.setProfileOrder(dirs)
+        let moved = current.remove(at: sourceIdx)
+        current.insert(moved, at: targetIdx)
+        for i in 0..<current.count {
+            current[i].index = i + 1
+        }
+        withAnimation(NNTSMotion.interactiveSnap) {
+            self.profiles = current
+        }
+        ChromeProfileEngine.shared.setProfileOrder(current.map { $0.dir })
         AppDelegate.shared?.updateMenu()
-        refreshShortcuts()
     }
     
     public func moveProfileUp(dir: String) {
-        var dirs = profiles.map { $0.dir }
-        guard let idx = dirs.firstIndex(of: dir), idx > 0 else { return }
-        dirs.swapAt(idx, idx - 1)
-        ChromeProfileEngine.shared.setProfileOrder(dirs)
+        var current = profiles
+        guard let idx = current.firstIndex(where: { $0.dir == dir }), idx > 0 else { return }
+        current.swapAt(idx, idx - 1)
+        for i in 0..<current.count {
+            current[i].index = i + 1
+        }
+        withAnimation(NNTSMotion.interactiveSnap) {
+            self.profiles = current
+        }
+        ChromeProfileEngine.shared.setProfileOrder(current.map { $0.dir })
         AppDelegate.shared?.updateMenu()
-        refreshShortcuts()
     }
     
     public func moveProfileDown(dir: String) {
-        var dirs = profiles.map { $0.dir }
-        guard let idx = dirs.firstIndex(of: dir), idx < dirs.count - 1 else { return }
-        dirs.swapAt(idx, idx + 1)
-        ChromeProfileEngine.shared.setProfileOrder(dirs)
+        var current = profiles
+        guard let idx = current.firstIndex(where: { $0.dir == dir }), idx < current.count - 1 else { return }
+        current.swapAt(idx, idx + 1)
+        for i in 0..<current.count {
+            current[i].index = i + 1
+        }
+        withAnimation(NNTSMotion.interactiveSnap) {
+            self.profiles = current
+        }
+        ChromeProfileEngine.shared.setProfileOrder(current.map { $0.dir })
         AppDelegate.shared?.updateMenu()
-        refreshShortcuts()
     }
     
     public func addProfileToActiveSlots(dir: String) {
         ChromeProfileEngine.shared.selectProfile(dir: dir)
+        withAnimation(NNTSMotion.interactiveSnap) {
+            self.profiles = ChromeProfileEngine.shared.selectedProfiles
+            self.allDiscoveredProfiles = ChromeProfileEngine.shared.profiles
+        }
         AppDelegate.shared?.updateMenu()
-        refreshShortcuts()
     }
     
     public func removeProfileFromActiveSlots(dir: String) {
         ChromeProfileEngine.shared.deselectProfile(dir: dir)
+        withAnimation(NNTSMotion.interactiveSnap) {
+            self.profiles = ChromeProfileEngine.shared.selectedProfiles
+            self.allDiscoveredProfiles = ChromeProfileEngine.shared.profiles
+        }
         AppDelegate.shared?.updateMenu()
-        refreshShortcuts()
     }
     
     // MARK: - Actions: License

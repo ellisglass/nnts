@@ -30,9 +30,20 @@ extension AppDelegate {
         }
         
         if let icon = icon {
-            let small = NSImage(size: NSSize(width: 18, height: 18))
+            let targetSize = NSSize(width: 18, height: 18)
+            let small = NSImage(size: targetSize)
             small.lockFocus()
-            icon.draw(in: NSRect(x: 0, y: 0, width: 18, height: 18))
+            let iconSize = icon.size
+            if iconSize.width > 0 && iconSize.height > 0 {
+                let scale = min(targetSize.width / iconSize.width, targetSize.height / iconSize.height)
+                let renderWidth = iconSize.width * scale
+                let renderHeight = iconSize.height * scale
+                let x = (targetSize.width - renderWidth) / 2.0
+                let y = (targetSize.height - renderHeight) / 2.0
+                icon.draw(in: NSRect(x: x, y: y, width: renderWidth, height: renderHeight))
+            } else {
+                icon.draw(in: NSRect(origin: .zero, size: targetSize))
+            }
             small.unlockFocus()
             if icon.isTemplate {
                 small.isTemplate = true
@@ -57,6 +68,7 @@ extension AppDelegate {
         let menu = NSMenu()
         
         appendBrowserAndProfileSection(to: menu)
+        appendQuickAppsCheatSheetSection(to: menu)
         menu.addItem(NSMenuItem.separator())
         
         appendPreferencesSection(to: menu)
@@ -97,67 +109,140 @@ extension AppDelegate {
             chromeIcon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil) ?? NSImage()
         }
         
-        let browserSectionHeader = NSMenuItem.sectionHeader(title: "Browsers & Profiles")
-        browserSectionHeader.isEnabled = false
-        menu.addItem(browserSectionHeader)
+        let displayProfiles = !selectedList.isEmpty ? selectedList : (profileEngine.profiles.first != nil ? [profileEngine.profiles.first!] : [])
         
-        let browserTitle = profileEngine.browserBundleID == "com.google.Chrome" ? "Chrome" : browserName
-        let chromeItem = makeAlignedMenuItem(
-            title: browserTitle,
-            keyEquivalent: browserCharStr,
-            isHeader: false,
-            icon: chromeIcon,
-            accessibilityLabel: "\(browserName)",
-            accessibilityHelp: "Hold caps lock and press \(browserChar) to switch to \(browserName)",
-            action: #selector(handleActivateBrowserClick(_:)),
+        // Unified HUD-style adaptive switcher card (Option 1: Clean single-row Profile Strip)
+        let stripItem = NSMenuItem()
+        let itemTitle = totalBrowserSharing > 1 ? "\(browserName) · 1/\(totalBrowserSharing) ↻" : browserName
+        stripItem.title = itemTitle
+        stripItem.keyEquivalent = browserCharStr
+        stripItem.action = #selector(handleActivateBrowserClick(_:))
+        stripItem.target = self
+        stripItem.toolTip = totalBrowserSharing > 1 ? "Hold caps lock and press \(browserChar) to cycle (1 of \(totalBrowserSharing): \(browserName))" : "Hold caps lock and press \(browserChar) to switch to \(browserName)"
+        stripItem.view = ProfileStripView(
+            profiles: displayProfiles,
+            activeDir: profileEngine.getActiveProfileDir(),
+            browserName: browserName,
+            browserIcon: chromeIcon,
+            totalBrowserSharing: totalBrowserSharing,
+            browserChar: browserChar,
+            letterGroups: []
+        )
+        menu.addItem(stripItem)
+        
+        if !displayProfiles.isEmpty && !profileEngine.isChromeFolderLinked {
+            let linkItem = makeAlignedMenuItem(
+                title: "Sync Real Profile Photos...",
+                keyEquivalent: "",
+                isHeader: false,
+                icon: NSImage(systemSymbolName: "photo.badge.arrow.forward", accessibilityDescription: nil),
+                accessibilityLabel: "Sync Real Profile Photos",
+                accessibilityHelp: "Link your Google Chrome folder to display real account photos",
+                action: #selector(handleLinkChromeAvatars(_:)),
+                target: self
+            )
+            menu.addItem(linkItem)
+        }
+    }
+    
+    internal func appendQuickAppsCheatSheetSection(to menu: NSMenu) {
+        let letterGroups = AppGroupEngine.statusMenuLetterGroups()
+        let totalApps = letterGroups.reduce(0) { $0 + $1.items.count }
+        
+        let cheatSheetTitle = totalApps > 0 ? "Quick Apps Cheat Sheet (\(totalApps))" : "Quick Apps Cheat Sheet"
+        let cheatSheetIcon = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "Quick Apps Cheat Sheet")
+        
+        let cheatSheetItem = makeAlignedMenuItem(
+            title: cheatSheetTitle,
+            icon: cheatSheetIcon,
+            accessibilityHelp: "View quick apps keyboard shortcuts cheat sheet",
             target: self
         )
         
-        if totalBrowserSharing > 1 {
-            let attr = NSMutableAttributedString(string: browserTitle)
-            let badge = NSAttributedString(
-                string: " · 1/\(totalBrowserSharing) ↻",
-                attributes: [
-                    .foregroundColor: NSColor.secondaryLabelColor,
-                    .font: NSFont.systemFont(ofSize: 11, weight: .regular)
-                ]
-            )
-            attr.append(badge)
-            chromeItem.attributedTitle = attr
-            chromeItem.toolTip = "Hold caps lock and press \(browserChar) to cycle (1 of \(totalBrowserSharing): \(browserName))"
-        } else {
-            chromeItem.toolTip = "Hold caps lock and press \(browserChar) to switch to \(browserName)"
-        }
-        menu.addItem(chromeItem)
+        let cheatSheetSubmenu = NSMenu()
+        cheatSheetSubmenu.autoenablesItems = false
         
-        let displayProfiles = !selectedList.isEmpty ? selectedList : (profileEngine.profiles.first != nil ? [profileEngine.profiles.first!] : [])
-        if !displayProfiles.isEmpty {
-            let stripItem = NSMenuItem()
-            stripItem.title = "Profiles"
-            stripItem.view = ProfileStripView(profiles: displayProfiles, activeDir: profileEngine.getActiveProfileDir())
-            menu.addItem(stripItem)
-            
-            if !profileEngine.isChromeFolderLinked {
-                let linkItem = makeAlignedMenuItem(
-                    title: "Sync Real Profile Photos...",
-                    keyEquivalent: "",
-                    isHeader: false,
-                    icon: NSImage(systemSymbolName: "photo.badge.arrow.forward", accessibilityDescription: nil),
-                    accessibilityLabel: "Sync Real Profile Photos",
-                    accessibilityHelp: "Link your Google Chrome folder to display real account photos",
-                    action: #selector(handleLinkChromeAvatars(_:)),
-                    target: self
-                )
-                menu.addItem(linkItem)
+        let sortedGroups = letterGroups.sorted { $0.letter < $1.letter }
+        
+        if sortedGroups.isEmpty {
+            let emptyItem = NSMenuItem(title: "No Quick Apps Pinned", action: nil, keyEquivalent: "")
+            emptyItem.isEnabled = false
+            cheatSheetSubmenu.addItem(emptyItem)
+        } else {
+            for group in sortedGroups {
+                let item = NSMenuItem()
+                item.target = nil
+                item.action = nil
+                item.isEnabled = false // Strictly read-only reference cheat sheet
+                
+                let appNames = group.items.map { item -> String in
+                    if item.bundleID.contains("antigravity-ide") || item.name == "Antigravity IDE" {
+                        return "AGY IDE"
+                    } else if item.name == "Activity Monitor" {
+                        return "Activity"
+                    } else if item.name == "System Settings" || item.name == "System Preferences" {
+                        return "Settings"
+                    } else {
+                        return item.name
+                    }
+                }.joined(separator: " · ")
+                
+                let attrTitle = NSMutableAttributedString()
+                
+                // [ X ] Keycap Badge
+                let keycapStr = "[ \(group.letter) ]  "
+                let keycapAttr: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.monospacedSystemFont(ofSize: 12.0, weight: .bold),
+                    .foregroundColor: NSColor.secondaryLabelColor
+                ]
+                attrTitle.append(NSAttributedString(string: keycapStr, attributes: keycapAttr))
+                
+                // App Names
+                let namesAttr: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: 12.5, weight: .medium),
+                    .foregroundColor: NSColor.labelColor
+                ]
+                attrTitle.append(NSAttributedString(string: appNames, attributes: namesAttr))
+                
+                // Cyclic indicator if multiple apps share this letter
+                if group.items.count > 1 {
+                    let cycleText = "  (\(group.items.count) ↻)"
+                    let cycleAttr: [NSAttributedString.Key: Any] = [
+                        .font: NSFont.systemFont(ofSize: 11.0, weight: .regular),
+                        .foregroundColor: NSColor.tertiaryLabelColor
+                    ]
+                    attrTitle.append(NSAttributedString(string: cycleText, attributes: cycleAttr))
+                }
+                
+                item.attributedTitle = attrTitle
+                let lowerChar = String(group.letter).lowercased()
+                item.toolTip = "Hold caps lock and press '\(lowerChar)' to switch to \(appNames)"
+                cheatSheetSubmenu.addItem(item)
             }
         }
+        
+        cheatSheetSubmenu.addItem(NSMenuItem.separator())
+        
+        let configureItem = makeAlignedMenuItem(
+            title: "Configure Quick Apps in Settings...",
+            icon: NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Configure Quick Apps"),
+            accessibilityHelp: "Open Settings to manage pinned apps and custom shortcuts",
+            action: #selector(handleOpenShortcutsSettings),
+            target: self
+        )
+        cheatSheetSubmenu.addItem(configureItem)
+        
+        cheatSheetItem.submenu = cheatSheetSubmenu
+        menu.addItem(cheatSheetItem)
     }
     
     internal func appendPreferencesSection(to menu: NSMenu) {
         // Preferences & System Controls
         let isCopyEnabled = CopyOnSelectEngine.shared.isEnabled
+        let copyIcon = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Copy on Select")
         let copyStatusItem = makeAlignedMenuItem(
             title: "Copy on Select",
+            icon: copyIcon,
             accessibilityHelp: "Toggle automatic copying of selected text to the clipboard",
             action: #selector(handleToggleCopyOnSelect),
             target: self
@@ -165,11 +250,12 @@ extension AppDelegate {
         copyStatusItem.state = .off
         let copyAttr = NSMutableAttributedString(string: "Copy on Select")
         let copyBadgeText = isCopyEnabled ? " · On" : " · Off"
+        let copyBadgeColor = isCopyEnabled ? NSColor.systemGreen : NSColor.secondaryLabelColor
         let copyBadge = NSAttributedString(
             string: copyBadgeText,
             attributes: [
-                .foregroundColor: NSColor.secondaryLabelColor,
-                .font: NSFont.systemFont(ofSize: 11, weight: .regular)
+                .foregroundColor: copyBadgeColor,
+                .font: NSFont.systemFont(ofSize: 11, weight: isCopyEnabled ? .semibold : .regular)
             ]
         )
         copyAttr.append(copyBadge)
@@ -203,32 +289,32 @@ extension AppDelegate {
         
         let tidySubmenu = NSMenu()
         
-        let tidyNowItem = NSMenuItem(
+        let tidyNowItem = makeAlignedMenuItem(
             title: "Tidy Windows Now",
+            icon: NSImage(systemSymbolName: "minus.rectangle", accessibilityDescription: nil),
             action: #selector(handleFinderTidyNow),
-            keyEquivalent: ""
+            target: self
         )
-        tidyNowItem.target = self
         tidyNowItem.isEnabled = finderWindowCount > 1
         tidySubmenu.addItem(tidyNowItem)
         
-        let closeDupesItem = NSMenuItem(
+        let closeDupesItem = makeAlignedMenuItem(
             title: "Close Duplicate Windows",
+            icon: NSImage(systemSymbolName: "square.stack.3d.down.right", accessibilityDescription: nil),
             action: #selector(handleFinderCloseDuplicates),
-            keyEquivalent: ""
+            target: self
         )
-        closeDupesItem.target = self
         closeDupesItem.isEnabled = finderWindowCount > 1
         tidySubmenu.addItem(closeDupesItem)
         
         tidySubmenu.addItem(NSMenuItem.separator())
         
-        let toggleAutoItem = NSMenuItem(
+        let toggleAutoItem = makeAlignedMenuItem(
             title: "Auto-Tidy (Keep Max 5 Windows)",
+            icon: NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: nil),
             action: #selector(handleToggleFinderTidyEnabled),
-            keyEquivalent: ""
+            target: self
         )
-        toggleAutoItem.target = self
         toggleAutoItem.state = finderTidyEngine.isEnabled ? .on : .off
         tidySubmenu.addItem(toggleAutoItem)
         
@@ -239,6 +325,7 @@ extension AppDelegate {
             title: "Settings...",
             keyEquivalent: ",",
             modifierMask: [.command],
+            icon: NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Settings"),
             accessibilityHelp: "Configure quick apps, browser profiles, copy on select, and system shortcuts",
             action: #selector(handleOpenSettings),
             target: self
@@ -259,26 +346,43 @@ extension AppDelegate {
     
     internal func appendDiagnosticsAndAboutSection(to menu: NSMenu) {
         // About & Diagnostics
+        let aboutIcon = NSImage(systemSymbolName: "info.circle", accessibilityDescription: "About")
         let aboutItem = makeAlignedMenuItem(
             title: "About NNTS...",
+            icon: aboutIcon,
             accessibilityHelp: "View version and application information",
             action: #selector(handleAbout),
             target: self
         )
         let aboutAttr = NSMutableAttributedString(string: "About NNTS")
-        let versionBadge = NSAttributedString(
-            string: "  v\(AppDelegate.appVersion)",
+        let isPro = LicenseEngine.shared.isPro
+        let versionBadgeText = isPro ? "  v\(AppDelegate.appVersion) · PRO" : "  v\(AppDelegate.appVersion)"
+        let versionBadge = NSMutableAttributedString(
+            string: versionBadgeText,
             attributes: [
                 .foregroundColor: NSColor.secondaryLabelColor,
                 .font: NSFont.systemFont(ofSize: 11, weight: .regular)
             ]
         )
+        if isPro {
+            let proRange = (versionBadgeText as NSString).range(of: "PRO")
+            if proRange.location != NSNotFound {
+                let proColor = NSColor(name: nil) { appearance in
+                    let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                    return isDark ? NSColor(red: 0.961, green: 0.729, blue: 0.075, alpha: 1.0) : NSColor(red: 0.72, green: 0.48, blue: 0.02, alpha: 1.0)
+                }
+                versionBadge.addAttribute(.foregroundColor, value: proColor, range: proRange)
+                versionBadge.addAttribute(.font, value: NSFont.systemFont(ofSize: 11, weight: .bold), range: proRange)
+            }
+        }
         aboutAttr.append(versionBadge)
         aboutItem.attributedTitle = aboutAttr
         menu.addItem(aboutItem)
         
+        let reportIcon = NSImage(systemSymbolName: "bubble.left.and.exclamationmark.bubble.right", accessibilityDescription: "Report an Issue")
         let reportItem = makeAlignedMenuItem(
             title: "Report an Issue...",
+            icon: reportIcon,
             accessibilityHelp: "Open diagnostics and report an issue",
             action: #selector(handleReportIssue),
             target: self
@@ -287,10 +391,12 @@ extension AppDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
+        let quitIcon = NSImage(systemSymbolName: "power", accessibilityDescription: "Quit")
         let quitItem = makeAlignedMenuItem(
             title: "Quit NNTS",
             keyEquivalent: "q",
             modifierMask: [.command],
+            icon: quitIcon,
             accessibilityHelp: "Quit the application",
             action: #selector(handleQuit),
             target: self
@@ -434,6 +540,11 @@ extension AppDelegate {
     @objc public func handleOpenSettings() {
         MinimalHUDWindow.shared.hideImmediate()
         SettingsWindow.shared.show()
+    }
+    
+    @objc public func handleOpenShortcutsSettings() {
+        MinimalHUDWindow.shared.hideImmediate()
+        SettingsWindow.shared.show(tab: .shortcuts)
     }
     
     @objc public func handleOpenAppSearch() {

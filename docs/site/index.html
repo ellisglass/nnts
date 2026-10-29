@@ -52,6 +52,20 @@
 
       <!-- Header Action Controls -->
       <div class="nnts-header-actions">
+        <!-- Audio Synth Toggle -->
+        <button id="audio-toggle-btn" class="nnts-btn nnts-btn-tactile is-active" title="Sound Effects: ON (Click to mute)" aria-label="Toggle Tactile Relay Audio">
+          <svg class="audio-svg-icon audio-icon-on" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+          <svg class="audio-svg-icon audio-icon-off" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+
         <!-- GitHub Link -->
         <a href="https://github.com/ellisglass/nnts" target="_blank" rel="noopener" class="nnts-btn nnts-btn-ghost" title="Source Code on GitHub">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
@@ -104,46 +118,154 @@
       </div>
 
       <!-- ====================================================================
-           MODERN SHOWCASE (META / APPLE STYLE MONOLITHIC MEDIA PLATE)
+           HERO RETRO TV & REMOTE WORKSTATION (SONY TRINITRON TV + RM-NNTS REMOTE)
            ==================================================================== -->
-      <div class="modern-showcase-container" id="modern-showcase">
-        
-        <!-- Showcase Header with Channel Tabs -->
-        <div class="modern-showcase-header">
-          <div class="modern-channel-tabs">
-            <button class="modern-channel-btn active" id="modern-ch-1" data-channel="1">
-              <span class="btn-dot"></span>
-              <span>01 // Browser Profiles</span>
-            </button>
-            <button class="modern-channel-btn" id="modern-ch-2" data-channel="2">
-              <span class="btn-dot"></span>
-              <span>02 // Copy-on-Select</span>
-            </button>
+      <div class="hero-tv-station" id="hero-tv-station">
+
+        <!-- THE REALISTIC ALIENWARE SONY TRINITRON REMOTE -->
+        <div class="tv-remote-handset realistic-alienware-remote" id="tv-remote-handset" aria-label="Sony Trinitron Remote Control">
+          <!-- Infrared Emitter Lens -->
+          <div class="remote-top-lens">
+            <div class="remote-ir-diode" id="remote-ir-led" aria-hidden="true"></div>
           </div>
 
-          <div class="modern-showcase-meta">
-            <span class="modern-meta-badge">60 FPS</span>
-            <span>Real Native Recording</span>
+          <!-- Master Remote Prop Body -->
+          <div class="remote-prop-body">
+            <img src="assets/nnts/canonical_realistic_rc_remote.png" alt="Sony Trinitron Remote Control RM-NNTS" class="remote-prop-image" id="remote-prop-image" draggable="false">
+
+            <!-- Real-time Tactile Interactive Hotspot Controls -->
+            <!-- 1. Glowing Green Power Key -->
+            <button class="rc-hotspot rc-hotspot-power pulsing" id="remote-power-btn" title="Turn TV ON / OFF (Power)" aria-label="Power TV">
+              <span class="hotspot-glow-ring"></span>
+            </button>
+
+            <!-- 2. Audio Mute Key -->
+            <button class="rc-hotspot rc-hotspot-mute" id="remote-mute-btn" title="Audio / Mute" aria-label="Mute Audio">
+              <span class="mute-sym-hidden" id="remote-mute-icon" style="display:none;">🔊</span>
+            </button>
+
+            <!-- 3. Number 1 Key (CH 1: Profiles & Apps) -->
+            <button class="rc-hotspot rc-hotspot-num rc-hotspot-num1 active" data-channel="1" id="remote-num-1" title="CH 1: Chrome Profiles & Apps" aria-label="Channel 1">
+              <span class="num-active-glow"></span>
+            </button>
+
+            <!-- 4. Number 2 Key (CH 2: Copy-on-Select) -->
+            <button class="rc-hotspot rc-hotspot-num rc-hotspot-num2" data-channel="2" id="remote-num-2" title="CH 2: Copy-on-Select" aria-label="Channel 2">
+              <span class="num-active-glow"></span>
+            </button>
+
+            <!-- 5. D-Pad Rocker (CH + / Up) -->
+            <button class="rc-hotspot rc-hotspot-dpad rc-hotspot-up" id="remote-ch-up" title="Next Channel (CH +)" aria-label="Channel Up"></button>
+
+            <!-- 6. D-Pad Rocker (CH - / Down) -->
+            <button class="rc-hotspot rc-hotspot-dpad rc-hotspot-down" id="remote-ch-down" title="Previous Channel (CH -)" aria-label="Channel Down"></button>
+          </div>
+
+          <!-- Bottom Subtitle / Status -->
+          <div class="remote-foot-meta">
+            <span class="remote-tx-status" id="remote-tx-led" title="IR TX Signal"></span>
+            <span class="remote-meta-model">RM-NNTS</span>
           </div>
         </div>
 
-        <!-- Video Viewport with Seamless HUD Overlay Badge -->
-        <div class="modern-video-viewport">
-          <video id="modern-video-player" class="modern-video-element" loop muted playsinline preload="auto" poster="assets/images/video-poster-hud.png">
-            <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
-          </video>
+        <!-- THE TELEVISION -->
+        <div class="retro-tv-chassis" id="retro-tv-chassis">
 
-          <!-- Minimal Apple Floating HUD Badge -->
-          <div class="modern-hud-floating-badge" id="modern-hud-badge">
-            <img src="assets/images/profiles_v2/personal.png" alt="Profile" id="modern-hud-avatar" class="modern-hud-avatar">
-            <div class="modern-hud-info">
-              <div class="modern-hud-title" id="modern-hud-title">Personal</div>
-              <div class="modern-hud-sub" id="modern-hud-sub">Google Chrome &bull; Window Raised</div>
+          <!-- TV Cabinet Top Trim -->
+          <div class="tv-cabinet-header">
+            <div class="tv-brand-badge">
+              <span class="badge-nnts">NNTS</span>
             </div>
-            <div class="modern-hud-hotkey">
-              <kbd class="modern-hud-kbd">caps lock</kbd> + <kbd class="modern-hud-kbd">C</kbd> + <kbd class="modern-hud-kbd">1</kbd>
+            <div class="tv-cabinet-grill" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
             </div>
           </div>
+
+          <!-- Main TV CRT Screen Container -->
+          <div class="tv-main-display-row">
+
+            <!-- CRT Screen Bezel -->
+            <div class="tv-screen-bezel" id="tv-screen-bezel">
+
+              <!-- CRT Cathode Tube Glass (Scanlines strictly confined here!) -->
+              <div class="tv-screen-glass" id="tv-screen-glass">
+
+                <!-- Authentic CRT Left Phosphor Trace (Trinitron signature) -->
+                <div class="crt-vector-arc" aria-hidden="true"></div>
+
+                <!-- CRT Screen Scanline & Curvature Vignette (Localized inside TV only) -->
+                <div class="tv-scanlines-layer" aria-hidden="true"></div>
+                <div class="tv-phosphor-glow-layer" aria-hidden="true"></div>
+
+                <!-- Standby Screen (Shown when TV is OFF) -->
+                <div class="tv-standby-screen" id="tv-standby-screen" title="Click to Power On">
+                  <div class="standby-content">
+                    <div class="standby-logo-glow">NNTS TRINITRON</div>
+                    <div class="standby-status-pill">
+                      <span class="standby-blink-dot">●</span>
+                      <span>STANDBY</span>
+                    </div>
+                    <div class="standby-instructions">
+                      <span class="instruction-arrow">▶</span>
+                      <span>PRESS <strong class="glow-key">⏻ POWER</strong> ON REMOTE TO RESUME</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- The Live Video Recording Player -->
+                <video id="tv-video-player" class="tv-video-element" loop muted playsinline preload="auto" poster="assets/images/video-poster-hud.png">
+                  <source src="assets/media/screenrec-switch-app.mp4" type="video/mp4">
+                </video>
+
+                <!-- On-Screen Display (OSD) Overlay -->
+                <div class="tv-osd-overlay" id="tv-osd-overlay">
+                  <div class="osd-header-row">
+                    <span class="osd-num-pill" id="tv-osd-num">CH 01</span>
+                    <span class="osd-title-text" id="tv-osd-channel-label">Profiles & Quick Apps</span>
+                  </div>
+                  <div class="osd-sub-line" id="tv-osd-sub-label">
+                    caps lock + C/B + 1..4 to raise profile window
+                  </div>
+                </div>
+
+                <!-- CRT Power-On / Power-Off Flash Layer -->
+                <div class="crt-power-flash" id="crt-power-flash" aria-hidden="true"></div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- TV Cabinet Bottom Trim -->
+          <div class="tv-cabinet-footer">
+            <div class="tv-cabinet-footer-left">
+              <div class="tv-cabinet-grill" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            <div class="tv-cabinet-footer-right">
+              <!-- Infrared Receiver Window -->
+              <div class="tv-ir-sensor-eye" id="tv-ir-eye" title="Remote IR Receiver Sensor">
+                <div class="sensor-glow"></div>
+              </div>
+              <!-- Physical TV Power Button & LED -->
+              <div class="tv-panel-power-group">
+                <div class="tv-power-indicator-wrap">
+                  <span class="tv-power-led standby" id="tv-power-led" title="Power / Standby"></span>
+                </div>
+                <button class="tv-hardware-power-btn" id="tv-hardware-power-btn" title="TV Power On/Off">
+                  <span class="tv-hw-power-icon">⏻</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ELEGANT AMBIENT MASCOT CHARACTER (MODERN LUXURY INTEGRATION) -->
+        <div class="hero-ambient-figure" id="hero-ambient-figure" aria-hidden="true">
+          <div class="ambient-figure-halo"></div>
+          <img src="assets/images/figure_transparent.png" alt="" class="ambient-figure-img" draggable="false">
         </div>
 
       </div>
@@ -247,7 +369,7 @@
         <!-- BENTO CARD 2: FIRST-LETTER APP CYCLING -->
         <div class="bento-card bento-card-cycling" data-bento-card>
           <div class="bento-card-header">
-            <span class="bento-tag tag-cyan">02 // NO SEARCH LAG</span>
+            <span class="bento-tag tag-green">02 // NO SEARCH LAG</span>
             <div class="bento-hotkey-badge">
               <kbd class="bento-kbd">caps lock</kbd> + <kbd class="bento-kbd">[a-z]</kbd>
             </div>

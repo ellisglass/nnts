@@ -2,7 +2,7 @@
 //  SettingsWindow.swift
 //  NNTS (macOS Productivity Suite)
 //
-//  Clean, simplified native macOS Settings Window hosting SettingsView.
+//  Clean, refined native macOS Settings Window hosting SettingsView.
 //
 
 import SwiftUI
@@ -22,47 +22,82 @@ public struct SettingsView: View {
     
     public var body: some View {
         VStack(spacing: 0) {
-            // Streamlined Tab Header
-            HStack(spacing: 6) {
-                ForEach(SettingsTab.allCases) { tab in
-                    Button(action: {
-                        withAnimation(NNTSMotion.magneticGlide) {
-                            viewModel.selectedTab = tab
+            // Unified macOS Header Bar
+            HStack(spacing: 12) {
+                // Window drag margin for traffic lights
+                Spacer()
+                    .frame(width: 58)
+                
+                // Brand Title & Edition Badge
+                HStack(spacing: 7) {
+                    Text("NNTS")
+                        .font(NNTSFont.display(size: 13.5))
+                        .foregroundColor(Color(nsColor: .labelColor))
+                    
+                    Text("Settings")
+                        .font(NNTSFont.display(size: 13.5))
+                        .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                    
+                    if viewModel.isPro {
+                        HStack(spacing: 3) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 9))
+                            Text("PRO")
+                                .font(.system(size: 9, weight: .bold))
                         }
-                    }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: tab.iconName)
-                                .font(.system(size: 11.5, weight: viewModel.selectedTab == tab ? .semibold : .medium))
-                            Text(tab.rawValue)
-                                .font(.system(size: 12, weight: viewModel.selectedTab == tab ? .semibold : .medium))
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .foregroundColor(viewModel.selectedTab == tab ? Color(nsColor: .labelColor) : Color(nsColor: .secondaryLabelColor))
-                        .background {
-                            if viewModel.selectedTab == tab {
-                                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .fill(Color(nsColor: .controlBackgroundColor))
-                                    .shadow(color: Color.black.opacity(0.12), radius: 2, y: 1)
-                                    .matchedGeometryEffect(id: "activeTab", in: tabNamespace)
-                            }
-                        }
+                        .foregroundColor(NNTSColors.cadmiumYellow)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule().fill(NNTSColors.cadmiumYellow.opacity(0.18))
+                        )
                     }
-                    .buttonStyle(.plain)
                 }
                 
                 Spacer()
+                
+                // Streamlined Tab Switcher
+                HStack(spacing: 4) {
+                    ForEach(Array(SettingsTab.allCases.enumerated()), id: \.element) { index, tab in
+                        Button(action: {
+                            withAnimation(NNTSMotion.magneticGlide) {
+                                viewModel.selectedTab = tab
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: tab.iconName)
+                                    .font(.system(size: 11.5, weight: viewModel.selectedTab == tab ? .semibold : .medium))
+                                Text(tab.rawValue)
+                                    .font(.system(size: 12, weight: viewModel.selectedTab == tab ? .semibold : .medium))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 5)
+                            .foregroundColor(viewModel.selectedTab == tab ? Color(nsColor: .labelColor) : Color(nsColor: .secondaryLabelColor))
+                            .background {
+                                if viewModel.selectedTab == tab {
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .fill(Color(nsColor: .controlBackgroundColor))
+                                        .shadow(color: Color.black.opacity(0.12), radius: 2, y: 1)
+                                        .matchedGeometryEffect(id: "activeTab", in: tabNamespace)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .help("⌘\(index + 1) — Switch to \(tab.rawValue)")
+                    }
+                }
+                .padding(3)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.35))
+                )
             }
-            .padding(4)
-            .background(
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.35))
-            )
             .padding(.horizontal, 16)
             .padding(.top, 14)
-            .padding(.bottom, 10)
+            .padding(.bottom, 12)
             
             Divider()
+                .opacity(0.4)
             
             // Tab Content
             ScrollView {
@@ -79,7 +114,7 @@ public struct SettingsView: View {
                 .padding(16)
             }
         }
-        .frame(minWidth: 580, minHeight: 460)
+        .frame(minWidth: 600, minHeight: 480)
     }
 }
 
@@ -89,26 +124,53 @@ public struct SettingsView: View {
 public final class SettingsWindow: NSWindow {
     public static let shared = SettingsWindow()
     public let viewModel = SettingsViewModel()
+    private var windowKeyObserver: Any?
+    private var appActiveObserver: Any?
     
     private init() {
-        let contentRect = NSRect(x: 0, y: 0, width: 600, height: 480)
+        let contentRect = NSRect(x: 0, y: 0, width: 640, height: 530)
         super.init(
             contentRect: contentRect,
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         
         self.title = "NNTS Settings"
-        self.titleVisibility = .visible
+        self.titleVisibility = .hidden
+        self.titlebarAppearsTransparent = true
+        self.isMovableByWindowBackground = true
         self.isReleasedWhenClosed = false
         self.center()
         self.setFrameAutosaveName("NNTSSettingsWindowFrame")
-        self.minSize = NSSize(width: 560, height: 440)
+        self.minSize = NSSize(width: 580, height: 460)
         
         let rootView = SettingsView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: rootView)
         self.contentView = hostingView
+        
+        // Auto-refresh when window or application receives focus (e.g. returning from System Settings)
+        self.windowKeyObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification,
+            object: self,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.viewModel.refreshAll()
+            }
+        }
+        
+        self.appActiveObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                if self?.isVisible == true {
+                    self?.viewModel.refreshAll()
+                }
+            }
+        }
     }
     
     public func show(tab: SettingsTab? = nil) {

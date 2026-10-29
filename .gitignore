@@ -48,6 +48,8 @@ DerivedData/
 scratch/
 graphify-out/
 .graphifyignore
+**/.hyperframes/
+.hyperframes/
 autoresearch/
 tutorial_30s/
 assets/archive/site_backups/

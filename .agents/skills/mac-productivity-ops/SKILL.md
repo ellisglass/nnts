@@ -19,8 +19,8 @@ Always execute pre-flight diagnostics and verification before initiating any bui
 make health
 ```
 This runs the 3-point automated verification:
-1. Version synchronization check between `VERSION.txt`, `BUILD.txt`, and `src/ChromeQuickAccess/Info.plist`.
-2. Binary architecture verification (`arm64` + `x86_64` Mach-O universal slices in `dist/Chrome Quick Access.app`).
+1. Version synchronization check between `VERSION.txt`, `BUILD.txt`, and `src/NNTS/Info.plist`.
+2. Binary architecture verification (`arm64` Mach-O slice in `dist/NNTS.app`).
 3. Automated test suite run (`./tests/run_tests.sh`).
 
 ### Step 2: Semantic Version Bumping
@@ -32,7 +32,7 @@ make bump-major  # Breaking architectural changes (e.g. 1.1.0 -> 2.0.0)
 ```
 This automatically:
 - Updates `VERSION.txt` and increments `BUILD.txt`.
-- Updates `src/ChromeQuickAccess/Info.plist` (`CFBundleShortVersionString` and `CFBundleVersion`) via `plutil`.
+- Updates `src/NNTS/Info.plist` (`CFBundleShortVersionString` and `CFBundleVersion`) via `plutil`.
 
 ### Step 3: Local Builds & Packaging
 ```bash
@@ -74,7 +74,7 @@ If releasing locally without cloud CI:
 The GitHub Actions CI pipeline (`.github/workflows/ci.yml`) runs on every pull request and push to `main` across three isolated stages:
 - **`lint-and-validate`**: Verifies version synchronization between `VERSION.txt`, `BUILD.txt`, and `Info.plist`, and lints all shell scripts.
 - **`test`**: Independent fast-fail gate running the Swift Testing unit suite in <30 seconds.
-- **`package`**: Compiles universal Mach-O binaries, packages the `.dmg` installer, computes SHA-256 hashes, and uploads downloadable artifacts (`ChromeQuickAccess-dmg`, 7-day retention) directly to the PR / workflow run.
+- **`package`**: Compiles universal Mach-O binaries, packages the `.dmg` installer, computes SHA-256 hashes, and uploads downloadable artifacts (`NNTS-dmg`, 7-day retention) directly to the PR / workflow run.
 
 ---
 

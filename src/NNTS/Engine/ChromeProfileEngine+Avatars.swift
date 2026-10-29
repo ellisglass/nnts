@@ -665,7 +665,13 @@ extension ChromeProfileEngine {
         
         let text = badgeText.isEmpty ? "C" : badgeText
         let fontSize: CGFloat = text.count > 2 ? 30 : (text.count == 2 ? 36 : 42)
-        let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
+        NNTSFont.registerFonts()
+        let font: NSFont
+        if let custom = NSFont(name: NNTSFont.spaceGroteskBoldName, size: fontSize) {
+            font = custom
+        } else {
+            font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
+        }
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: NSColor.white

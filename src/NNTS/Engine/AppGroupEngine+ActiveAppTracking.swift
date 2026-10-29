@@ -105,6 +105,10 @@ extension AppGroupEngine {
         lastActiveBundleIDByLetter.removeAll()
         lastActiveTimestamps.removeAll()
         testOpenWindowsOverride = nil
+        mockFrontmostBundleID = nil
+        for k in UserDefaults.standard.dictionaryRepresentation().keys where k.hasPrefix("LastActiveApp_") {
+            UserDefaults.standard.removeObject(forKey: k)
+        }
     }
     
     public static func prioritizedBundleID(from bundleIDs: [String]) -> String? {

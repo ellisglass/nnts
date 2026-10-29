@@ -27,7 +27,7 @@
   --scanline-magenta: #C837AB;
   --scanline-magenta-glow: rgba(200, 55, 171, 0.45);
   
-  --electric-cyan: #00F0FF;
+  /* purged cyan */
   
   --titanium-white: #FFFFFF;
   --titanium-text-dim: #94A3B8;
@@ -433,7 +433,7 @@ body.nnts-body {
 }
 
 .hero-title-accent {
-  background: linear-gradient(135deg, var(--electric-cyan) 0%, var(--phosphor-green) 100%);
+  background: linear-gradient(135deg, var(--phosphor-green) 0%, var(--phosphor-green) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -587,8 +587,8 @@ body.nnts-body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.75rem;
-  max-width: 1120px;
+  gap: 1.5rem;
+  max-width: 1200px;
   margin: 0.35rem auto 0;
   position: relative;
   z-index: 10;
@@ -659,8 +659,8 @@ body.nnts-body {
 }
 
 .realistic-alienware-remote .remote-ir-diode.firing {
-  background: #00F0FF;
-  box-shadow: 0 0 12px #00F0FF, 0 0 20px #39FF14, 0 0 30px #ffffff;
+  background: var(--phosphor-green);
+  box-shadow: 0 0 12px var(--phosphor-green), 0 0 20px #39FF14, 0 0 30px #ffffff;
 }
 
 /* Master Alienware Remote Prop Body */
@@ -813,16 +813,18 @@ body.nnts-body {
 }
 
 .remote-tx-status {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background-color: #333;
-  transition: background-color 0.1s var(--ease-out), box-shadow 0.1s var(--ease-out);
+  background-color: #24252e;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-block;
+  transition: background-color 0.08s var(--ease-out), box-shadow 0.08s var(--ease-out);
 }
 
 .remote-tx-status.active {
-  background-color: var(--phosphor-green);
-  box-shadow: 0 0 8px var(--phosphor-green);
+  background-color: var(--phosphor-green) !important;
+  box-shadow: 0 0 10px var(--phosphor-green), 0 0 18px var(--phosphor-green-glow), 0 0 2px #ffffff !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -841,6 +843,7 @@ body.nnts-body {
     0 0 35px rgba(57, 255, 20, 0.04),
     inset 0 1px 1px rgba(255, 255, 255, 0.15);
   position: relative;
+  z-index: 5;
   overflow: hidden;
 }
 
@@ -1245,8 +1248,61 @@ body.nnts-body {
 }
 
 .tv-ir-sensor-eye.pulse .sensor-glow {
-  background: #00F0FF;
-  box-shadow: 0 0 10px #00F0FF;
+  background: var(--phosphor-green);
+  box-shadow: 0 0 10px var(--phosphor-green);
+}
+
+/* ==========================================================================
+   ELEGANT AMBIENT MASCOT FIGURE (MODERN LUXURY HERO WORKSTATION)
+   ========================================================================== */
+.hero-ambient-figure {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  pointer-events: none;
+  user-select: none;
+  z-index: 6;
+  animation: ambientFigureFloat 5s ease-in-out infinite alternate;
+}
+
+@keyframes ambientFigureFloat {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-8px);
+  }
+}
+
+.ambient-figure-halo {
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(57, 255, 20, 0.16) 0%,
+    rgba(0, 240, 255, 0.08) 35%,
+    rgba(200, 55, 171, 0.04) 60%,
+    transparent 75%
+  );
+  filter: blur(28px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ambient-figure-img {
+  position: relative;
+  width: 100%;
+  height: auto;
+  display: block;
+  z-index: 2;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.95))
+          drop-shadow(0 0 25px rgba(57, 255, 20, 0.15));
 }
 
 /* Laptop Viewport Height Optimization (e.g. MacBook Pro 14" default 1512x982) */
@@ -1349,7 +1405,23 @@ body.nnts-body {
 }
 
 /* Responsive TV and Remote */
+@media (max-width: 1200px) {
+  .hero-ambient-figure {
+    width: 140px;
+  }
+}
+
+@media (max-width: 992px) {
+  .hero-ambient-figure {
+    display: none;
+  }
+}
+
 @media (max-width: 860px) {
+  .hero-ambient-figure {
+    display: none;
+  }
+
   .hero-tv-station {
     flex-direction: column-reverse;
     align-items: center;
@@ -1504,7 +1576,7 @@ body.nnts-body {
 }
 
 .tag-green { color: var(--phosphor-green); }
-.tag-cyan { color: var(--electric-cyan); }
+.tag-green { color: var(--phosphor-green); }
 .tag-magenta { color: var(--scanline-magenta); }
 
 .bento-hotkey-badge, .bento-counter-badge {
@@ -1872,35 +1944,35 @@ body.nnts-body {
   text-transform: uppercase;
 }
 
-/* Cyan Variant for Quick Apps Keychord */
-.keychord-cluster-cyan {
+/* Green Variant for Quick Apps Keychord */
+.keychord-cluster-green {
   border-color: rgba(0, 240, 255, 0.15);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 240, 255, 0.08);
 }
 
-.keychord-cap-cyan {
+.keychord-cap-green {
   border-color: rgba(0, 240, 255, 0.25);
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 240, 255, 0.12);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .keychord-cap-cyan:hover {
+  .keychord-cap-green:hover {
     border-color: rgba(0, 240, 255, 0.5);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.7), 0 0 18px rgba(0, 240, 255, 0.3);
   }
 }
 
-.keychord-cap-cyan:active, .keychord-cap-cyan.is-pressed {
+.keychord-cap-green:active, .keychord-cap-green.is-pressed {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 22px rgba(0, 240, 255, 0.6);
 }
 
-.keychord-led-cyan {
-  background: var(--electric-cyan);
-  box-shadow: 0 0 6px var(--electric-cyan);
+.keychord-led-green {
+  background: var(--phosphor-green);
+  box-shadow: 0 0 6px var(--phosphor-green);
 }
 
 .keychord-cap-letter .keychord-cap-label {
-  color: var(--electric-cyan);
+  color: var(--phosphor-green);
 }
 
 /* Quick Apps Letter Shelf */
@@ -2074,8 +2146,8 @@ body.nnts-body {
 
 .bento-letter-btn.active {
   background: rgba(0, 240, 255, 0.12);
-  border-color: var(--electric-cyan);
-  color: var(--electric-cyan);
+  border-color: var(--phosphor-green);
+  color: var(--phosphor-green);
   box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
   font-weight: 700;
 }
@@ -2161,7 +2233,7 @@ body.nnts-body {
   font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 700;
-  color: var(--electric-cyan);
+  color: var(--phosphor-green);
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -2195,7 +2267,7 @@ body.nnts-body {
 @media (hover: hover) and (pointer: fine) {
   .mechanical-keycap:hover {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 240, 255, 0.4);
-    border-color: var(--electric-cyan);
+    border-color: var(--phosphor-green);
   }
 }
 
@@ -2209,7 +2281,7 @@ body.nnts-body {
   font-family: "Space Grotesk", var(--font-mono);
   font-size: 1.55rem;
   font-weight: 800;
-  color: var(--electric-cyan);
+  color: var(--phosphor-green);
   line-height: 1;
 }
 
@@ -2241,7 +2313,7 @@ body.nnts-body {
 
 .cycler-app-item.active {
   background: rgba(0, 240, 255, 0.1);
-  border-color: var(--electric-cyan);
+  border-color: var(--phosphor-green);
   box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
 }
 
@@ -2273,7 +2345,7 @@ body.nnts-body {
 .cycler-check {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--electric-cyan);
+  color: var(--phosphor-green);
   font-weight: bold;
 }
 
@@ -2983,6 +3055,9 @@ body.nnts-body {
 }
 
 @media (max-width: 480px) {
+  .hero-ambient-figure {
+    display: none;
+  }
   .hero-title {
     font-size: 1.32rem;
     line-height: 1.15;

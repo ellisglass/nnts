@@ -310,4 +310,131 @@ extension ChromeQuickAccessUnitTests {
         let initialTidyLimit = FinderTidyEngine.shared.maxWindows
         vm.setFinderMaxWindows(initialTidyLimit)
     }
+
+    @Test @MainActor
+    func testSettingsViewModelExtendedActionsAndHelpers() {
+        let vm = SettingsViewModel()
+        
+        // Version and Installation Source
+        #expect(!vm.appVersion.isEmpty)
+        #expect(vm.installationSource == .homebrew || vm.installationSource == .directDownload)
+        
+        // Status message clearing
+        vm.statusMessage = "Test message"
+        vm.isStatusError = false
+        #expect(vm.statusMessage == "Test message")
+        vm.clearStatusMessage()
+        #expect(vm.statusMessage == nil)
+        
+        // Tidy Finder now action
+        vm.tidyFinderWindowsNow()
+        #expect(vm.statusMessage != nil)
+        #expect(vm.isStatusError == false)
+        
+        // Slot limit calculation
+        vm.isPro = false
+        #expect(vm.isSlotLimitReached == (vm.pinnedApps.count >= AppGroupEngine.freePinnedAppsLimit))
+        vm.isPro = true
+        #expect(vm.isSlotLimitReached == false)
+        
+        // Cycling badge calculation
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let app1 = AntigravityItem(name: "Telegram", bundleID: "com.tdesktop.Telegram", path: "/Applications/Telegram.app", icon: dummyIcon, index: 1)
+        let app2 = AntigravityItem(name: "Terminal", bundleID: "com.apple.Terminal", path: "/System/Applications/Utilities/Terminal.app", icon: dummyIcon, index: 2)
+        let app3 = AntigravityItem(name: "Safari", bundleID: "com.apple.Safari", path: "/Applications/Safari.app", icon: dummyIcon, index: 3)
+        
+        vm.pinnedApps = [app1, app2, app3]
+        
+        let badge1 = vm.cycleBadge(for: app1)
+        let badge2 = vm.cycleBadge(for: app2)
+        let badge3 = vm.cycleBadge(for: app3)
+        
+        #expect(badge1 == "1/2 ↻")
+        #expect(badge2 == "2/2 ↻")
+        #expect(badge3 == nil)
+        
+        // Deactivate confirmation toggle
+        vm.showingDeactivateConfirm = false
+        #expect(!vm.showingDeactivateConfirm)
+        vm.showingDeactivateConfirm = true
+        #expect(vm.showingDeactivateConfirm)
+    }
+
+    @Test @MainActor
+    func testSettingsWindowChromeAndInvariants() {
+        let window = SettingsWindow.shared
+        #expect(window.styleMask.contains(.fullSizeContentView))
+        #expect(window.titlebarAppearsTransparent == true)
+        #expect(window.titleVisibility == .hidden)
+        #expect(window.isMovableByWindowBackground == true)
+        #expect(window.minSize.width >= 560)
+        #expect(window.minSize.height >= 440)
+    }
+
+    @Test @MainActor
+    func testPinnedAppsLetterGroupingAndCycleReordering() {
+        let dummyIcon = NSImage(size: NSSize(width: 32, height: 32))
+        let appT1 = AntigravityItem(name: "Telegram", bundleID: "com.tdesktop.Telegram", path: "/Applications/Telegram.app", icon: dummyIcon, index: 1)
+        let appT2 = AntigravityItem(name: "Terminal", bundleID: "com.apple.Terminal", path: "/System/Applications/Utilities/Terminal.app", icon: dummyIcon, index: 2)
+        let appS = AntigravityItem(name: "Spotify", bundleID: "com.spotify.client", path: "/Applications/Spotify.app", icon: dummyIcon, index: 3)
+        let appA = AntigravityItem(name: "Antigravity", bundleID: "com.google.antigravity", path: "/Applications/Antigravity.app", icon: dummyIcon, index: 4)
+        
+        let vm = SettingsViewModel()
+        vm.pinnedApps = [appT1, appS, appT2, appA]
+        
+        // Groups should be sorted alphabetically: A, S, T
+        let groups = vm.pinnedLetterGroups
+        #expect(groups.count == 3)
+        #expect(groups[0].letter == "A")
+        #expect(groups[0].items.count == 1)
+        #expect(groups[0].items[0].name == "Antigravity")
+        
+        #expect(groups[1].letter == "S")
+        #expect(groups[1].items.count == 1)
+        #expect(groups[1].items[0].name == "Spotify")
+        
+        #expect(groups[2].letter == "T")
+        #expect(groups[2].items.count == 2)
+        #expect(groups[2].items[0].name == "Telegram")
+        #expect(groups[2].items[1].name == "Terminal")
+        
+        // Test AppGroupEngine reorder logic with mock overrides
+        let prev = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs")
+        let prevSelected = AppGroupEngine.selectedBundleIDs
+        AppGroupEngine.terminal.customItemsOverride = [appT1, appT2]
+        AppGroupEngine.terminal.refreshItems()
+        
+        defer {
+            AppGroupEngine.terminal.customItemsOverride = nil
+            AppGroupEngine.terminal.refreshItems()
+            AppGroupEngine.selectedBundleIDs = prevSelected
+            if let p = prev {
+                UserDefaults.standard.set(p, forKey: "SelectedAppBundleIDs")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "SelectedAppBundleIDs")
+            }
+        }
+        
+        UserDefaults.standard.set([appT1.bundleID, appT2.bundleID], forKey: "SelectedAppBundleIDs")
+        AppGroupEngine.selectedBundleIDs = Set([appT1.bundleID, appT2.bundleID])
+        
+        // appT1 is at top of 'T' group -> moving up should fail
+        #expect(AppGroupEngine.movePinnedAppUp(bundleID: appT1.bundleID) == false)
+        // appT2 is at bottom of 'T' group -> moving down should fail
+        #expect(AppGroupEngine.movePinnedAppDown(bundleID: appT2.bundleID) == false)
+        
+        // Moving appT2 up swaps it with appT1
+        let movedUp = AppGroupEngine.movePinnedAppUp(bundleID: appT2.bundleID)
+        #expect(movedUp == true)
+        
+        let savedAfterUp = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs") ?? []
+        #expect(savedAfterUp == [appT2.bundleID, appT1.bundleID])
+        
+        // Moving appT2 down restores original order
+        let movedDown = AppGroupEngine.movePinnedAppDown(bundleID: appT2.bundleID)
+        #expect(movedDown == true)
+        
+        let savedAfterDown = UserDefaults.standard.stringArray(forKey: "SelectedAppBundleIDs") ?? []
+        #expect(savedAfterDown == [appT1.bundleID, appT2.bundleID])
+    }
 }

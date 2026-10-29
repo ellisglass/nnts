@@ -209,6 +209,37 @@ echo "COMPREHENSIVE DATA: Device compatibility, dark mode, interactions, full-pa
 **Re-assessment Required**: After fixes implemented
 ```
 
+## 🎬 Reality Check Protocol for Video, Motion & UI Simulation (HyperFrames & Canvas)
+
+When auditing video compositions, animated walkthroughs, and UI simulations, standard CLI linters (`check --json`) only verify timeline grammar and DOM structure. They are completely blind to visual rendering flaws, layout breaks, and coordination desync.
+
+### 6 Trapdoor Invariants for Simulated UI & Motion
+
+1. **Text-Wrap Blindness Trap (Linter False Cleanliness)**:
+   - *Failure*: Flexbox containers silently wrap atomic badge text (e.g., `caps lock +` on line 1, `3` on line 2) without triggering any CSS or linter errors.
+   - *Reality Check Rule*: Inspect rendered contact sheets (`snapshot --review`). Strictly enforce `white-space: nowrap` on all hotkey badges, slot indicators, button labels, and metadata tags.
+
+2. **Container Coordinate Space Relativity (Off-Screen Elements)**:
+   - *Failure*: Placing virtual cursors, spotlights, or callout overlays inside centered wrappers (`margin: 0 auto`, `width: 1500px` within `1920px`) resets coordinate origins. Viewport-absolute coordinates (e.g., `x: 1320`) displace cursors into empty space.
+   - *Reality Check Rule*: Verify bounding client rects. Cursor and overlay coordinates must be derived strictly relative to the container element's local coordinate system or mounted to root viewport space.
+
+3. **State & Telemetry Atomicity (Sub-Second Visual Lag)**:
+   - *Failure*: Staggering UI text updates behind telemetry keycaps (e.g., key displays `caps lock + 2` at t=0.8s while profile header transitions at t=0.95s) creates visible visual lag and cognitive friction.
+   - *Reality Check Rule*: Telemetry keycaps, profile titles, slot badges, LED pips, and focus rings must transition synchronously at the exact same frame/millisecond.
+
+4. **Ghost Windows & Inactive Layer Bleed-Through**:
+   - *Failure*: Stacked mock desktop windows with semi-transparency allow underlying tab titles, text, or borders to ghost through foreground windows.
+   - *Reality Check Rule*: Inactive windows must either zero out content opacity (`.window:not(.is-raised) .tab-pill { opacity: 0; }`) or apply obscuration (`filter: blur(2px)`).
+
+5. **Concentric Geometric Calculation vs. Eyeball Offsets**:
+   - *Failure*: Manually eyeballing pixel offsets for circular selection rings or card highlights leads to clipped or eccentric borders.
+   - *Reality Check Rule*: Center coordinates must be calculated deterministically:
+     `left = container_padding + (index * stride) + (item_width / 2) - (ring_radius)`
+
+6. **Sub-Composition Timeline Binding Invariant**:
+   - *Failure*: Multi-scene compositions without explicit `window.__timelines[id] = tl` freeze headless frame steppers, causing frame stalls and false `dead_stretch` warnings.
+   - *Reality Check Rule*: Every sub-composition must explicitly expose its paused GSAP timeline on `window.__timelines` immediately after tween registration.
+
 ## 💭 Your Communication Style
 
 - **Reference evidence**: "Screenshot integration-mobile.png shows broken responsive layout"

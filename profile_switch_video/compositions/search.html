@@ -1,0 +1,488 @@
+<template>
+  <style>
+    @font-face {
+      font-family: 'Space Grotesk';
+      src: url('assets/fonts/SpaceGrotesk-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
+    #search {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', -apple-system, sans-serif;
+      color: #F8F5EE;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 30%, #1a1e29 0%, #0d0f14 100%);
+    }
+    .scene-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 1500px;
+      position: relative;
+    }
+    .header-block {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .feature-tag {
+      display: inline-block;
+      background: rgba(245, 186, 19, 0.15);
+      border: 1.5px solid rgba(245, 186, 19, 0.45);
+      color: #F5BA13;
+      padding: 8px 24px;
+      border-radius: 9999px;
+      font-size: 28px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+    }
+    .feature-title {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+      color: #F8F5EE;
+    }
+    .feature-desc {
+      font-size: 30px;
+      color: rgba(248, 245, 238, 0.70);
+      font-weight: 500;
+    }
+
+    /* Native NNTS Search & Picker Window */
+    .picker-window {
+      background: rgba(20, 23, 31, 0.94);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1.5px solid rgba(255, 255, 255, 0.16);
+      border-radius: 28px;
+      padding: 24px 36px 32px 36px;
+      box-shadow: 0 32px 70px rgba(0, 0, 0, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.2);
+      display: flex;
+      flex-direction: column;
+      width: 1080px;
+      position: relative;
+    }
+
+    /* Window Header Bar */
+    .window-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+      margin-bottom: 22px;
+    }
+    .traffic-lights {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .traffic-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+    .dot-close { background: #ff5f57; }
+    .dot-min { background: #febc2e; }
+    .dot-max { background: #28c840; }
+
+    .window-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .window-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #F8F5EE;
+    }
+    .pro-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 230, 118, 0.16);
+      border: 1px solid rgba(0, 230, 118, 0.35);
+      color: #00E676;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 9999px;
+    }
+
+    /* Search Bar */
+    .search-bar {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      border: 2px solid rgba(245, 186, 19, 0.40);
+      border-radius: 16px;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    .search-icon {
+      font-size: 30px;
+      color: #F5BA13;
+    }
+    .search-input-text {
+      font-size: 30px;
+      font-weight: 500;
+      color: #F8F5EE;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      letter-spacing: -0.01em;
+    }
+    .search-cursor {
+      display: inline-block;
+      width: 3px;
+      height: 32px;
+      background: #F5BA13;
+      margin-left: 4px;
+      border-radius: 2px;
+    }
+
+    /* Results List */
+    .results-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+    .result-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 16px 24px;
+    }
+    .result-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .profile-avatar-wrap {
+      position: relative;
+      width: 72px;
+      height: 72px;
+    }
+    .profile-avatar-img {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+    }
+    .chrome-mini-badge {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #1E232D;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      padding: 2px;
+    }
+
+    .profile-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .profile-name {
+      font-size: 32px;
+      font-weight: 700;
+      color: #F8F5EE;
+      white-space: nowrap;
+    }
+    .profile-sub {
+      font-size: 28px;
+      color: rgba(248, 245, 238, 0.65);
+      white-space: nowrap;
+    }
+
+    .result-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+    .slot-shortcut-pill {
+      background: rgba(245, 186, 19, 0.15);
+      border: 1.5px solid rgba(245, 186, 19, 0.35);
+      color: #F5BA13;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      font-size: 28px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .pin-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 86, 160, 0.85);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      padding: 10px 24px;
+      border-radius: 9999px;
+      font-size: 28px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(30, 86, 160, 0.4);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .pin-btn.pinned-state {
+      background: rgba(0, 230, 118, 0.20);
+      border-color: rgba(0, 230, 118, 0.60);
+      color: #00E676;
+      box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+    }
+
+    /* Tactile Status Toast */
+    .status-toast {
+      margin-top: 22px;
+      background: rgba(30, 35, 45, 0.95);
+      border: 1.5px solid rgba(0, 230, 118, 0.5);
+      border-radius: 9999px;
+      padding: 12px 30px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(0, 230, 118, 0.25);
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    .status-led {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #00E676;
+      box-shadow: 0 0 10px #00E676;
+    }
+    .status-text {
+      font-size: 28px;
+      font-weight: 700;
+      color: #F8F5EE;
+    }
+    .status-hotkey {
+      color: #F5BA13;
+    }
+
+    /* Operator Silhouette in Ambient Backdrop */
+    .ambient-operator {
+      position: absolute;
+      left: 60px;
+      bottom: 40px;
+      width: 300px;
+      height: 300px;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0.28;
+      filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.85));
+    }
+    .operator-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Virtual Hand/Pointer Cursor */
+    .virtual-cursor {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      pointer-events: none;
+      z-index: 100;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
+      opacity: 0;
+    }
+  </style>
+
+  <div id="search" data-composition-id="search" data-width="1920" data-height="1080">
+    <div class="scene-content">
+      <!-- Header -->
+      <div class="header-block" id="header-block">
+        <div class="feature-tag">Browser Profiles</div>
+        <h1 class="feature-title">Find & Assign Any Profile</h1>
+        <p class="feature-desc">Search unassigned profiles and pin to quick slots</p>
+      </div>
+
+      <!-- Native NNTS Window -->
+      <div class="picker-window" id="picker-window">
+        <!-- Window Top Bar -->
+        <div class="window-header">
+          <div class="traffic-lights" data-layout-ignore="true">
+            <div class="traffic-dot dot-close"></div>
+            <div class="traffic-dot dot-min"></div>
+            <div class="traffic-dot dot-max"></div>
+          </div>
+          <div class="window-title-group">
+            <span class="window-title">Settings & Quick Apps</span>
+          </div>
+          <div class="pro-badge">PRO ACTIVE</div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar" id="search-bar">
+          <span class="search-icon">⚲</span>
+          <div class="search-input-text" id="search-input-text">
+            <span id="placeholder-text" style="color: rgba(248, 245, 238, 0.38); position: absolute;" data-layout-allow-overlap="true">Search unassigned profiles...</span>
+            <span id="typed-text" style="position: relative; z-index: 2;"></span>
+            <span class="search-cursor" id="search-cursor"></span>
+          </div>
+        </div>
+
+        <!-- Results List -->
+        <div class="results-container">
+          <div class="result-row" id="result-row">
+            <div class="result-left">
+              <div class="profile-avatar-wrap">
+                <img src="assets/profiles/client.png" alt="Client" class="profile-avatar-img" />
+                <img src="assets/images/icon_chrome.png" alt="Chrome" class="chrome-mini-badge" data-layout-ignore="true" />
+              </div>
+              <div class="profile-meta">
+                <div class="profile-name">Client</div>
+                <div class="profile-sub">Google Chrome Profile • Slot 3</div>
+              </div>
+            </div>
+            <div class="result-right">
+              <div class="slot-shortcut-pill">caps lock + 3</div>
+              <div class="pin-btn" id="pin-btn">
+                <span id="pin-btn-text">+ Pin to Slot 3</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tactile Status Toast -->
+      <div class="status-toast" id="status-toast" data-layout-allow-overflow="true">
+        <div class="status-led"></div>
+        <div class="status-text">Client assigned to <span class="status-hotkey">caps lock + 3</span></div>
+      </div>
+
+      <!-- Animated Pointer Cursor -->
+      <svg
+        id="virtual-cursor"
+        class="virtual-cursor"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        data-layout-allow-overflow="true"
+      >
+        <path
+          d="M5.5 3.2L18.8 12.2C19.7 12.8 19.3 14.2 18.2 14.3L12.9 14.9L16.2 21.2C16.6 22 15.8 22.8 15 22.4L11.5 20.3L8.6 23.4C7.9 24.1 6.8 23.6 6.8 22.6V3.8C6.8 2.8 7.9 2.3 8.6 3L5.5 3.2Z"
+          fill="#F8F5EE"
+          stroke="#1E232D"
+          stroke-width="1.8"
+        />
+      </svg>
+    </div>
+
+    <!-- Ambient Operator Character in Corner Backdrop -->
+    <div class="ambient-operator" id="ambient-operator" data-layout-ignore="true">
+      <img src="assets/images/character.png" alt="Operator" class="operator-img" />
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.getElementById('search');
+      const headerBlock = document.getElementById('header-block');
+      const pickerWindow = document.getElementById('picker-window');
+      const placeholderText = document.getElementById('placeholder-text');
+      const typedText = document.getElementById('typed-text');
+      const searchCursor = document.getElementById('search-cursor');
+      const resultRow = document.getElementById('result-row');
+      const pinBtn = document.getElementById('pin-btn');
+      const pinBtnText = document.getElementById('pin-btn-text');
+      const statusToast = document.getElementById('status-toast');
+      const cursor = document.getElementById('virtual-cursor');
+      const operator = document.getElementById('ambient-operator');
+
+      // Static initial placements (frame 0 visible to avoid first_frame_empty)
+      gsap.set(headerBlock, { opacity: 1, y: 0 });
+      gsap.set(pickerWindow, { opacity: 1, scale: 1, y: 0 });
+      gsap.set(resultRow, { opacity: 0, y: 12 });
+      gsap.set(cursor, { opacity: 0, x: 900, y: 450 });
+      gsap.set(statusToast, { opacity: 0, y: 15 });
+      gsap.set(operator, { opacity: 0.28, y: 0 });
+
+      const tl = gsap.timeline({ paused: true });
+
+      // Subtle intro settle from frame 0
+      tl.from(headerBlock, { y: -10, duration: 0.5, ease: 'power2.out' }, 0);
+      tl.from(pickerWindow, { scale: 0.98, duration: 0.6, ease: 'power2.out' }, 0);
+      tl.from(operator, { opacity: 0.08, y: 15, duration: 0.8, ease: 'power2.out' }, 0.1);
+
+      // 0.8s - 2.8s: Cursor glides into search bar and text types "Client"
+      tl.to(cursor, { opacity: 1, x: 420, y: 220, duration: 0.6, ease: 'power2.out' }, 0.8);
+      tl.to(placeholderText, { opacity: 0, duration: 0.25, ease: 'power1.out' }, 1.4);
+
+      const targetText = 'Client';
+      for (let i = 1; i <= targetText.length; i++) {
+        const partial = targetText.slice(0, i);
+        tl.call(() => { typedText.textContent = partial; }, null, 1.5 + (i * 0.16));
+      }
+
+      // 2.4s - 3.0s: Filtered result row slides in with spring
+      tl.to(resultRow, {
+        opacity: 1,
+        y: 0,
+        backgroundColor: 'rgba(245, 186, 19, 0.12)',
+        borderColor: 'rgba(245, 186, 19, 0.50)',
+        duration: 0.45,
+        ease: 'back.out(1.4)'
+      }, 2.4);
+
+      // 3.2s - 4.2s: Cursor glides directly to "Pin to Slot 3" button
+      tl.to(cursor, { x: 1120, y: 350, duration: 0.8, ease: 'power2.inOut' }, 3.2);
+
+      // 4.2s - 4.5s: Visible click action
+      tl.to(cursor, { scale: 0.84, duration: 0.12, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 4.3);
+      tl.to(pinBtn, { scale: 0.94, duration: 0.12, ease: 'power1.in' }, 4.3);
+
+      // 4.5s: Tactile button snap to Pinned state + Confirmation Toast
+      tl.call(() => {
+        pinBtn.classList.add('pinned-state');
+        pinBtnText.textContent = '✓ Pinned';
+      }, null, 4.45);
+      tl.to(pinBtn, { scale: 1.04, duration: 0.18, ease: 'back.out(2)' }, 4.45);
+      tl.to(pinBtn, { scale: 1.0, duration: 0.15, ease: 'power1.out' }, 4.65);
+
+      // Status toast appears right away at t=4.5s
+      tl.to(statusToast, { opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }, 4.5);
+      tl.to(cursor, { opacity: 0, x: 1220, y: 420, duration: 0.5, ease: 'power2.in' }, 5.2);
+
+      // 6.5s - 7.5s: Smooth exit transition
+      tl.to([headerBlock, pickerWindow, statusToast, operator], {
+        opacity: 0,
+        y: -15,
+        duration: 0.6,
+        ease: 'power2.in'
+      }, 6.8);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["search"] = tl;
+      if (window.__registerTimeline) {
+        window.__registerTimeline('search', tl);
+      }
+    })();
+  </script>
+</template>
