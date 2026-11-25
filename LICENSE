@@ -1,0 +1,31 @@
+PROPRIETARY SOFTWARE LICENSE
+
+Copyright (c) 2026 NNTS (Igor Ekishev). All Rights Reserved.
+
+All source code, documentation, user interface designs, audio/visual assets,
+compiled binaries, and installer packages contained in or distributed alongside
+this software ("NNTS") are proprietary and confidential unless explicitly noted
+otherwise in THIRD_PARTY_NOTICES.
+
+GRANT OF RUNTIME LICENSE (COMPILED BINARIES ONLY)
+You are granted a personal, non-exclusive, non-transferable license to download,
+install, and execute the official compiled NNTS application on macOS devices
+that you own or control:
+- NNTS Free features may be used free of charge.
+- NNTS Pro features require a valid paid license key (up to 3 personal Macs per key).
+
+RESTRICTIONS
+Except as expressly permitted by applicable law or separate written agreement:
+- You may not redistribute, resell, sublicense, rent, or host NNTS installers
+  for commercial distribution.
+- You may not reverse-engineer, decompile, circumvent license verification, or
+  strip attribution or licensing notices from the binary.
+- No license or rights are granted to copy, modify, publish, or distribute the
+  underlying source code.
+
+DISCLAIMER OF WARRANTY & LIMITATION OF LIABILITY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING
+FROM THE USE OR IN PERFORMANCE OR OPERATION OF THE SOFTWARE.

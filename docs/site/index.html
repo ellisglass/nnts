@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NNTS - Hardware Profile & Window Switcher for macOS</title>
+  <meta name="description" content="Control Mac windows like TV channels. Jump between 1-8 Chrome and Brave profiles in <16ms, cycle apps by first letter, and copy selected text from caps lock.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ellisglass.github.io/nnts/">
+  <meta property="og:title" content="NNTS - Control Mac Windows Like TV Channels">
+  <meta property="og:description" content="Direct Chrome profiles (1-8), first-letter app cycling, and automatic Copy-on-Select direct from caps lock. Pure Swift 6 for macOS 14+.">
+  <meta property="og:image" content="https://ellisglass.github.io/nnts/assets/images/nnts_opengraph_banner.png">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NNTS - Control Mac Windows Like TV Channels">
+  <meta name="twitter:description" content="Direct Chrome/Brave profiles (1-8), first-letter app cycling, and Copy-on-Select from caps lock.">
+  <meta name="twitter:image" content="https://ellisglass.github.io/nnts/assets/images/nnts_opengraph_banner.png">
+
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+  <link rel="preload" as="font" href="assets/fonts/SpaceGrotesk-Bold.ttf" type="font/ttf" crossorigin>
+
+  <link rel="stylesheet" href="styles.min.css?v=10.0">
+</head>
+<body class="nnts-body">
+  <div class="nnts-shell">
+    <header class="site-header">
+      <a href="#top" class="brand-lockup" aria-label="NNTS Home">
+        <img src="assets/images/AppIcon.png" alt="" class="brand-icon" width="28" height="28">
+        <span class="brand-name">NNTS</span>
+      </a>
+
+      <nav class="site-nav" aria-label="Primary Navigation">
+        <a href="#workbench" class="nav-link">Workbench</a>
+        <a href="#architecture" class="nav-link">Engineering</a>
+        <a href="#compare" class="nav-link">Free vs Pro</a>
+        <a href="#install" class="nav-link">Install</a>
+        <a href="#privacy" class="nav-link">Privacy</a>
+      </nav>
+
+      <div class="header-actions">
+        <button id="audio-toggle-btn" class="icon-btn is-active" type="button" title="Tactile Synth Audio: On" aria-label="Toggle hardware sound effects">
+          <svg class="icon-audio-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+          <svg class="icon-audio-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+
+        <a href="https://github.com/ellisglass/nnts" target="_blank" rel="noopener" class="icon-btn" title="NNTS on GitHub" aria-label="GitHub Repository">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+          </svg>
+        </a>
+
+        <a href="https://github.com/ellisglass/nnts/releases/latest/download/NNTS.dmg" class="btn btn-primary btn-header-cta">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" x2="12" y1="15" y2="3"></line>
+          </svg>
+          <span>Download DMG</span>
+        </a>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- HERO SECTION -->
+      <section class="hero-section">
+        <div class="hero-copy">
+          <h1 class="hero-title">
+            Control Mac windows<br>
+            like <span class="text-phosphor">TV channels</span>.
+          </h1>
+          <p class="hero-subtitle">
+            Jump directly to Chrome or Brave profiles (1-8), cycle apps by first letter, and copy selected text from <kbd class="inline-kbd">caps lock</kbd>.
+          </p>
+
+          <div class="hero-actions">
+            <a href="https://github.com/ellisglass/nnts/releases/latest/download/NNTS.dmg" class="btn btn-primary btn-lg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" x2="12" y1="15" y2="3"></line>
+              </svg>
+              <span>Download Free for macOS</span>
+            </a>
+
+            <div class="brew-pill" id="brew-copy-pill">
+              <span class="brew-prompt">$</span>
+              <code class="brew-cmd">brew install ellisglass/tap/nnts</code>
+              <button type="button" class="brew-copy-btn" id="brew-copy-btn" aria-label="Copy Homebrew install command">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span id="brew-copy-label">Copy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- INTERACTIVE TRINITRON CRT & RM-NNTS REMOTE WORKSTATION -->
+        <div class="cockpit-stage" id="hero-tv-station">
+          <div class="remote-column">
+            <div class="tv-remote-handset" id="tv-remote-handset" aria-label="RM-NNTS Interactive Remote">
+              <div class="remote-top-lens">
+                <div class="remote-ir-diode" id="remote-ir-led" aria-hidden="true"></div>
+              </div>
+              <div class="remote-prop-body">
+                <img src="assets/nnts/canonical_realistic_rc_remote.png" alt="RM-NNTS Hardware Remote Control" class="remote-prop-image" id="remote-prop-image" draggable="false" width="179" height="797">
+                <button type="button" class="rc-hotspot rc-hotspot-mute" id="remote-mute-btn" title="Mute Audio (M)" aria-label="Mute TV Audio"></button>
+                <button type="button" class="rc-hotspot rc-hotspot-power active" id="remote-power-btn" title="Power On or Off (P)" aria-label="Power TV"></button>
+                <button type="button" class="rc-hotspot rc-hotspot-num rc-hotspot-num1 active" data-channel="1" id="remote-num-1" title="Channel 1: Browser Profiles" aria-label="Channel 1 Browser Profiles"></button>
+                <button type="button" class="rc-hotspot rc-hotspot-num rc-hotspot-num2" data-channel="2" id="remote-num-2" title="Channel 2: Quick Apps" aria-label="Channel 2 Quick Apps"></button>
+                <button type="button" class="rc-hotspot rc-hotspot-num rc-hotspot-num3" data-channel="3" id="remote-num-3" title="Channel 3: Copy-on-Select" aria-label="Channel 3 Copy-on-Select"></button>
+                <button type="button" class="rc-hotspot rc-hotspot-num rc-hotspot-num4" data-channel="4" id="remote-num-4" title="Channel 4: Pro Signal" aria-label="Channel 4 Pro Signal"></button>
+                <button type="button" class="rc-hotspot rc-hotspot-dpad rc-hotspot-up" id="remote-ch-up" title="Next Channel" aria-label="Channel Up"></button>
+                <button type="button" class="rc-hotspot rc-hotspot-dpad rc-hotspot-down" id="remote-ch-down" title="Previous Channel" aria-label="Channel Down"></button>
+              </div>
+              <div class="remote-foot-meta">
+                <span class="remote-tx-status" id="remote-tx-led"></span>
+                <span class="remote-meta-model">RM-NNTS</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="retro-tv-chassis" id="retro-tv-chassis">
+            <div class="tv-cabinet-header">
+              <div class="tv-brand-badge">
+                <span class="badge-nnts">NNTS TRINITRON</span>
+              </div>
+              <div class="tv-channel-strip" role="tablist" aria-label="Demo Channels">
+                <button type="button" class="tv-chan-btn active" data-tv-channel="1" role="tab" aria-selected="true">CH 01 Profiles</button>
+                <button type="button" class="tv-chan-btn" data-tv-channel="2" role="tab" aria-selected="false">CH 02 Apps</button>
+                <button type="button" class="tv-chan-btn" data-tv-channel="3" role="tab" aria-selected="false">CH 03 Copy</button>
+                <button type="button" class="tv-chan-btn tv-chan-pro" data-tv-channel="4" role="tab" aria-selected="false">CH 04 Pro</button>
+              </div>
+            </div>
+
+            <div class="tv-screen-bezel">
+              <div class="tv-screen-glass crt-screen-power-on" id="tv-screen-glass">
+                <div class="tv-scanlines-layer" aria-hidden="true"></div>
+                <div class="tv-phosphor-glow-layer" aria-hidden="true"></div>
+
+                <div class="tv-standby-screen" id="tv-standby-screen" style="display: none;">
+                  <div class="standby-content">
+                    <span class="standby-logo-glow">NNTS // STANDBY</span>
+                    <button type="button" class="btn btn-primary" id="standby-wake-btn">Power On Monitor</button>
+                  </div>
+                </div>
+
+                <video id="tv-video-player" class="tv-video-element" autoplay loop muted playsinline preload="metadata" poster="assets/images/video-poster-hud.png">
+                  <source src="assets/media/channel_01_profiles.mp4" type="video/mp4">
+                </video>
+
+                <div class="tv-osd-overlay" id="tv-osd-overlay">
+                  <div class="osd-header-row">
+                    <span class="osd-num-pill" id="tv-osd-num">CH 01</span>
+                    <span class="osd-title-text" id="tv-osd-channel-label">Browser Profiles (1-8)</span>
+                  </div>
+                  <div class="osd-sub-line" id="tv-osd-sub-label">caps lock + C/B + 1..8 via kAXMenuBar</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tv-cabinet-footer">
+              <div class="tv-footer-hint">Keys: 1-4 tune channel, P power, M mute</div>
+              <div class="tv-cabinet-footer-right">
+                <div class="tv-ir-sensor-eye" id="tv-ir-eye" title="IR Receiver Sensor">
+                  <div class="sensor-glow"></div>
+                </div>
+                <div class="tv-panel-power-group">
+                  <span class="tv-power-led active" id="tv-power-led"></span>
+                  <button type="button" class="tv-hardware-power-btn" id="tv-hardware-power-btn" title="Power On or Off" aria-label="TV Power Button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                      <line x1="12" y1="2" x2="12" y2="12"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-ambient-figure" aria-hidden="true">
+            <div class="ambient-figure-halo"></div>
+            <img src="assets/images/figure_transparent.png" alt="" class="ambient-figure-img" width="440" height="440" draggable="false">
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 1: INTERACTIVE WORKBENCH (REAL 2x APP SCREEN + LIVE CONTROLS) -->
+      <section class="page-section" id="workbench">
+        <div class="section-head">
+          <h2 class="section-title">Three tools inside one menu bar remote.</h2>
+          <p class="section-desc">Test the actual shortcuts and inspect genuine captures of the native NNTS chassis.</p>
+        </div>
+
+        <div class="workbench-grid">
+          <div class="workbench-controls">
+            <div class="wb-tabs" role="tablist" aria-label="Core Features">
+              <button type="button" class="wb-tab active" data-wb-tab="profiles" role="tab" aria-selected="true">
+                <span class="wb-tab-title">Browser Profiles (1-8)</span>
+                <span class="wb-tab-meta">caps lock + C/B + 1..8</span>
+              </button>
+              <button type="button" class="wb-tab" data-wb-tab="apps" role="tab" aria-selected="false">
+                <span class="wb-tab-title">First-Letter Apps</span>
+                <span class="wb-tab-meta">caps lock + [a-z]</span>
+              </button>
+              <button type="button" class="wb-tab" data-wb-tab="copy" role="tab" aria-selected="false">
+                <span class="wb-tab-title">Copy-on-Select</span>
+                <span class="wb-tab-meta">Drag text without Cmd+C</span>
+              </button>
+            </div>
+
+            <!-- Panel 1: Browser Profiles -->
+            <div class="wb-panel active" id="wb-panel-profiles">
+              <p class="wb-panel-copy">
+                macOS bundles every Chrome or Brave profile window under one Command-Tab icon. NNTS addresses windows directly via Chromium's native Profiles menu attribute (<code class="inline-code">kAXMenuBarAttribute</code>), never brittle window titles.
+              </p>
+
+              <div class="wb-profile-tester">
+                <div class="wb-tester-row">
+                  <span class="wb-keychord-display">
+                    <kbd class="keycap-btn" id="wb-prof-chord">caps lock + C + 1</kbd>
+                  </span>
+                  <span class="wb-latency-readout" id="wb-prof-latency">11.2 ms focus</span>
+                </div>
+
+                <div class="wb-slot-grid" id="wb-slot-grid">
+                  <button type="button" class="slot-chip active" data-slot="1" data-name="Igor" data-tier="free" data-ms="11.2 ms">1 Personal (Free)</button>
+                  <button type="button" class="slot-chip" data-slot="2" data-name="AI11" data-tier="free" data-ms="9.6 ms">2 Work (Free)</button>
+                  <button type="button" class="slot-chip" data-slot="3" data-name="dhl.com" data-tier="pro" data-ms="10.4 ms">3 Client (Pro)</button>
+                  <button type="button" class="slot-chip" data-slot="4" data-name="GCP Free 2" data-tier="pro" data-ms="10.8 ms">4 Cloud (Pro)</button>
+                  <button type="button" class="slot-chip" data-slot="5" data-name="GCP Free Trial" data-tier="pro" data-ms="11.9 ms">5 Staging (Pro)</button>
+                  <button type="button" class="slot-chip" data-slot="6" data-name="Nastya" data-tier="pro" data-ms="10.1 ms">6 Partner (Pro)</button>
+                </div>
+                <p class="wb-note" id="wb-profile-note">Free includes 2 profile slots (1-2) and scroll-wheel picker. Pro unlocks up to 8 slots, Brave/Edge/Chromium switcher, and Avatar Assistant.</p>
+              </div>
+            </div>
+
+            <!-- Panel 2: Quick Apps -->
+            <div class="wb-panel" id="wb-panel-apps">
+              <p class="wb-panel-copy">
+                Zero Spotlight typing or Dock hunting. Hold <kbd class="inline-kbd">caps lock</kbd> and press any letter. Repeat presses cycle deterministically between apps sharing the same initial letter (<code class="inline-code">1/2</code> to <code class="inline-code">2/2</code>).
+              </p>
+
+              <div class="wb-apps-tester">
+                <div class="wb-letter-row">
+                  <button type="button" class="letter-key active" data-letter="A" data-a1="Antigravity" data-a2="Antigravity IDE">A</button>
+                  <button type="button" class="letter-key" data-letter="I" data-a1="iTerm2" data-a2="">I</button>
+                  <button type="button" class="letter-key" data-letter="N" data-a1="Notes" data-a2="">N</button>
+                  <button type="button" class="letter-key" data-letter="S" data-a1="Spotify" data-a2="System Settings">S</button>
+                  <button type="button" class="letter-key" data-letter="T" data-a1="Telegram" data-a2="Terminal">T</button>
+                </div>
+
+                <div class="wb-cycle-readout" id="wb-cycle-readout">
+                  <span class="wb-keychord-display" id="wb-app-chord">caps lock + A</span>
+                  <span class="wb-cycle-target" id="wb-app-target">Antigravity (1/2)</span>
+                  <button type="button" class="btn btn-subtle btn-sm" id="wb-tap-again-btn">Tap Letter Again</button>
+                </div>
+                <p class="wb-note">Free supports 5 pinned Quick Apps across A-Z (Browser Hub never consumes a slot). Pro unlocks all 26 letters with unlimited chains.</p>
+              </div>
+            </div>
+
+            <!-- Panel 3: Copy-on-Select -->
+            <div class="wb-panel" id="wb-panel-copy">
+              <p class="wb-panel-copy">
+                Highlight any text with a mouse drag (&gt;10pt) or double-click. NNTS copies automatically when you release the mouse button, complete with trajectory-aware cursor toast and synthetic tape-snick sound.
+              </p>
+
+              <div class="wb-copy-sandbox">
+                <div class="sandbox-topbar">
+                  <span>Drag-select any line below to copy</span>
+                  <span id="copy-saved-count">0 copies in demo</span>
+                </div>
+                <div class="sandbox-body" id="live-select-zone">
+                  <code>brew install ellisglass/tap/nnts && xattr -cr /Applications/NNTS.app</code>
+                </div>
+                <div class="pasteboard-strip">
+                  <span class="pb-label">PASTEBOARD:</span>
+                  <code class="pb-value" id="pasteboard-val">Ready. Highlight text above.</code>
+                  <span class="pb-status" id="pasteboard-status">STANDBY</span>
+                </div>
+                <p class="wb-note">Safety Vault immunity is 100% Free: 22+ password managers, secure input fields, spreadsheets, and CAD/DAW apps are always excluded. Pro adds In Terminals auto-copy and 7-day signal tracking.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Genuine 2x Native App Preview Column -->
+          <div class="workbench-device-stage">
+            <div class="device-frame">
+              <div class="device-screen-mode-bar">
+                <button type="button" class="mode-chip active" data-screen-src="assets/media/hud_profiles_v1.png">Profiles</button>
+                <button type="button" class="mode-chip" data-screen-src="assets/media/hud_quickapps_v1.png">Quick Apps</button>
+                <button type="button" class="mode-chip" data-screen-src="assets/media/hud_copy_v1.png">Copy HUD</button>
+                <button type="button" class="mode-chip" data-screen-src="assets/media/hud_paywall_v1.png">Pro Paywall</button>
+                <button type="button" class="mode-chip" data-screen-src="assets/media/hud_settings_free_v1.png">Settings</button>
+              </div>
+              <img id="wb-hud-preview-img" src="assets/media/hud_profiles_v1.png" alt="NNTS v1.0 native macOS Status HUD showing profile channels" class="hud-device-img" width="300" height="500">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: TELEMETRY METRICS & STUDIO SHOWCASE -->
+      <section class="page-section" id="architecture">
+        <div class="section-head">
+          <h2 class="section-title">Zero Electron. Native Swift 6 telemetry.</h2>
+          <p class="section-desc">Hardware-level modifier remapping via macOS <code class="inline-code">hidutil</code> keeps the caps lock LED off without kernel extensions.</p>
+        </div>
+
+        <div class="metrics-strip">
+          <div class="metric-item">
+            <div class="metric-val">&lt; 16 ms</div>
+            <div class="metric-label">Head-insert CGEventTap hotkey focus switch across Spaces and displays.</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-val">&lt; 18 MB</div>
+            <div class="metric-label">Steady-state native AppKit and SwiftUI memory footprint.</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-val">0% CPU</div>
+            <div class="metric-label">Idle processor usage with event-driven pasteboard hooks.</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-val">Zero</div>
+            <div class="metric-label">Screen Recording permissions. Never calls CGRequestScreenCaptureAccess.</div>
+          </div>
+        </div>
+
+        <div class="showcase-spread">
+          <img src="assets/images/nnts_bento_grid.png" alt="NNTS v1.0 Profiles, First-Letter Apps, and Copy-on-Select HUD windows alongside RM-NNTS remote" class="showcase-spread-img" width="1920" height="1080" loading="lazy">
+        </div>
+      </section>
+
+      <!-- SECTION 3: FREEMIUM COMPARISON (FREE VS $19 LIFETIME PRO) -->
+      <section class="page-section" id="compare">
+        <div class="section-head">
+          <h2 class="section-title">Free for your daily rig. $19 once for Pro.</h2>
+          <p class="section-desc">All sound synthesis, trackpad haptics, <code class="inline-code">caps lock</code> driverless remapping, and Copy-on-Select password immunity stay free forever.</p>
+        </div>
+
+        <div class="pricing-grid">
+          <div class="tier-card">
+            <div class="tier-head">
+              <div class="tier-name">NNTS Free</div>
+              <div class="tier-price">$0 <span class="tier-cadence">forever</span></div>
+            </div>
+            <p class="tier-lead">Built to feel instantaneous out of the box with zero registration.</p>
+            <ul class="tier-list">
+              <li>Complete acoustic &amp; haptic CRT engine (&lt;16ms)</li>
+              <li>2 browser profiles via <code class="inline-code">caps lock + 1-2</code> &amp; scroll picker</li>
+              <li>5 Quick Apps across A-Z with full 1/N repeat cycling</li>
+              <li>Auto Copy-on-Select, floating cursor toast, and full password-manager vault protection</li>
+              <li>Manual Finder Window Tidy (<code class="inline-code">Tidy Now</code>)</li>
+              <li>Offline operation, zero telemetry, zero Screen Recording</li>
+            </ul>
+            <a href="https://github.com/ellisglass/nnts/releases/latest/download/NNTS.dmg" class="btn btn-subtle btn-block">Download Free DMG</a>
+          </div>
+
+          <div class="tier-card tier-card-pro">
+            <div class="tier-head">
+              <div class="tier-name text-violet">NNTS Pro</div>
+              <div class="tier-price">$19 <span class="tier-cadence">one-time lifetime</span></div>
+            </div>
+            <p class="tier-lead">Unlock full multi-workspace throughput on up to 3 personal Macs.</p>
+            <ul class="tier-list">
+              <li>Everything in NNTS Free plus v1.x updates</li>
+              <li>Up to 8 browser profile slots (<code class="inline-code">caps lock + 1-8</code>) from 50 discovered</li>
+              <li>Chrome, Brave, Edge &amp; Chromium switcher plus Avatar Capture Assistant</li>
+              <li>Unlimited Quick Apps across all 26 letters A-Z</li>
+              <li><code class="inline-code">In Terminals</code> auto-copy, 7-day signal histogram, and clipboard preview</li>
+              <li>Background Finder Window Tidy daemon &amp; offline Ed25519 license key</li>
+            </ul>
+            <a href="https://buy.polar.sh/polar_cl_v5lBa882Ea4dkTo9gvABMVxVbMgRyjkkhUcY43ktCAo" target="_blank" rel="noopener" class="btn btn-pro btn-block">Unlock Pro - $19</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: INSTALL / GATEKEEPER & PRIVACY POLICY -->
+      <section class="page-section two-col-docs" id="install">
+        <div class="doc-block">
+          <h2 class="doc-title">Install &amp; macOS Gatekeeper</h2>
+          <p class="doc-copy">Universal macOS 14.0+ binary for Apple Silicon and Intel Macs. v1.0 ships locally signed without paid Apple Developer notarization.</p>
+
+          <div class="code-panel">
+            <div class="code-line"><span>$</span> brew install ellisglass/tap/nnts</div>
+            <div class="code-line"><span>$</span> xattr -cr /Applications/NNTS.app</div>
+          </div>
+
+          <ol class="gatekeeper-steps">
+            <li>Download <strong>NNTS.dmg</strong> or install via Homebrew above, then drag <strong>NNTS.app</strong> to Applications.</li>
+            <li>On first launch, right-click <strong>NNTS.app</strong> in Applications and choose <strong>Open</strong>, or run the <code class="inline-code">xattr -cr</code> command once to clear macOS quarantine.</li>
+            <li>Grant Accessibility permission when prompted so NNTS can bind <code class="inline-code">caps lock</code> without green LED blink or accidental uppercase.</li>
+          </ol>
+        </div>
+
+        <div class="doc-block" id="privacy">
+          <h2 class="doc-title">Privacy Policy</h2>
+          <p class="doc-copy">NNTS is engineered to operate locally inside your Mac's security boundary.</p>
+          <ul class="privacy-list">
+            <li><strong>Zero telemetry or analytics:</strong> NNTS runs no background usage tracking, crash reporters, or third-party SDKs.</li>
+            <li><strong>Zero Screen Recording permission:</strong> NNTS never calls screen capture APIs. Profile avatars import only from your clipboard (<code class="inline-code">Cmd+Ctrl+Shift+4</code>) or chosen folders.</li>
+            <li><strong>Password &amp; sensitive field immunity:</strong> Copy-on-Select automatically ignores secure text inputs and 22+ password managers (1Password, Bitwarden, KeePassXC, Apple Passwords).</li>
+            <li><strong>User-initiated diagnostics only:</strong> Clicking Report Issue generates a PII-sanitized archive in Downloads for you to inspect before attaching anywhere.</li>
+            <li><strong>Offline Pro licensing:</strong> Pro keys verify offline via Ed25519 cryptography when present, with network calls occurring only on explicit key activation, deactivation, or manual update checks.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <img src="assets/images/AppIcon.png" alt="" width="20" height="20" class="footer-icon">
+        <span>NNTS</span>
+        <span class="footer-meta">Copyright 2026 NNTS. All rights reserved. macOS 14.0+.</span>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com/ellisglass/nnts" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/ellisglass/nnts/releases" target="_blank" rel="noopener">Releases</a>
+        <a href="https://github.com/ellisglass/nnts/issues" target="_blank" rel="noopener">Report Issue</a>
+        <a href="#privacy">Privacy</a>
+      </div>
+    </footer>
+  </div>
+
+  <div class="cursor-copy-toast" id="live-cursor-toast" aria-live="polite">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    <span>Copied</span>
+  </div>
+
+  <script src="app.min.js?v=10.0"></script>
+</body>
+</html>
