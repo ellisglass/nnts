@@ -1,0 +1,24 @@
+THIRD-PARTY SOFTWARE AND ASSET NOTICES
+
+NNTS incorporates or is distributed alongside the following third-party components,
+each governed by its respective license:
+
+--------------------------------------------------------------------------------
+1. Space Grotesk Font (`SpaceGrotesk-Bold.ttf`)
+   Copyright 2020 The Space Grotesk Project Authors
+   (https://github.com/floriankarsten/space-grotesk)
+   License: SIL Open Font License, Version 1.1
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of the Font Software, to use, study, copy, merge, embed, modify, redistribute,
+   and sell modified and unmodified copies of the Font Software, subject to the
+   conditions of the SIL Open Font License 1.1 (http://scripts.sil.org/OFL).
+   Specifically, no Font Software may be sold by itself, and derived versions may
+   not use Reserved Font Names unless explicitly authorized.
+
+--------------------------------------------------------------------------------
+2. Apple System Frameworks (macOS SDK)
+   Copyright (c) Apple Inc.
+   Linked dynamically against system-provided Cocoa, AppKit, SwiftUI,
+   AVFoundation, ApplicationServices, CoreGraphics, Security, CryptoKit, and
+   UniformTypeIdentifiers frameworks on macOS 14.0+.
